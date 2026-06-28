@@ -74,21 +74,22 @@ function FadeInWhenVisible({ children, delay = 0, className = '' }: { children: 
 function FloatingParticles() {
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
-  const particles = mounted ? Array.from({ length: 20 }, (_, i) => ({
+  const particles = mounted ? Array.from({ length: 25 }, (_, i) => ({
     id: i,
     x: Math.random() * 100,
     y: Math.random() * 100,
-    size: Math.random() * 4 + 2,
+    size: Math.random() * 3 + 1.5,
     duration: Math.random() * 20 + 15,
     delay: Math.random() * 10,
-    opacity: Math.random() * 0.3 + 0.1,
+    opacity: Math.random() * 0.25 + 0.05,
+    color: ['#34d399', '#22d3ee', '#a78bfa', '#fbbf24'][Math.floor(Math.random() * 4)],
   })) : []
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {particles.map(p => (
-        <motion.div key={p.id} className="absolute rounded-full bg-emerald-400"
-          style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size, opacity: p.opacity }}
-          animate={{ y: [0, -30, 0], x: [0, 15, 0], opacity: [p.opacity, p.opacity * 2, p.opacity] }}
+        <motion.div key={p.id} className="absolute rounded-full"
+          style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size, opacity: p.opacity, background: p.color }}
+          animate={{ y: [0, -40, 0], x: [0, 20, 0], opacity: [p.opacity, p.opacity * 2.5, p.opacity] }}
           transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
         />
       ))}
@@ -96,28 +97,49 @@ function FloatingParticles() {
   )
 }
 
+function AnimatedCounter({ target, prefix = '', suffix = '', duration = 2 }: { target: number; prefix?: string; suffix?: string; duration?: number }) {
+  const [count, setCount] = useState(0)
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true, margin: '-50px' })
+
+  useEffect(() => {
+    if (!inView) return
+    let start = 0
+    const end = target
+    const step = end / (duration * 60)
+    const timer = setInterval(() => {
+      start += step
+      if (start >= end) { setCount(end); clearInterval(timer) }
+      else setCount(Math.floor(start))
+    }, 1000 / 60)
+    return () => clearInterval(timer)
+  }, [inView, target, duration])
+
+  return <span ref={ref}>{prefix}{count.toLocaleString()}{suffix}</span>
+}
+
 export default function LandingPage() {
   const setView = useAppStore(s => s.setView)
 
   return (
-    <div className="min-h-screen mesh-bg text-foreground overflow-x-hidden">
+    <div className="min-h-screen mesh-bg-enhanced text-foreground overflow-x-hidden">
       {/* Navbar */}
       <motion.nav initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5 }} className="fixed top-0 left-0 right-0 z-50 glass-strong">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
               <Zap className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold">FinWise <span className="gradient-text">AI</span></span>
           </div>
           <div className="hidden md:flex items-center gap-8">
             {NAV_ITEMS.map(item => (
-              <a key={item} href={`#${item.toLowerCase()}`} className="text-sm text-muted-foreground hover:text-foreground transition-colors">{item}</a>
+              <a key={item} href={`#${item.toLowerCase()}`} className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">{item}</a>
             ))}
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => setView('login')} className="text-muted-foreground hover:text-foreground">Sign In</Button>
-            <Button size="sm" onClick={() => setView('register')} className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0">
+            <Button variant="ghost" size="sm" onClick={() => setView('login')} className="text-muted-foreground hover:text-foreground hover:bg-white/5">Sign In</Button>
+            <Button size="sm" onClick={() => setView('register')} className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white border-0 shadow-lg shadow-emerald-500/20">
               Get Started <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
@@ -126,27 +148,27 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full filter blur-[120px] pointer-events-none" />
-        <div className="absolute top-40 right-1/4 w-72 h-72 bg-cyan-500/8 rounded-full filter blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-500/5 rounded-full filter blur-[150px] pointer-events-none" />
+        <div className="absolute top-20 left-1/4 w-96 h-96 bg-emerald-500/12 rounded-full filter blur-[120px] pointer-events-none orb-animated" />
+        <div className="absolute top-40 right-1/4 w-72 h-72 bg-cyan-500/10 rounded-full filter blur-[100px] pointer-events-none orb-animated" style={{ animationDelay: '-7s' }} />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-500/6 rounded-full filter blur-[150px] pointer-events-none" />
         <FloatingParticles />
         <div className="max-w-7xl mx-auto text-center relative">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-            <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-sm text-muted-foreground mb-6">
-              <Star className="w-4 h-4 text-emerald-400" /> Trusted by 10,000+ users worldwide
+            <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-sm text-foreground/70 mb-6 border border-emerald-500/15">
+              <Star className="w-4 h-4 text-emerald-400 fill-emerald-400" /> Trusted by 10,000+ users worldwide
             </div>
           </motion.div>
           <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }} className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight">
-            Your <span className="gradient-text">AI-Powered</span><br />Finance Coach
+            Your <span className="gradient-text text-glow-emerald">AI-Powered</span><br />Finance Coach
           </motion.h1>
-          <motion.p initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.2 }} className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
+          <motion.p initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.2 }} className="text-lg sm:text-xl text-foreground/70 max-w-2xl mx-auto mb-10 leading-relaxed">
             Understand, analyze, and improve your finances with intelligent AI insights. Maximum privacy, zero compromise.
           </motion.p>
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.3 }} className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <Button size="lg" onClick={() => setView('register')} className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0 text-base px-8 py-6 rounded-xl">
+            <Button size="lg" onClick={() => setView('register')} className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white border-0 text-base px-8 py-6 rounded-xl shadow-xl shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-shadow">
               Start Free <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
-            <Button size="lg" variant="outline" className="glass rounded-xl text-base px-8 py-6">
+            <Button size="lg" variant="outline" className="glass rounded-xl text-base px-8 py-6 hover:bg-white/5 border-white/10 text-foreground">
               Watch Demo
             </Button>
           </motion.div>
@@ -196,7 +218,7 @@ export default function LandingPage() {
                       <f.icon className="w-6 h-6" style={{ color: f.color }} />
                     </div>
                     <h3 className="text-lg font-semibold mb-2">{f.title}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                    <p className="text-sm text-foreground/70 leading-relaxed">{f.desc}</p>
                   </CardContent>
                 </Card>
               </FadeInWhenVisible>
@@ -239,19 +261,21 @@ export default function LandingPage() {
       </section>
 
       {/* Stats Bar */}
-      <section className="py-12 border-y border-border/20">
+      <section className="py-16 border-y border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
-              { value: '10K+', label: 'Active Users', icon: Globe },
-              { value: '$2.5M+', label: 'Money Tracked', icon: TrendingUp },
-              { value: '50K+', label: 'AI Insights', icon: Bot },
-              { value: '99.9%', label: 'Uptime', icon: Shield },
+              { value: 10000, label: 'Active Users', icon: Globe, prefix: '', suffix: '+' },
+              { value: 2500000, label: 'Money Tracked', icon: TrendingUp, prefix: '$', suffix: '+' },
+              { value: 50000, label: 'AI Insights', icon: Bot, prefix: '', suffix: '+' },
+              { value: 99, label: 'Uptime', icon: Shield, prefix: '', suffix: '.9%' },
             ].map((stat, i) => (
               <FadeInWhenVisible key={stat.label} delay={i * 0.1} className="text-center">
-                <stat.icon className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
-                <p className="text-2xl md:text-3xl font-bold gradient-text">{stat.value}</p>
-                <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
+                <stat.icon className="w-5 h-5 text-emerald-400 mx-auto mb-3" />
+                <p className="text-3xl md:text-4xl font-bold gradient-text">
+                  <AnimatedCounter target={stat.value} prefix={stat.prefix} suffix={stat.suffix} />
+                </p>
+                <p className="text-sm text-foreground/60 mt-2">{stat.label}</p>
               </FadeInWhenVisible>
             ))}
           </div>
@@ -277,7 +301,7 @@ export default function LandingPage() {
                       <f.icon className="w-7 h-7 text-emerald-400" />
                     </div>
                     <h3 className="text-base font-semibold mb-2">{f.title}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                    <p className="text-sm text-foreground/70 leading-relaxed">{f.desc}</p>
                   </CardContent>
                 </Card>
               </FadeInWhenVisible>

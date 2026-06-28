@@ -5,6 +5,7 @@ import LandingPage from '@/components/landing/landing-page'
 import LoginPage from '@/components/auth/login-page'
 import RegisterPage from '@/components/auth/register-page'
 import AppShell from '@/components/layout/app-shell'
+import OnboardingWizard from '@/components/onboarding/onboarding-wizard'
 import DashboardPage from '@/components/dashboard/dashboard-page'
 import ExpensesPage from '@/components/expenses/expenses-page'
 import IncomePage from '@/components/expenses/income-page'
@@ -16,7 +17,7 @@ import SettingsPage from '@/components/settings/settings-page'
 import SecurityPage from '@/components/settings/security-page'
 
 export default function Home() {
-  const { currentView, isAuthenticated } = useAppStore()
+  const { currentView, isAuthenticated, hasCompletedOnboarding } = useAppStore()
 
   // Public views (no shell)
   if (!isAuthenticated) {
@@ -25,6 +26,11 @@ export default function Home() {
       case 'register': return <RegisterPage />
       default: return <LandingPage />
     }
+  }
+
+  // Onboarding (before dashboard)
+  if (!hasCompletedOnboarding) {
+    return <OnboardingWizard />
   }
 
   // Authenticated views (with shell)

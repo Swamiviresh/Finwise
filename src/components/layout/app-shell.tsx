@@ -167,9 +167,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="hidden md:flex items-center glass rounded-lg px-3 py-2 gap-2 w-64">
-              <Search className="w-4 h-4 text-muted-foreground" />
-              <input type="text" placeholder="Search..." className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground" />
+            <div className="hidden md:flex items-center glass rounded-xl px-3.5 py-2 gap-2.5 w-72 transition-all duration-300 focus-within:glow-border-emerald">
+              <Search className="w-4 h-4 text-foreground/40" />
+              <input type="text" placeholder="Search transactions..." className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-foreground/30" />
+              <kbd className="text-[10px] text-foreground/20 border border-white/10 rounded px-1.5 py-0.5 font-mono">/</kbd>
             </div>
             <div className="relative">
             <button onClick={() => setNotifOpen(!notifOpen)} className="relative p-2 rounded-lg hover:bg-white/5 transition-colors">
@@ -183,14 +184,25 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <AnimatePresence>
               {notifOpen && overBudgets.length > 0 && (
                 <motion.div initial={{ opacity: 0, y: -8, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                  className="absolute right-0 top-12 w-72 glass rounded-xl border border-border/30 p-3 z-50 shadow-2xl">
-                  <p className="text-xs font-semibold text-rose-400 flex items-center gap-1 mb-2"><AlertTriangle className="w-3 h-3" /> Budget Alerts</p>
-                  {overBudgets.map(b => (
-                    <div key={b.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors">
-                      <span className="text-xs">{b.category}</span>
-                      <span className="text-xs font-medium text-rose-400">{Math.round((b.spent / b.limit) * 100)}%</span>
-                    </div>
-                  ))}
+                  className="absolute right-0 top-12 w-80 glass rounded-xl border border-white/10 p-4 z-50 shadow-2xl">
+                  <p className="text-xs font-semibold text-rose-400 flex items-center gap-1.5 mb-3"><AlertTriangle className="w-3.5 h-3.5" /> Budget Alerts</p>
+                  <div className="space-y-1">
+                    {overBudgets.map(b => {
+                      const pct = Math.round((b.spent / b.limit) * 100)
+                      return (
+                        <div key={b.id} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-white/5 transition-colors">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${pct > 95 ? 'bg-rose-400 animate-breathe' : 'bg-amber-400'}`} />
+                            <span className="text-sm">{b.category}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className={`text-sm font-semibold ${pct > 95 ? 'text-rose-400' : 'text-amber-400'}`}>{pct}%</span>
+                            <p className="text-[10px] text-foreground/40">${b.spent.toLocaleString()} / ${b.limit.toLocaleString()}</p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>

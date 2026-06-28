@@ -1,0 +1,552 @@
+     1→'use client'
+     2→
+     3→import { useEffect, useState, useMemo } from 'react'
+     4→import { useAppStore } from '@/store/use-app-store'
+     5→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+     6→import { Badge } from '@/components/ui/badge'
+     7→import { Progress } from '@/components/ui/progress'
+     8→import { Skeleton } from '@/components/ui/skeleton'
+     9→import { TrendingUp, TrendingDown, Wallet, Heart, Lightbulb, ArrowUpRight, ArrowDownRight, ChevronRight, AlertTriangle, Sparkles, Minus, BarChart3 } from 'lucide-react'
+    10→import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts'
+    11→import { motion } from 'framer-motion'
+    12→import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
+    13→import HealthScoreRing from './health-score-ring'
+    14→
+    15→const CATEGORY_COLORS: Record<string, string> = {
+    16→  Food: '#10b981', Rent: '#06b6d4', Shopping: '#f59e0b', Healthcare: '#f43f5e',
+    17→  Education: '#8b5cf6', Transportation: '#06b6d4', Entertainment: '#f59e0b',
+    18→  Utilities: '#10b981', Investments: '#10b981', Insurance: '#8b5cf6',
+    19→  Subscriptions: '#f43f5e', Others: '#94a3b8'
+    20→}
+    21→
+    22→const AI_TIPS = [
+    23→  { text: 'You spent 15% more on dining out this month. Consider meal prepping to save.', icon: '🍽️' },
+    24→  { text: 'Great job! Your savings rate is above the recommended 20% threshold.', icon: '💪' },
+    25→  { text: 'You have 3 subscriptions you haven\'t used this month. Consider canceling them.', icon: '💡' },
+    26→  { text: 'Your emergency fund is on track. Keep it up!', icon: '🛡️' },
+    27→]
+    28→
+    29→function formatCurrency(amount: number) {
+    30→  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount)
+    31→}
+    32→
+    33→function AnimatedCard({ children, index }: { children: React.ReactNode; index: number }) {
+    34→  return (
+    35→    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: index * 0.08 }}>
+    36→      {children}
+    37→    </motion.div>
+    38→  )
+    39→}
+    40→
+    41→export default function DashboardPage() {
+    42→  const { user, expenses, incomes, budgets, setExpenses, setIncomes, setBudgets, healthScore, setHealthScore, setView, setLoading } = useAppStore()
+    43→  const [loading, setLoadingState] = useState(true)
+    44→  const [forecast, setForecast] = useState<any>(null)
+    45→
+    46→  useEffect(() => {
+    47→    if (!user?.id) return
+    48→    let cancelled = false
+    49→    setLoadingState(true)
+    50→
+    51→    const fetchData = async () => {
+    52→      try {
+    53→        const [expRes, incRes, budRes, healthRes, forecastRes] = await Promise.all([
+    54→          fetch(`/api/expenses?userId=${user.id}`),
+    55→          fetch(`/api/incomes?userId=${user.id}`),
+    56→          fetch(`/api/budgets?userId=${user.id}`),
+    57→          fetch(`/api/health-score?userId=${user.id}`),
+    58→          fetch(`/api/forecast?userId=${user.id}`),
+    59→        ])
+    60→        if (cancelled) return
+    61→        const [expData, incData, budData, healthData, forecastData] = await Promise.all([expRes.json(), incRes.json(), budRes.json(), healthRes.json(), forecastRes.json()])
+    62→        setExpenses(expData)
+    63→        setIncomes(incData)
+    64→        setBudgets(budData)
+    65→        setHealthScore(healthData.score)
+    66→        setForecast(forecastData)
+    67→      } catch (e) { console.error(e) }
+    68→      finally { if (!cancelled) setLoadingState(false) }
+    69→    }
+    70→    fetchData()
+    71→    return () => { cancelled = true }
+    72→  }, [user?.id, setExpenses, setIncomes, setBudgets, setHealthScore])
+    73→
+    74→  const now = new Date()
+    75→  const monthStart = startOfMonth(now)
+    76→  const monthEnd = endOfMonth(now)
+    77→
+    78→  const monthExpenses = useMemo(() =>
+    79→    expenses.filter(e => isWithinInterval(new Date(e.date), { start: monthStart, end: monthEnd })),
+    80→    [expenses, monthStart, monthEnd]
+    81→  )
+    82→  const monthIncomes = useMemo(() =>
+    83→    incomes.filter(i => isWithinInterval(new Date(i.date), { start: monthStart, end: monthEnd })),
+    84→    [incomes, monthStart, monthEnd]
+    85→  )
+    86→
+    87→  const totalExpense = monthExpenses.reduce((s, e) => s + e.amount, 0)
+    88→  const totalIncome = monthIncomes.reduce((s, i) => s + i.amount, 0)
+    89→  const netSavings = totalIncome - totalExpense
+    90→
+    91→  // Category breakdown for pie chart
+    92→  const categoryData = useMemo(() => {
+    93→    const map: Record<string, number> = {}
+    94→    monthExpenses.forEach(e => { map[e.category] = (map[e.category] || 0) + e.amount })
+    95→    return Object.entries(map)
+    96→      .map(([name, value]) => ({ name, value: Math.round(value) }))
+    97→      .sort((a, b) => b.value - a.value)
+    98→      .slice(0, 6)
+    99→  }, [monthExpenses])
+   100→
+   101→  // Monthly trend (last 6 months)
+   102→  const monthlyTrend = useMemo(() => {
+   103→    const map: Record<string, { income: number; expense: number }> = {}
+   104→    for (let m = 5; m >= 0; m--) {
+   105→      const d = new Date(now.getFullYear(), now.getMonth() - m, 1)
+   106→      const key = format(d, 'MMM')
+   107→      const mStart = startOfMonth(d)
+   108→      const mEnd = endOfMonth(d)
+   109→      const mExp = expenses.filter(e => isWithinInterval(new Date(e.date), { start: mStart, end: mEnd })).reduce((s, e) => s + e.amount, 0)
+   110→      const mInc = incomes.filter(i => isWithinInterval(new Date(i.date), { start: mStart, end: mEnd })).reduce((s, i) => s + i.amount, 0)
+   111→      map[key] = { income: Math.round(mInc), expense: Math.round(mExp) }
+   112→    }
+   113→    return Object.entries(map).map(([month, data]) => ({ month, ...data }))
+   114→  }, [expenses, incomes, now])
+   115→
+   116→  const recentExpenses = monthExpenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5)
+   117→  const topBudgets = budgets.slice(0, 3)
+   118→
+   119→  const forecastChartData = useMemo(() => {
+   120→    if (!forecast) return []
+   121→    return [
+   122→      ...forecast.historical,
+   123→      ...forecast.forecast.map((f: any) => ({ month: f.month, income: f.predictedIncome, expenses: f.predictedExpense })),
+   124→    ]
+   125→  }, [forecast])
+   126→
+   127→  if (loading) {
+   128→    return (
+   129→      <div className="space-y-6 animate-pulse">
+   130→        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+   131→          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-32 rounded-2xl" />)}
+   132→        </div>
+   133→        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   134→          <Skeleton className="h-80 rounded-2xl" />
+   135→          <Skeleton className="h-80 rounded-2xl" />
+   136→        </div>
+   137→      </div>
+   138→    )
+   139→  }
+   140→
+   141→  return (
+   142→    <div className="space-y-6">
+   143→      {/* Summary Cards */}
+   144→      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
+   145→        <AnimatedCard index={0}>
+   146→          <Card className="glass border-0 card-hover card-shine">
+   147→            <CardContent className="p-5">
+   148→              <div className="flex items-center justify-between mb-3">
+   149→                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center glow-border-emerald">
+   150→                  <TrendingUp className="w-5 h-5 text-emerald-400" />
+   151→                </div>
+   152→                <span className="text-xs text-emerald-400 flex items-center gap-1"><ArrowUpRight className="w-3 h-3" />12.5%</span>
+   153→              </div>
+   154→              <p className="text-sm text-muted-foreground">Total Income</p>
+   155→              <p className="text-2xl font-bold mt-1 counter-animate number-tick">{formatCurrency(totalIncome)}</p>
+   156→            </CardContent>
+   157→          </Card>
+   158→        </AnimatedCard>
+   159→
+   160→        <AnimatedCard index={1}>
+   161→          <Card className="glass border-0 card-hover card-shine">
+   162→            <CardContent className="p-5">
+   163→              <div className="flex items-center justify-between mb-3">
+   164→                <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center">
+   165→                  <TrendingDown className="w-5 h-5 text-rose-400" />
+   166→                </div>
+   167→                <span className="text-xs text-rose-400 flex items-center gap-1"><ArrowDownRight className="w-3 h-3" />8.2%</span>
+   168→              </div>
+   169→              <p className="text-sm text-muted-foreground">Total Expenses</p>
+   170→              <p className="text-2xl font-bold mt-1 counter-animate number-tick">{formatCurrency(totalExpense)}</p>
+   171→            </CardContent>
+   172→          </Card>
+   173→        </AnimatedCard>
+   174→
+   175→        <AnimatedCard index={2}>
+   176→          <Card className="glass border-0 card-hover card-shine">
+   177→            <CardContent className="p-5">
+   178→              <div className="flex items-center justify-between mb-3">
+   179→                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center glow-border-cyan">
+   180→                  <Wallet className="w-5 h-5 text-cyan-400" />
+   181→                </div>
+   182→                <span className="text-xs text-cyan-400 flex items-center gap-1"><ArrowUpRight className="w-3 h-3" />23.1%</span>
+   183→              </div>
+   184→              <p className="text-sm text-muted-foreground">Net Savings</p>
+   185→              <p className="text-2xl font-bold mt-1 counter-animate number-tick">{formatCurrency(netSavings)}</p>
+   186→            </CardContent>
+   187→          </Card>
+   188→        </AnimatedCard>
+   189→
+   190→        <AnimatedCard index={3}>
+   191→          <Card className="glass border-0 card-hover card-shine">
+   192→            <CardContent className="p-5 flex items-center gap-4">
+   193→              <HealthScoreRing score={healthScore} size={72} strokeWidth={6} />
+   194→              <div>
+   195→                <p className="text-sm text-muted-foreground">Health Score</p>
+   196→                <p className="text-lg font-bold">Financial Health</p>
+   197→                <p className="text-xs text-muted-foreground mt-0.5">{healthScore >= 75 ? 'Excellent' : healthScore >= 60 ? 'Good' : healthScore >= 40 ? 'Fair' : 'Needs Work'}</p>
+   198→              </div>
+   199→            </CardContent>
+   200→          </Card>
+   201→        </AnimatedCard>
+   202→      </div>
+   203→
+   204→      {/* Charts Row */}
+   205→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   206→        <AnimatedCard index={4}>
+   207→          <Card className="glass border-0">
+   208→            <CardHeader className="pb-2">
+   209→              <CardTitle className="text-base">Spending by Category</CardTitle>
+   210→            </CardHeader>
+   211→            <CardContent className="flex items-center gap-4">
+   212→              <div className="w-1/2 h-52">
+   213→                <ResponsiveContainer width="100%" height="100%">
+   214→                  <PieChart>
+   215→                    <Pie data={categoryData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value">
+   216→                      {categoryData.map((entry, i) => (
+   217→                        <Cell key={i} fill={CATEGORY_COLORS[entry.name] || '#94a3b8'} />
+   218→                      ))}
+   219→                    </Pie>
+   220→                    <Tooltip
+   221→                      contentStyle={{ background: 'rgba(15,23,42,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px' }}
+   222→                      formatter={(value: number) => formatCurrency(value)}
+   223→                    />
+   224→                  </PieChart>
+   225→                </ResponsiveContainer>
+   226→              </div>
+   227→              <div className="w-1/2 space-y-2 max-h-52 overflow-y-auto pr-2">
+   228→                {categoryData.map(c => (
+   229→                  <div key={c.name} className="flex items-center justify-between text-sm">
+   230→                    <div className="flex items-center gap-2">
+   231→                      <div className="w-2.5 h-2.5 rounded-full" style={{ background: CATEGORY_COLORS[c.name] || '#94a3b8' }} />
+   232→                      <span className="text-muted-foreground">{c.name}</span>
+   233→                    </div>
+   234→                    <span className="font-medium">{formatCurrency(c.value)}</span>
+   235→                  </div>
+   236→                ))}
+   237→              </div>
+   238→            </CardContent>
+   239→          </Card>
+   240→        </AnimatedCard>
+   241→
+   242→        <AnimatedCard index={5}>
+   243→          <Card className="glass border-0">
+   244→            <CardHeader className="pb-2">
+   245→              <CardTitle className="text-base">Monthly Trend</CardTitle>
+   246→            </CardHeader>
+   247→            <CardContent>
+   248→              <div className="h-52">
+   249→                <ResponsiveContainer width="100%" height="100%">
+   250→                  <AreaChart data={monthlyTrend}>
+   251→                    <defs>
+   252→                      <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
+   253→                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
+   254→                        <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+   255→                      </linearGradient>
+   256→                      <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
+   257→                        <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.3} />
+   258→                        <stop offset="100%" stopColor="#f43f5e" stopOpacity={0} />
+   259→                      </linearGradient>
+   260→                    </defs>
+   261→                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} />
+   262→                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
+   263→                    <Tooltip
+   264→                      contentStyle={{ background: 'rgba(15,23,42,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px' }}
+   265→                      formatter={(value: number) => formatCurrency(value)}
+   266→                    />
+   267→                    <Area type="monotone" dataKey="income" stroke="#10b981" fill="url(#incomeGrad)" strokeWidth={2} name="Income" />
+   268→                    <Area type="monotone" dataKey="expense" stroke="#f43f5e" fill="url(#expenseGrad)" strokeWidth={2} name="Expenses" />
+   269→                  </AreaChart>
+   270→                </ResponsiveContainer>
+   271→              </div>
+   272→            </CardContent>
+   273→          </Card>
+   274→        </AnimatedCard>
+   275→      </div>
+   276→
+   277→      {/* Bottom Row */}
+   278→      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+   279→        {/* Recent Transactions */}
+   280→        <AnimatedCard index={6}>
+   281→          <Card className="glass border-0">
+   282→            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+   283→              <CardTitle className="text-base">Recent Transactions</CardTitle>
+   284→              <button onClick={() => setView('expenses')} className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1">
+   285→                View All <ChevronRight className="w-3 h-3" />
+   286→              </button>
+   287→            </CardHeader>
+   288→            <CardContent>
+   289→              <div className="space-y-3">
+   290→                {recentExpenses.length === 0 ? (
+   291→                  <p className="text-sm text-muted-foreground text-center py-8">No transactions this month</p>
+   292→                ) : recentExpenses.map(e => (
+   293→                  <div key={e.id} className="flex items-center justify-between">
+   294→                    <div className="flex items-center gap-3">
+   295→                      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${CATEGORY_COLORS[e.category] || '#94a3b8'}15` }}>
+   296→                        <span className="text-xs font-bold" style={{ color: CATEGORY_COLORS[e.category] || '#94a3b8' }}>
+   297→                          {e.category[0]}
+   298→                        </span>
+   299→                      </div>
+   300→                      <div>
+   301→                        <p className="text-sm font-medium">{e.title}</p>
+   302→                        <p className="text-xs text-muted-foreground">{format(new Date(e.date), 'MMM d')}</p>
+   303→                      </div>
+   304→                    </div>
+   305→                    <span className="text-sm font-medium text-rose-400">-{formatCurrency(e.amount)}</span>
+   306→                  </div>
+   307→                ))}
+   308→              </div>
+   309→            </CardContent>
+   310→          </Card>
+   311→        </AnimatedCard>
+   312→
+   313→        {/* Active Budgets */}
+   314→        <AnimatedCard index={7}>
+   315→          <Card className="glass border-0">
+   316→            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+   317→              <CardTitle className="text-base">Active Budgets</CardTitle>
+   318→              <button onClick={() => setView('budgets')} className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1">
+   319→                View All <ChevronRight className="w-3 h-3" />
+   320→              </button>
+   321→            </CardHeader>
+   322→            <CardContent>
+   323→              <div className="space-y-4">
+   324→                {topBudgets.map(b => {
+   325→                  const pct = Math.round((b.spent / b.limit) * 100)
+   326→                  const color = pct > 90 ? '#f43f5e' : pct > 70 ? '#f59e0b' : '#10b981'
+   327→                  return (
+   328→                    <div key={b.id}>
+   329→                      <div className="flex items-center justify-between mb-1.5">
+   330→                        <span className="text-sm font-medium">{b.category}</span>
+   331→                        <span className="text-xs text-muted-foreground">{formatCurrency(b.spent)} / {formatCurrency(b.limit)}</span>
+   332→                      </div>
+   333→                      <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+   334→                        <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(pct, 100)}%` }} transition={{ duration: 0.8, delay: 0.3 }}
+   335→                          className="h-full rounded-full" style={{ background: color }} />
+   336→                      </div>
+   337→                      <p className="text-xs text-muted-foreground mt-1">{pct}% used</p>
+   338→                    </div>
+   339→                  )
+   340→                })}
+   341→                {topBudgets.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No budgets set</p>}
+   342→              </div>
+   343→            </CardContent>
+   344→          </Card>
+   345→        </AnimatedCard>
+   346→
+   347→        {/* AI Suggestions */}
+   348→        <AnimatedCard index={8}>
+   349→          <Card className="glass border-0">
+   350→            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+   351→              <CardTitle className="text-base flex items-center gap-2"><Lightbulb className="w-4 h-4 text-amber-400" /> AI Insights</CardTitle>
+   352→              <button onClick={() => setView('ai-coach')} className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1">
+   353→                Ask AI <ChevronRight className="w-3 h-3" />
+   354→              </button>
+   355→            </CardHeader>
+   356→            <CardContent>
+   357→              <div className="space-y-3">
+   358→                {AI_TIPS.map((tip, i) => (
+   359→                  <div key={i} className="glass rounded-xl p-3 text-sm text-muted-foreground leading-relaxed">
+   360→                    <span className="mr-1.5">{tip.icon}</span>{tip.text}
+   361→                  </div>
+   362→                ))}
+   363→              </div>
+   364→            </CardContent>
+   365→          </Card>
+   366→        </AnimatedCard>
+   367→      </div>
+   368→
+   369→      {/* Forecast & Category Trends */}
+   370→      {forecast && (
+   371→        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   372→          <AnimatedCard index={9}>
+   373→            <Card className="glass border-0">
+   374→              <CardHeader className="pb-2">
+   375→                <CardTitle className="text-base flex items-center gap-2">
+   376→                  <Sparkles className="w-4 h-4 text-cyan-400" /> Spending Forecast
+   377→                  <Badge variant="secondary" className="text-[10px] bg-cyan-500/10 text-cyan-400 border-0 ml-auto">AI Powered</Badge>
+   378→                </CardTitle>
+   379→              </CardHeader>
+   380→              <CardContent>
+   381→                <div className="flex items-center gap-2 mb-4">
+   382→                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${forecast.trend.direction === 'increasing' ? 'bg-rose-500/10' : forecast.trend.direction === 'decreasing' ? 'bg-emerald-500/10' : 'bg-amber-500/10'}`}>
+   383→                    {forecast.trend.direction === 'increasing' ? <TrendingUp className="w-4 h-4 text-rose-400" /> : forecast.trend.direction === 'decreasing' ? <TrendingDown className="w-4 h-4 text-emerald-400" /> : <Minus className="w-4 h-4 text-amber-400" />}
+   384→                  </div>
+   385→                  <div>
+   386→                    <p className="text-sm font-medium">Spending is {forecast.trend.direction}</p>
+   387→                    <p className="text-xs text-muted-foreground">{forecast.trend.percent > 0 ? '+' : ''}{forecast.trend.percent}% vs last month</p>
+   388→                  </div>
+   389→                </div>
+   390→                <div className="h-48">
+   391→                  <ResponsiveContainer width="100%" height="100%">
+   392→                    <AreaChart data={forecastChartData}>
+   393→                      <defs>
+   394→                        <linearGradient id="fIncGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity={0.3} /><stop offset="100%" stopColor="#10b981" stopOpacity={0} /></linearGradient>
+   395→                        <linearGradient id="fExpGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f43f5e" stopOpacity={0.3} /><stop offset="100%" stopColor="#f43f5e" stopOpacity={0} /></linearGradient>
+   396→                      </defs>
+   397→                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+   398→                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
+   399→                      <Tooltip contentStyle={{ background: 'rgba(15,23,42,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px' }} formatter={(v: number) => formatCurrency(v)} />
+   400→                      <Area type="monotone" dataKey="income" stroke="#10b981" fill="url(#fIncGrad)" strokeWidth={2} name="Income" />
+   401→                      <Area type="monotone" dataKey="expenses" stroke="#f43f5e" fill="url(#fExpGrad)" strokeWidth={2} name="Expenses" strokeDasharray="0" />
+   402→                    </AreaChart>
+   403→                  </ResponsiveContainer>
+   404→                </div>
+   405→                <div className="grid grid-cols-3 gap-2 mt-4">
+   406→                  {forecast.forecast.map((f: any, i: number) => (
+   407→                    <div key={i} className="glass rounded-lg p-2.5 text-center">
+   408→                      <p className="text-[10px] text-muted-foreground mb-1">{f.month}</p>
+   409→                      <p className={`text-sm font-bold ${f.predictedSavings >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{formatCurrency(f.predictedSavings)}</p>
+   410→                      <p className="text-[10px] text-muted-foreground">net savings</p>
+   411→                    </div>
+   412→                  ))}
+   413→                </div>
+   414→              </CardContent>
+   415→            </Card>
+   416→          </AnimatedCard>
+   417→
+   418→          <AnimatedCard index={10}>
+   419→            <Card className="glass border-0">
+   420→              <CardHeader className="pb-2">
+   421→                <CardTitle className="text-base flex items-center gap-2">
+   422→                  <AlertTriangle className="w-4 h-4 text-amber-400" /> Category Trends
+   423→                </CardTitle>
+   424→              </CardHeader>
+   425→              <CardContent>
+   426→                <div className="space-y-3">
+   427→                  {forecast.categoryTrends.map((ct: any, i: number) => (
+   428→                    <div key={ct.category} className="flex items-center gap-3">
+   429→                      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${CATEGORY_COLORS[ct.category] || '#94a3b8'}15` }}>
+   430→                        <span className="text-xs font-bold" style={{ color: CATEGORY_COLORS[ct.category] || '#94a3b8' }}>{ct.category[0]}</span>
+   431→                      </div>
+   432→                      <div className="flex-1 min-w-0">
+   433→                        <p className="text-sm font-medium truncate">{ct.category}</p>
+   434→                        <p className="text-xs text-muted-foreground">{formatCurrency(ct.current)} this month</p>
+   435→                      </div>
+   436→                      <div className="text-right">
+   437→                        <span className={`text-sm font-semibold ${ct.change > 10 ? 'text-rose-400' : ct.change < -10 ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+   438→                          {ct.change > 0 ? '+' : ''}{ct.change}%
+   439→                        </span>
+   440→                        <p className="text-[10px] text-muted-foreground">vs last month</p>
+   441→                      </div>
+   442→                    </div>
+   443→                  ))}
+   444→                </div>
+   445→              </CardContent>
+   446→            </Card>
+   447→          </AnimatedCard>
+   448→        </div>
+   449→      )}
+   450→
+   451→      {/* Spending Patterns / Insights */}
+   452→      <AnimatedCard index={11}>
+   453→        <Card className="glass border-0 card-shine">
+   454→          <CardHeader className="pb-2">
+   455→            <CardTitle className="text-base flex items-center gap-2">
+   456→              <div className="w-6 h-6 rounded-md bg-violet-500/10 flex items-center justify-center">
+   457→                <BarChart3 className="w-3.5 h-3.5 text-violet-400" />
+   458→              </div>
+   459→              Spending Patterns
+   460→            </CardTitle>
+   461→          </CardHeader>
+   462→          <CardContent>
+   463→            <SpendingPatterns expenses={expenses} incomes={incomes} />
+   464→          </CardContent>
+   465→        </Card>
+   466→      </AnimatedCard>
+   467→    </div>
+   468→  )
+   469→}
+   470→
+   471→function SpendingPatterns({ expenses, incomes }: { expenses: any[]; incomes: any[] }) {
+   472→  const patterns = useMemo(() => {
+   473→    const now = new Date()
+   474→    const thisMonth = expenses.filter(e => {
+   475→      const d = new Date(e.date)
+   476→      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+   477→    })
+   478→    const lastMonth = expenses.filter(e => {
+   479→      const d = new Date(e.date)
+   480→      return d.getMonth() === (now.getMonth() - 1 + 12) % 12 && d.getFullYear() === (now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear())
+   481→    })
+   482→
+   483→    const thisTotal = thisMonth.reduce((s, e) => s + e.amount, 0)
+   484→    const lastTotal = lastMonth.reduce((s, e) => s + e.amount, 0)
+   485→    const changePercent = lastTotal > 0 ? Math.round(((thisTotal - lastTotal) / lastTotal) * 100) : 0
+   486→
+   487→    // Top spending day of week
+   488→    const dayTotals: Record<string, number> = {}
+   489→    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+   490→    expenses.forEach(e => {
+   491→      const day = dayNames[new Date(e.date).getDay()]
+   492→      dayTotals[day] = (dayTotals[day] || 0) + e.amount
+   493→    })
+   494→    const topDay = Object.entries(dayTotals).sort((a, b) => b[1] - a[1])[0]
+   495→
+   496→    // Recurring vs one-time
+   497→    const recurring = expenses.filter(e => e.isRecurring).reduce((s, e) => s + e.amount, 0)
+   498→    const oneTime = expenses.filter(e => !e.isRecurring).reduce((s, e) => s + e.amount, 0)
+   499→    const total = recurring + oneTime
+   500→    const recurringPct = total > 0 ? Math.round((recurring / total) * 100) : 0
+   501→
+   502→    // Average transaction size
+   503→    const avgTransaction = thisMonth.length > 0 ? thisMonth.reduce((s, e) => s + e.amount, 0) / thisMonth.length : 0
+   504→
+   505→    return { changePercent, topDay, recurringPct, avgTransaction, thisMonthCount: thisMonth.length }
+   506→  }, [expenses, incomes])
+   507→
+   508→  const fmt = (n: number) => formatCurrency(n)
+   509→
+   510→  return (
+   511→    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+   512→      <div className="glass-subtle rounded-xl p-3">
+   513→        <p className="text-xs text-muted-foreground mb-1">Month-over-Month</p>
+   514→        <div className="flex items-center gap-2">
+   515→          {patterns.changePercent > 0 ? (
+   516→            <TrendingUp className="w-4 h-4 text-rose-400" />
+   517→          ) : patterns.changePercent < 0 ? (
+   518→            <TrendingDown className="w-4 h-4 text-emerald-400" />
+   519→          ) : (
+   520→            <Minus className="w-4 h-4 text-amber-400" />
+   521→          )}
+   522→          <span className={`text-lg font-bold ${patterns.changePercent > 0 ? 'text-rose-400' : patterns.changePercent < 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+   523→            {patterns.changePercent > 0 ? '+' : ''}{patterns.changePercent}%
+   524→          </span>
+   525→        </div>
+   526→        <p className="text-[10px] text-muted-foreground mt-1">{patterns.changePercent > 0 ? 'Spending increased' : patterns.changePercent < 0 ? 'Great! Spending decreased' : 'Spending stable'}</p>
+   527→      </div>
+   528→
+   529→      <div className="glass-subtle rounded-xl p-3">
+   530→        <p className="text-xs text-muted-foreground mb-1">Biggest Spending Day</p>
+   531→        <p className="text-lg font-bold">{patterns.topDay?.[0] || 'N/A'}</p>
+   532→        <p className="text-[10px] text-muted-foreground mt-1">{fmt(patterns.topDay?.[1] || 0)} total</p>
+   533→      </div>
+   534→
+   535→      <div className="glass-subtle rounded-xl p-3">
+   536→        <p className="text-xs text-muted-foreground mb-1">Recurring Expenses</p>
+   537→        <p className="text-lg font-bold">{patterns.recurringPct}%</p>
+   538→        <div className="mt-1.5 h-1.5 bg-white/5 rounded-full overflow-hidden">
+   539→          <motion.div initial={{ width: 0 }} animate={{ width: `${patterns.recurringPct}%` }} transition={{ duration: 1, delay: 0.5 }}
+   540→            className="h-full rounded-full bg-gradient-to-r from-amber-400 to-rose-400" />
+   541→        </div>
+   542→        <p className="text-[10px] text-muted-foreground mt-1">of total spending</p>
+   543→      </div>
+   544→
+   545→      <div className="glass-subtle rounded-xl p-3">
+   546→        <p className="text-xs text-muted-foreground mb-1">Avg Transaction</p>
+   547→        <p className="text-lg font-bold">{fmt(patterns.avgTransaction)}</p>
+   548→        <p className="text-[10px] text-muted-foreground mt-1">{patterns.thisMonthCount} transactions this month</p>
+   549→      </div>
+   550→    </div>
+   551→  )
+   552→}

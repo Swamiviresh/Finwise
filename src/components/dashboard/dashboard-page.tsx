@@ -11,12 +11,14 @@ import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, Tooltip, Responsive
 import { motion } from 'framer-motion'
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
 import HealthScoreRing from './health-score-ring'
+import ActivityFeed from './activity-feed'
+import SpendingCalendar from './spending-calendar'
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Food: '#10b981', Rent: '#06b6d4', Shopping: '#f59e0b', Healthcare: '#f43f5e',
-  Education: '#8b5cf6', Transportation: '#06b6d4', Entertainment: '#f59e0b',
-  Utilities: '#10b981', Investments: '#10b981', Insurance: '#8b5cf6',
-  Subscriptions: '#f43f5e', Others: '#94a3b8'
+  Food: '#34d399', Rent: '#22d3ee', Shopping: '#fbbf24', Healthcare: '#fb7185',
+  Education: '#a78bfa', Transportation: '#38bdf8', Entertainment: '#f97316',
+  Utilities: '#2dd4bf', Investments: '#4ade80', Insurance: '#c084fc',
+  Subscriptions: '#f472b6', Others: '#94a3b8'
 }
 
 const AI_TIPS = [
@@ -143,58 +145,61 @@ export default function DashboardPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
         <AnimatedCard index={0}>
-          <Card className="glass border-0 card-hover card-shine">
+          <Card className="glass border-0 card-hover card-shine glass-accent-top" style={{ '--accent-color': '#34d399' } as React.CSSProperties}>
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center glow-border-emerald">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center">
                   <TrendingUp className="w-5 h-5 text-emerald-400" />
                 </div>
-                <span className="text-xs text-emerald-400 flex items-center gap-1"><ArrowUpRight className="w-3 h-3" />12.5%</span>
+                <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-full"><ArrowUpRight className="w-3 h-3" />12.5%</span>
               </div>
               <p className="text-sm text-muted-foreground">Total Income</p>
-              <p className="text-2xl font-bold mt-1 counter-animate number-tick">{formatCurrency(totalIncome)}</p>
+              <p className="text-2xl font-bold mt-1 counter-animate number-tick text-foreground">{formatCurrency(totalIncome)}</p>
             </CardContent>
           </Card>
         </AnimatedCard>
 
         <AnimatedCard index={1}>
-          <Card className="glass border-0 card-hover card-shine">
+          <Card className="glass border-0 card-hover card-shine glass-accent-top" style={{ '--accent-color': '#fb7185' } as React.CSSProperties}>
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/15 flex items-center justify-center">
                   <TrendingDown className="w-5 h-5 text-rose-400" />
                 </div>
-                <span className="text-xs text-rose-400 flex items-center gap-1"><ArrowDownRight className="w-3 h-3" />8.2%</span>
+                <span className="text-xs text-rose-400 font-semibold flex items-center gap-1 bg-rose-500/10 px-2 py-0.5 rounded-full"><ArrowDownRight className="w-3 h-3" />8.2%</span>
               </div>
               <p className="text-sm text-muted-foreground">Total Expenses</p>
-              <p className="text-2xl font-bold mt-1 counter-animate number-tick">{formatCurrency(totalExpense)}</p>
+              <p className="text-2xl font-bold mt-1 counter-animate number-tick text-foreground">{formatCurrency(totalExpense)}</p>
             </CardContent>
           </Card>
         </AnimatedCard>
 
         <AnimatedCard index={2}>
-          <Card className="glass border-0 card-hover card-shine">
+          <Card className="glass border-0 card-hover card-shine glass-accent-top" style={{ '--accent-color': '#22d3ee' } as React.CSSProperties}>
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center glow-border-cyan">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/15 flex items-center justify-center">
                   <Wallet className="w-5 h-5 text-cyan-400" />
                 </div>
-                <span className="text-xs text-cyan-400 flex items-center gap-1"><ArrowUpRight className="w-3 h-3" />23.1%</span>
+                <span className="text-xs text-cyan-400 font-semibold flex items-center gap-1 bg-cyan-500/10 px-2 py-0.5 rounded-full"><ArrowUpRight className="w-3 h-3" />23.1%</span>
               </div>
               <p className="text-sm text-muted-foreground">Net Savings</p>
-              <p className="text-2xl font-bold mt-1 counter-animate number-tick">{formatCurrency(netSavings)}</p>
+              <p className="text-2xl font-bold mt-1 counter-animate number-tick text-foreground">{formatCurrency(netSavings)}</p>
             </CardContent>
           </Card>
         </AnimatedCard>
 
         <AnimatedCard index={3}>
-          <Card className="glass border-0 card-hover card-shine">
-            <CardContent className="p-5 flex items-center gap-4">
-              <HealthScoreRing score={healthScore} size={72} strokeWidth={6} />
-              <div>
-                <p className="text-sm text-muted-foreground">Health Score</p>
-                <p className="text-lg font-bold">Financial Health</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{healthScore >= 75 ? 'Excellent' : healthScore >= 60 ? 'Good' : healthScore >= 40 ? 'Fair' : 'Needs Work'}</p>
+          <Card className="glass border-0 card-hover card-shine glass-accent-top" style={{ '--accent-color': '#a78bfa' } as React.CSSProperties}>
+            <CardContent className="p-4 flex items-center gap-3">
+              <HealthScoreRing score={healthScore} size={64} strokeWidth={5} />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground">Health Score</p>
+                <p className="text-base font-bold text-foreground">Financial Health</p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <div className="pulse-dot" />
+                  <p className="text-[11px] text-muted-foreground">{healthScore >= 75 ? 'Excellent' : healthScore >= 60 ? 'Good' : healthScore >= 40 ? 'Fair' : 'Needs Work'}</p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -212,13 +217,13 @@ export default function DashboardPage() {
               <div className="w-1/2 h-52">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={categoryData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value">
+                    <Pie data={categoryData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value" strokeWidth={1} stroke="rgba(6,10,16,0.8)">
                       {categoryData.map((entry, i) => (
                         <Cell key={i} fill={CATEGORY_COLORS[entry.name] || '#94a3b8'} />
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={{ background: 'rgba(15,23,42,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px' }}
+                      contentStyle={{ background: 'rgba(10,15,25,0.95)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '12px', fontSize: '12px', color: '#e8edf5' }}
                       formatter={(value: number) => formatCurrency(value)}
                     />
                   </PieChart>
@@ -229,7 +234,7 @@ export default function DashboardPage() {
                   <div key={c.name} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full" style={{ background: CATEGORY_COLORS[c.name] || '#94a3b8' }} />
-                      <span className="text-muted-foreground">{c.name}</span>
+                      <span className="text-xs text-foreground/80 truncate max-w-[80px]">{c.name}</span>
                     </div>
                     <span className="font-medium">{formatCurrency(c.value)}</span>
                   </div>
@@ -258,14 +263,15 @@ export default function DashboardPage() {
                         <stop offset="100%" stopColor="#f43f5e" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
+                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#cbd5e1' }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#cbd5e1' }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
                     <Tooltip
-                      contentStyle={{ background: 'rgba(15,23,42,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px' }}
+                      contentStyle={{ background: 'rgba(10,15,25,0.95)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '12px', fontSize: '12px', color: '#e8edf5' }}
                       formatter={(value: number) => formatCurrency(value)}
                     />
-                    <Area type="monotone" dataKey="income" stroke="#10b981" fill="url(#incomeGrad)" strokeWidth={2} name="Income" />
-                    <Area type="monotone" dataKey="expense" stroke="#f43f5e" fill="url(#expenseGrad)" strokeWidth={2} name="Expenses" />
+                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '12px', color: '#cbd5e1', paddingTop: '8px' }} />
+                    <Area type="monotone" dataKey="income" stroke="#34d399" fill="url(#incomeGrad)" strokeWidth={2.5} name="Income" />
+                    <Area type="monotone" dataKey="expense" stroke="#fb7185" fill="url(#expenseGrad)" strokeWidth={2.5} name="Expenses" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -448,8 +454,13 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Spending Patterns / Insights */}
+      {/* Spending Calendar */}
       <AnimatedCard index={11}>
+        <SpendingCalendar />
+      </AnimatedCard>
+
+      {/* Spending Patterns / Insights */}
+      <AnimatedCard index={12}>
         <Card className="glass border-0 card-shine">
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
@@ -463,6 +474,11 @@ export default function DashboardPage() {
             <SpendingPatterns expenses={expenses} incomes={incomes} />
           </CardContent>
         </Card>
+      </AnimatedCard>
+
+      {/* Activity Feed */}
+      <AnimatedCard index={13}>
+        <ActivityFeed />
       </AnimatedCard>
     </div>
   )

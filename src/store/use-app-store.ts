@@ -109,6 +109,12 @@ interface AppState {
   // Loading states
   isLoading: boolean
   setLoading: (loading: boolean) => void
+
+  // Onboarding
+  hasCompletedOnboarding: boolean
+  setHasCompletedOnboarding: (v: boolean) => void
+  onboardingData: Record<string, unknown>
+  setOnboardingData: (data: Record<string, unknown>) => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -150,4 +156,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Loading
   isLoading: false,
   setLoading: (loading) => set({ isLoading: loading }),
+
+  // Onboarding
+  hasCompletedOnboarding: false,
+  setHasCompletedOnboarding: (v) => set({ hasCompletedOnboarding: v }),
+  onboardingData: {},
+  setOnboardingData: (data) => set((s) => ({ onboardingData: { ...s.onboardingData, ...data } })),
 }))
