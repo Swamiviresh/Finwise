@@ -39,12 +39,8 @@ export async function POST(req: NextRequest) {
     const response = completion.choices[0]?.message?.content || 'Sorry, I could not process your request.'
 
     // Save messages to database
-    await db.chatMessage.createMany({
-      data: [
-        { userId, role: 'user', content: message },
-        { userId, role: 'assistant', content: response },
-      ],
-    })
+    await db.chatMessage.create({ data: { userId, role: 'user', content: message } })
+    await db.chatMessage.create({ data: { userId, role: 'assistant', content: response } })
 
     return NextResponse.json({ response })
   } catch (error) {

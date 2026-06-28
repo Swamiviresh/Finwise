@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
-import { TrendingUp, TrendingDown, Wallet, Heart, Lightbulb, ArrowUpRight, ArrowDownRight, ChevronRight, AlertTriangle, Sparkles, Minus } from 'lucide-react'
+import { TrendingUp, TrendingDown, Wallet, Heart, Lightbulb, ArrowUpRight, ArrowDownRight, ChevronRight, AlertTriangle, Sparkles, Minus, BarChart3 } from 'lucide-react'
 import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts'
 import { motion } from 'framer-motion'
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
@@ -143,22 +143,22 @@ export default function DashboardPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
         <AnimatedCard index={0}>
-          <Card className="glass border-0 card-hover">
+          <Card className="glass border-0 card-hover card-shine">
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center glow-border-emerald">
                   <TrendingUp className="w-5 h-5 text-emerald-400" />
                 </div>
                 <span className="text-xs text-emerald-400 flex items-center gap-1"><ArrowUpRight className="w-3 h-3" />12.5%</span>
               </div>
               <p className="text-sm text-muted-foreground">Total Income</p>
-              <p className="text-2xl font-bold mt-1 counter-animate">{formatCurrency(totalIncome)}</p>
+              <p className="text-2xl font-bold mt-1 counter-animate number-tick">{formatCurrency(totalIncome)}</p>
             </CardContent>
           </Card>
         </AnimatedCard>
 
         <AnimatedCard index={1}>
-          <Card className="glass border-0 card-hover">
+          <Card className="glass border-0 card-hover card-shine">
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center">
@@ -167,28 +167,28 @@ export default function DashboardPage() {
                 <span className="text-xs text-rose-400 flex items-center gap-1"><ArrowDownRight className="w-3 h-3" />8.2%</span>
               </div>
               <p className="text-sm text-muted-foreground">Total Expenses</p>
-              <p className="text-2xl font-bold mt-1 counter-animate">{formatCurrency(totalExpense)}</p>
+              <p className="text-2xl font-bold mt-1 counter-animate number-tick">{formatCurrency(totalExpense)}</p>
             </CardContent>
           </Card>
         </AnimatedCard>
 
         <AnimatedCard index={2}>
-          <Card className="glass border-0 card-hover">
+          <Card className="glass border-0 card-hover card-shine">
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center glow-border-cyan">
                   <Wallet className="w-5 h-5 text-cyan-400" />
                 </div>
                 <span className="text-xs text-cyan-400 flex items-center gap-1"><ArrowUpRight className="w-3 h-3" />23.1%</span>
               </div>
               <p className="text-sm text-muted-foreground">Net Savings</p>
-              <p className="text-2xl font-bold mt-1 counter-animate">{formatCurrency(netSavings)}</p>
+              <p className="text-2xl font-bold mt-1 counter-animate number-tick">{formatCurrency(netSavings)}</p>
             </CardContent>
           </Card>
         </AnimatedCard>
 
         <AnimatedCard index={3}>
-          <Card className="glass border-0 card-hover">
+          <Card className="glass border-0 card-hover card-shine">
             <CardContent className="p-5 flex items-center gap-4">
               <HealthScoreRing score={healthScore} size={72} strokeWidth={6} />
               <div>
@@ -447,6 +447,106 @@ export default function DashboardPage() {
           </AnimatedCard>
         </div>
       )}
+
+      {/* Spending Patterns / Insights */}
+      <AnimatedCard index={11}>
+        <Card className="glass border-0 card-shine">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-violet-500/10 flex items-center justify-center">
+                <BarChart3 className="w-3.5 h-3.5 text-violet-400" />
+              </div>
+              Spending Patterns
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SpendingPatterns expenses={expenses} incomes={incomes} />
+          </CardContent>
+        </Card>
+      </AnimatedCard>
+    </div>
+  )
+}
+
+function SpendingPatterns({ expenses, incomes }: { expenses: any[]; incomes: any[] }) {
+  const patterns = useMemo(() => {
+    const now = new Date()
+    const thisMonth = expenses.filter(e => {
+      const d = new Date(e.date)
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+    })
+    const lastMonth = expenses.filter(e => {
+      const d = new Date(e.date)
+      return d.getMonth() === (now.getMonth() - 1 + 12) % 12 && d.getFullYear() === (now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear())
+    })
+
+    const thisTotal = thisMonth.reduce((s, e) => s + e.amount, 0)
+    const lastTotal = lastMonth.reduce((s, e) => s + e.amount, 0)
+    const changePercent = lastTotal > 0 ? Math.round(((thisTotal - lastTotal) / lastTotal) * 100) : 0
+
+    // Top spending day of week
+    const dayTotals: Record<string, number> = {}
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    expenses.forEach(e => {
+      const day = dayNames[new Date(e.date).getDay()]
+      dayTotals[day] = (dayTotals[day] || 0) + e.amount
+    })
+    const topDay = Object.entries(dayTotals).sort((a, b) => b[1] - a[1])[0]
+
+    // Recurring vs one-time
+    const recurring = expenses.filter(e => e.isRecurring).reduce((s, e) => s + e.amount, 0)
+    const oneTime = expenses.filter(e => !e.isRecurring).reduce((s, e) => s + e.amount, 0)
+    const total = recurring + oneTime
+    const recurringPct = total > 0 ? Math.round((recurring / total) * 100) : 0
+
+    // Average transaction size
+    const avgTransaction = thisMonth.length > 0 ? thisMonth.reduce((s, e) => s + e.amount, 0) / thisMonth.length : 0
+
+    return { changePercent, topDay, recurringPct, avgTransaction, thisMonthCount: thisMonth.length }
+  }, [expenses, incomes])
+
+  const fmt = (n: number) => formatCurrency(n)
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="glass-subtle rounded-xl p-3">
+        <p className="text-xs text-muted-foreground mb-1">Month-over-Month</p>
+        <div className="flex items-center gap-2">
+          {patterns.changePercent > 0 ? (
+            <TrendingUp className="w-4 h-4 text-rose-400" />
+          ) : patterns.changePercent < 0 ? (
+            <TrendingDown className="w-4 h-4 text-emerald-400" />
+          ) : (
+            <Minus className="w-4 h-4 text-amber-400" />
+          )}
+          <span className={`text-lg font-bold ${patterns.changePercent > 0 ? 'text-rose-400' : patterns.changePercent < 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+            {patterns.changePercent > 0 ? '+' : ''}{patterns.changePercent}%
+          </span>
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-1">{patterns.changePercent > 0 ? 'Spending increased' : patterns.changePercent < 0 ? 'Great! Spending decreased' : 'Spending stable'}</p>
+      </div>
+
+      <div className="glass-subtle rounded-xl p-3">
+        <p className="text-xs text-muted-foreground mb-1">Biggest Spending Day</p>
+        <p className="text-lg font-bold">{patterns.topDay?.[0] || 'N/A'}</p>
+        <p className="text-[10px] text-muted-foreground mt-1">{fmt(patterns.topDay?.[1] || 0)} total</p>
+      </div>
+
+      <div className="glass-subtle rounded-xl p-3">
+        <p className="text-xs text-muted-foreground mb-1">Recurring Expenses</p>
+        <p className="text-lg font-bold">{patterns.recurringPct}%</p>
+        <div className="mt-1.5 h-1.5 bg-white/5 rounded-full overflow-hidden">
+          <motion.div initial={{ width: 0 }} animate={{ width: `${patterns.recurringPct}%` }} transition={{ duration: 1, delay: 0.5 }}
+            className="h-full rounded-full bg-gradient-to-r from-amber-400 to-rose-400" />
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-1">of total spending</p>
+      </div>
+
+      <div className="glass-subtle rounded-xl p-3">
+        <p className="text-xs text-muted-foreground mb-1">Avg Transaction</p>
+        <p className="text-lg font-bold">{fmt(patterns.avgTransaction)}</p>
+        <p className="text-[10px] text-muted-foreground mt-1">{patterns.thisMonthCount} transactions this month</p>
+      </div>
     </div>
   )
 }

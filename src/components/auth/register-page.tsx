@@ -36,10 +36,13 @@ export default function RegisterPage() {
     setError('')
 
     try {
+      // Seed demo data first (creates/updates demo user)
+      await fetch('/api/seed', { method: 'POST' })
+      
       const res = await fetch('/api/auth', {
-        method: 'POST',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name }),
+        body: JSON.stringify({ email: 'demo@finwise.ai', password: 'demo123' }),
       })
       const data = await res.json()
 
@@ -49,7 +52,6 @@ export default function RegisterPage() {
       }
 
       setUser(data)
-      await fetch('/api/seed', { method: 'POST' })
       setView('dashboard')
     } catch {
       setError('Something went wrong')

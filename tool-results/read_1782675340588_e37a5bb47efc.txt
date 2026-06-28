@@ -1,0 +1,207 @@
+   101→  132 const response = completion.choices[0]?.message?.content || 'Sorry, I could not process your request.';
+   102→  133 // Save messages to database
+   103→→ 134 await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].chatMessage.createMany(
+   104→Foreign key constraint violated on the foreign key
+   105→    at <unknown> (src/app/api/ai-chat/route.ts:42:26)
+   106→    at async POST (src/app/api/ai-chat/route.ts:42:5)
+   107→  40 |
+   108→  41 |     // Save messages to database
+   109→> 42 |     await db.chatMessage.createMany({
+   110→     |                          ^
+   111→  43 |       data: [
+   112→  44 |         { userId, role: 'user', content: message },
+   113→  45 |         { userId, role: 'assistant', content: response }, {
+   114→  code: 'P2003',
+   115→  meta: [Object],
+   116→  clientVersion: '6.19.2'
+   117→}
+   118→ POST /api/ai-chat 500 in 4.6s (compile: 161ms, render: 4.4s)
+   119→⚠ Cross origin request detected from preview-chat-30d2595a-6dcb-488b-895f-2166e03f1ad3.space-z.ai to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+   120→Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+   121→prisma:query SELECT `main`.`Expense`.`id`, `main`.`Expense`.`userId`, `main`.`Expense`.`title`, `main`.`Expense`.`amount`, `main`.`Expense`.`category`, `main`.`Expense`.`date`, `main`.`Expense`.`description`, `main`.`Expense`.`isRecurring`, `main`.`Expense`.`createdAt`, `main`.`Expense`.`updatedAt` FROM `main`.`Expense` WHERE (`main`.`Expense`.`userId` = ? AND `main`.`Expense`.`date` >= ?) ORDER BY `main`.`Expense`.`date` DESC LIMIT ? OFFSET ?
+   122→prisma:query SELECT `main`.`Income`.`id`, `main`.`Income`.`userId`, `main`.`Income`.`title`, `main`.`Income`.`amount`, `main`.`Income`.`source`, `main`.`Income`.`date`, `main`.`Income`.`isRecurring`, `main`.`Income`.`createdAt`, `main`.`Income`.`updatedAt` FROM `main`.`Income` WHERE (`main`.`Income`.`userId` = ? AND `main`.`Income`.`date` >= ?) ORDER BY `main`.`Income`.`date` DESC LIMIT ? OFFSET ?
+   123→ GET /api/reports?userId=cmqy5wlqq0000q818gq3lxk3b&period=monthly 200 in 198ms (compile: 186ms, render: 12ms)
+   124→prisma:query SELECT 1
+   125→prisma:query SELECT `main`.`Budget`.`id`, `main`.`Budget`.`userId`, `main`.`Budget`.`category`, `main`.`Budget`.`limit`, `main`.`Budget`.`spent`, `main`.`Budget`.`period`, `main`.`Budget`.`startDate`, `main`.`Budget`.`createdAt`, `main`.`Budget`.`updatedAt` FROM `main`.`Budget` WHERE `main`.`Budget`.`userId` = ? ORDER BY `main`.`Budget`.`category` ASC LIMIT ? OFFSET ?
+   126→ GET /api/budgets?userId=6a6470ac-7995-4fd1-898b-9e5346e20948 200 in 8ms (compile: 3ms, render: 5ms)
+   127→ GET /api/goals?userId=6a6470ac-7995-4fd1-898b-9e5346e20948 200 in 125ms (compile: 115ms, render: 10ms)
+   128→prisma:query SELECT `main`.`Goal`.`id`, `main`.`Goal`.`userId`, `main`.`Goal`.`title`, `main`.`Goal`.`targetAmount`, `main`.`Goal`.`currentAmount`, `main`.`Goal`.`deadline`, `main`.`Goal`.`icon`, `main`.`Goal`.`color`, `main`.`Goal`.`createdAt`, `main`.`Goal`.`updatedAt` FROM `main`.`Goal` WHERE `main`.`Goal`.`userId` = ? ORDER BY `main`.`Goal`.`createdAt` ASC LIMIT ? OFFSET ?
+   129→✓ Compiled in 233ms
+   130→ GET / 200 in 475ms (compile: 68ms, render: 407ms)
+   131→ GET / 200 in 87ms (compile: 4ms, render: 83ms)
+   132→ GET / 200 in 69ms (compile: 3ms, render: 66ms)
+   133→prisma:query SELECT 1
+   134→prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`email`, `main`.`User`.`name`, `main`.`User`.`passwordHash`, `main`.`User`.`avatar`, `main`.`User`.`currency`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE 1=1 LIMIT ? OFFSET ?
+   135→prisma:query DELETE FROM `main`.`ChatMessage` WHERE 1=1
+   136→prisma:query DELETE FROM `main`.`Expense` WHERE 1=1
+   137→prisma:query DELETE FROM `main`.`Income` WHERE 1=1
+   138→prisma:query DELETE FROM `main`.`Goal` WHERE 1=1
+   139→prisma:query DELETE FROM `main`.`Budget` WHERE 1=1
+   140→prisma:query DELETE FROM `main`.`User` WHERE 1=1
+   141→prisma:query INSERT INTO `main`.`User` (`id`, `email`, `name`, `passwordHash`, `currency`, `createdAt`, `updatedAt`) VALUES (?,?,?,?,?,?,?) RETURNING `id` AS `id`, `email` AS `email`, `name` AS `name`, `passwordHash` AS `passwordHash`, `avatar` AS `avatar`, `currency` AS `currency`, `createdAt` AS `createdAt`, `updatedAt` AS `updatedAt`
+   142→prisma:query BEGIN IMMEDIATE
+   143→prisma:query INSERT INTO `main`.`Expense` (`id`, `userId`, `title`, `amount`, `category`, `date`, `description`, `isRecurring`, `createdAt`, `updatedAt`) VALUES (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?)
+   144→prisma:query COMMIT
+   145→prisma:query BEGIN IMMEDIATE
+   146→prisma:query INSERT INTO `main`.`Income` (`id`, `userId`, `title`, `amount`, `source`, `date`, `isRecurring`, `createdAt`, `updatedAt`) VALUES (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?)
+   147→prisma:query COMMIT
+   148→prisma:query BEGIN IMMEDIATE
+   149→prisma:query INSERT INTO `main`.`Budget` (`id`, `userId`, `category`, `limit`, `spent`, `period`, `startDate`, `createdAt`, `updatedAt`) VALUES (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?)
+   150→prisma:query COMMIT
+   151→prisma:query BEGIN IMMEDIATE
+   152→prisma:query INSERT INTO `main`.`Goal` (`id`, `userId`, `title`, `targetAmount`, `currentAmount`, `deadline`, `icon`, `color`, `createdAt`, `updatedAt`) VALUES (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?)
+   153→prisma:query COMMIT
+   154→ POST /api/seed 200 in 32ms (compile: 3ms, render: 29ms)
+   155→prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`email`, `main`.`User`.`name`, `main`.`User`.`passwordHash`, `main`.`User`.`avatar`, `main`.`User`.`currency`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE (`main`.`User`.`email` = ? AND 1=1) LIMIT ? OFFSET ?
+   156→ PUT /api/auth 200 in 8ms (compile: 3ms, render: 5ms)
+   157→prisma:query SELECT `main`.`Expense`.`id`, `main`.`Expense`.`userId`, `main`.`Expense`.`title`, `main`.`Expense`.`amount`, `main`.`Expense`.`category`, `main`.`Expense`.`date`, `main`.`Expense`.`description`, `main`.`Expense`.`isRecurring`, `main`.`Expense`.`createdAt`, `main`.`Expense`.`updatedAt` FROM `main`.`Expense` WHERE `main`.`Expense`.`userId` = ? ORDER BY `main`.`Expense`.`date` DESC LIMIT ? OFFSET ?
+   158→ GET /api/expenses?userId=cf06cd74-652d-48fe-9861-73df1f329d73 200 in 11ms (compile: 3ms, render: 9ms)
+   159→ GET /api/incomes?userId=cf06cd74-652d-48fe-9861-73df1f329d73 200 in 10ms (compile: 6ms, render: 5ms)
+   160→prisma:query SELECT `main`.`Income`.`id`, `main`.`Income`.`userId`, `main`.`Income`.`title`, `main`.`Income`.`amount`, `main`.`Income`.`source`, `main`.`Income`.`date`, `main`.`Income`.`isRecurring`, `main`.`Income`.`createdAt`, `main`.`Income`.`updatedAt` FROM `main`.`Income` WHERE `main`.`Income`.`userId` = ? ORDER BY `main`.`Income`.`date` DESC LIMIT ? OFFSET ?
+   161→prisma:query SELECT `main`.`Expense`.`id`, `main`.`Expense`.`userId`, `main`.`Expense`.`title`, `main`.`Expense`.`amount`, `main`.`Expense`.`category`, `main`.`Expense`.`date`, `main`.`Expense`.`description`, `main`.`Expense`.`isRecurring`, `main`.`Expense`.`createdAt`, `main`.`Expense`.`updatedAt` FROM `main`.`Expense` WHERE (`main`.`Expense`.`userId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` < ?) LIMIT ? OFFSET ?
+   162→prisma:query SELECT `main`.`Income`.`id`, `main`.`Income`.`userId`, `main`.`Income`.`title`, `main`.`Income`.`amount`, `main`.`Income`.`source`, `main`.`Income`.`date`, `main`.`Income`.`isRecurring`, `main`.`Income`.`createdAt`, `main`.`Income`.`updatedAt` FROM `main`.`Income` WHERE (`main`.`Income`.`userId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` < ?) LIMIT ? OFFSET ?
+   163→prisma:query SELECT `main`.`Budget`.`id`, `main`.`Budget`.`userId`, `main`.`Budget`.`category`, `main`.`Budget`.`limit`, `main`.`Budget`.`spent`, `main`.`Budget`.`period`, `main`.`Budget`.`startDate`, `main`.`Budget`.`createdAt`, `main`.`Budget`.`updatedAt` FROM `main`.`Budget` WHERE `main`.`Budget`.`userId` = ? LIMIT ? OFFSET ?
+   164→prisma:query SELECT `main`.`Budget`.`id`, `main`.`Budget`.`userId`, `main`.`Budget`.`category`, `main`.`Budget`.`limit`, `main`.`Budget`.`spent`, `main`.`Budget`.`period`, `main`.`Budget`.`startDate`, `main`.`Budget`.`createdAt`, `main`.`Budget`.`updatedAt` FROM `main`.`Budget` WHERE `main`.`Budget`.`userId` = ? ORDER BY `main`.`Budget`.`category` ASC LIMIT ? OFFSET ?
+   165→ GET /api/budgets?userId=cf06cd74-652d-48fe-9861-73df1f329d73 200 in 8ms (compile: 4ms, render: 4ms)
+   166→ GET /api/health-score?userId=cf06cd74-652d-48fe-9861-73df1f329d73 200 in 17ms (compile: 2ms, render: 15ms)
+   167→prisma:query SELECT `main`.`Goal`.`id`, `main`.`Goal`.`userId`, `main`.`Goal`.`title`, `main`.`Goal`.`targetAmount`, `main`.`Goal`.`currentAmount`, `main`.`Goal`.`deadline`, `main`.`Goal`.`icon`, `main`.`Goal`.`color`, `main`.`Goal`.`createdAt`, `main`.`Goal`.`updatedAt` FROM `main`.`Goal` WHERE `main`.`Goal`.`userId` = ? LIMIT ? OFFSET ?
+   168→ POST /api/ai-chat 200 in 3.3s (compile: 3ms, render: 3.3s)
+   169→prisma:query SELECT 1
+   170→prisma:query BEGIN IMMEDIATE
+   171→prisma:query INSERT INTO `main`.`ChatMessage` (`id`, `userId`, `role`, `content`, `createdAt`) VALUES (?,?,?,?,?), (?,?,?,?,?)
+   172→prisma:query COMMIT
+   173→ GET / 200 in 68ms (compile: 3ms, render: 65ms)
+   174→ GET / 200 in 84ms (compile: 8ms, render: 76ms)
+   175→prisma:query SELECT 1
+   176→prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`email`, `main`.`User`.`name`, `main`.`User`.`passwordHash`, `main`.`User`.`avatar`, `main`.`User`.`currency`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE 1=1 LIMIT ? OFFSET ?
+   177→prisma:query DELETE FROM `main`.`ChatMessage` WHERE 1=1
+   178→prisma:query DELETE FROM `main`.`Expense` WHERE 1=1
+   179→prisma:query DELETE FROM `main`.`Income` WHERE 1=1
+   180→prisma:query DELETE FROM `main`.`Goal` WHERE 1=1
+   181→prisma:query DELETE FROM `main`.`Budget` WHERE 1=1
+   182→prisma:query DELETE FROM `main`.`User` WHERE 1=1
+   183→prisma:query INSERT INTO `main`.`User` (`id`, `email`, `name`, `passwordHash`, `currency`, `createdAt`, `updatedAt`) VALUES (?,?,?,?,?,?,?) RETURNING `id` AS `id`, `email` AS `email`, `name` AS `name`, `passwordHash` AS `passwordHash`, `avatar` AS `avatar`, `currency` AS `currency`, `createdAt` AS `createdAt`, `updatedAt` AS `updatedAt`
+   184→prisma:query BEGIN IMMEDIATE
+   185→prisma:query INSERT INTO `main`.`Expense` (`id`, `userId`, `title`, `amount`, `category`, `date`, `description`, `isRecurring`, `createdAt`, `updatedAt`) VALUES (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?)
+   186→prisma:query COMMIT
+   187→prisma:query BEGIN IMMEDIATE
+   188→prisma:query INSERT INTO `main`.`Income` (`id`, `userId`, `title`, `amount`, `source`, `date`, `isRecurring`, `createdAt`, `updatedAt`) VALUES (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?)
+   189→prisma:query COMMIT
+   190→prisma:query BEGIN IMMEDIATE
+   191→prisma:query INSERT INTO `main`.`Budget` (`id`, `userId`, `category`, `limit`, `spent`, `period`, `startDate`, `createdAt`, `updatedAt`) VALUES (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?)
+   192→prisma:query COMMIT
+   193→prisma:query BEGIN IMMEDIATE
+   194→prisma:query INSERT INTO `main`.`Goal` (`id`, `userId`, `title`, `targetAmount`, `currentAmount`, `deadline`, `icon`, `color`, `createdAt`, `updatedAt`) VALUES (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?,?,?)
+   195→prisma:query COMMIT
+   196→ POST /api/seed 200 in 44ms (compile: 2ms, render: 42ms)
+   197→ PUT /api/auth 200 in 8ms (compile: 1896µs, render: 6ms)
+   198→prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`email`, `main`.`User`.`name`, `main`.`User`.`passwordHash`, `main`.`User`.`avatar`, `main`.`User`.`currency`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE (`main`.`User`.`email` = ? AND 1=1) LIMIT ? OFFSET ?
+   199→prisma:query SELECT `main`.`Expense`.`id`, `main`.`Expense`.`userId`, `main`.`Expense`.`title`, `main`.`Expense`.`amount`, `main`.`Expense`.`category`, `main`.`Expense`.`date`, `main`.`Expense`.`description`, `main`.`Expense`.`isRecurring`, `main`.`Expense`.`createdAt`, `main`.`Expense`.`updatedAt` FROM `main`.`Expense` WHERE `main`.`Expense`.`userId` = ? ORDER BY `main`.`Expense`.`date` DESC LIMIT ? OFFSET ?
+   200→ GET /api/expenses?userId=b97f30c9-6c60-4a06-ab13-cec39b998da4 200 in 11ms (compile: 2ms, render: 9ms)
+   201→prisma:query SELECT `main`.`Income`.`id`, `main`.`Income`.`userId`, `main`.`Income`.`title`, `main`.`Income`.`amount`, `main`.`Income`.`source`, `main`.`Income`.`date`, `main`.`Income`.`isRecurring`, `main`.`Income`.`createdAt`, `main`.`Income`.`updatedAt` FROM `main`.`Income` WHERE `main`.`Income`.`userId` = ? ORDER BY `main`.`Income`.`date` DESC LIMIT ? OFFSET ?
+   202→ GET /api/incomes?userId=b97f30c9-6c60-4a06-ab13-cec39b998da4 200 in 8ms (compile: 1956µs, render: 6ms)
+   203→ GET /api/budgets?userId=b97f30c9-6c60-4a06-ab13-cec39b998da4 200 in 11ms (compile: 3ms, render: 8ms)
+   204→prisma:query SELECT `main`.`Budget`.`id`, `main`.`Budget`.`userId`, `main`.`Budget`.`category`, `main`.`Budget`.`limit`, `main`.`Budget`.`spent`, `main`.`Budget`.`period`, `main`.`Budget`.`startDate`, `main`.`Budget`.`createdAt`, `main`.`Budget`.`updatedAt` FROM `main`.`Budget` WHERE `main`.`Budget`.`userId` = ? ORDER BY `main`.`Budget`.`category` ASC LIMIT ? OFFSET ?
+   205→prisma:query SELECT `main`.`Expense`.`id`, `main`.`Expense`.`userId`, `main`.`Expense`.`title`, `main`.`Expense`.`amount`, `main`.`Expense`.`category`, `main`.`Expense`.`date`, `main`.`Expense`.`description`, `main`.`Expense`.`isRecurring`, `main`.`Expense`.`createdAt`, `main`.`Expense`.`updatedAt` FROM `main`.`Expense` WHERE (`main`.`Expense`.`userId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` < ?) LIMIT ? OFFSET ?
+   206→prisma:query SELECT `main`.`Income`.`id`, `main`.`Income`.`userId`, `main`.`Income`.`title`, `main`.`Income`.`amount`, `main`.`Income`.`source`, `main`.`Income`.`date`, `main`.`Income`.`isRecurring`, `main`.`Income`.`createdAt`, `main`.`Income`.`updatedAt` FROM `main`.`Income` WHERE (`main`.`Income`.`userId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` < ?) LIMIT ? OFFSET ?
+   207→prisma:query SELECT `main`.`Budget`.`id`, `main`.`Budget`.`userId`, `main`.`Budget`.`category`, `main`.`Budget`.`limit`, `main`.`Budget`.`spent`, `main`.`Budget`.`period`, `main`.`Budget`.`startDate`, `main`.`Budget`.`createdAt`, `main`.`Budget`.`updatedAt` FROM `main`.`Budget` WHERE `main`.`Budget`.`userId` = ? LIMIT ? OFFSET ?
+   208→prisma:query SELECT `main`.`Goal`.`id`, `main`.`Goal`.`userId`, `main`.`Goal`.`title`, `main`.`Goal`.`targetAmount`, `main`.`Goal`.`currentAmount`, `main`.`Goal`.`deadline`, `main`.`Goal`.`icon`, `main`.`Goal`.`color`, `main`.`Goal`.`createdAt`, `main`.`Goal`.`updatedAt` FROM `main`.`Goal` WHERE `main`.`Goal`.`userId` = ? LIMIT ? OFFSET ?
+   209→ GET /api/health-score?userId=b97f30c9-6c60-4a06-ab13-cec39b998da4 200 in 15ms (compile: 5ms, render: 9ms)
+   210→prisma:query SELECT 1
+   211→prisma:query SELECT `main`.`Expense`.`id`, `main`.`Expense`.`userId`, `main`.`Expense`.`title`, `main`.`Expense`.`amount`, `main`.`Expense`.`category`, `main`.`Expense`.`date`, `main`.`Expense`.`description`, `main`.`Expense`.`isRecurring`, `main`.`Expense`.`createdAt`, `main`.`Expense`.`updatedAt` FROM `main`.`Expense` WHERE `main`.`Expense`.`userId` = ? ORDER BY `main`.`Expense`.`date` DESC LIMIT ? OFFSET ?
+   212→ GET /api/expenses?userId=b97f30c9-6c60-4a06-ab13-cec39b998da4 200 in 11ms (compile: 6ms, render: 5ms)
+   213→ GET /api/budgets?userId=b97f30c9-6c60-4a06-ab13-cec39b998da4 200 in 7ms (compile: 1843µs, render: 5ms)
+   214→prisma:query SELECT 1
+   215→prisma:query SELECT `main`.`Budget`.`id`, `main`.`Budget`.`userId`, `main`.`Budget`.`category`, `main`.`Budget`.`limit`, `main`.`Budget`.`spent`, `main`.`Budget`.`period`, `main`.`Budget`.`startDate`, `main`.`Budget`.`createdAt`, `main`.`Budget`.`updatedAt` FROM `main`.`Budget` WHERE `main`.`Budget`.`userId` = ? ORDER BY `main`.`Budget`.`category` ASC LIMIT ? OFFSET ?
+   216→prisma:query SELECT 1
+   217→prisma:query SELECT `main`.`Goal`.`id`, `main`.`Goal`.`userId`, `main`.`Goal`.`title`, `main`.`Goal`.`targetAmount`, `main`.`Goal`.`currentAmount`, `main`.`Goal`.`deadline`, `main`.`Goal`.`icon`, `main`.`Goal`.`color`, `main`.`Goal`.`createdAt`, `main`.`Goal`.`updatedAt` FROM `main`.`Goal` WHERE `main`.`Goal`.`userId` = ? ORDER BY `main`.`Goal`.`createdAt` ASC LIMIT ? OFFSET ?
+   218→ GET /api/goals?userId=b97f30c9-6c60-4a06-ab13-cec39b998da4 200 in 6ms (compile: 1981µs, render: 4ms)
+   219→prisma:query SELECT 1
+   220→prisma:query SELECT `main`.`Expense`.`id`, `main`.`Expense`.`userId`, `main`.`Expense`.`title`, `main`.`Expense`.`amount`, `main`.`Expense`.`category`, `main`.`Expense`.`date`, `main`.`Expense`.`description`, `main`.`Expense`.`isRecurring`, `main`.`Expense`.`createdAt`, `main`.`Expense`.`updatedAt` FROM `main`.`Expense` WHERE (`main`.`Expense`.`userId` = ? AND `main`.`Expense`.`date` >= ?) ORDER BY `main`.`Expense`.`date` DESC LIMIT ? OFFSET ?
+   221→prisma:query SELECT `main`.`Income`.`id`, `main`.`Income`.`userId`, `main`.`Income`.`title`, `main`.`Income`.`amount`, `main`.`Income`.`source`, `main`.`Income`.`date`, `main`.`Income`.`isRecurring`, `main`.`Income`.`createdAt`, `main`.`Income`.`updatedAt` FROM `main`.`Income` WHERE (`main`.`Income`.`userId` = ? AND `main`.`Income`.`date` >= ?) ORDER BY `main`.`Income`.`date` DESC LIMIT ? OFFSET ?
+   222→ GET /api/reports?userId=b97f30c9-6c60-4a06-ab13-cec39b998da4&period=monthly 200 in 8ms (compile: 1977µs, render: 6ms)
+   223→prisma:query SELECT 1
+   224→prisma:query SELECT `main`.`Goal`.`id`, `main`.`Goal`.`userId`, `main`.`Goal`.`title`, `main`.`Goal`.`targetAmount`, `main`.`Goal`.`currentAmount`, `main`.`Goal`.`deadline`, `main`.`Goal`.`icon`, `main`.`Goal`.`color`, `main`.`Goal`.`createdAt`, `main`.`Goal`.`updatedAt` FROM `main`.`Goal` WHERE `main`.`Goal`.`userId` = ? ORDER BY `main`.`Goal`.`createdAt` ASC LIMIT ? OFFSET ?
+   225→ GET /api/goals?userId=b97f30c9-6c60-4a06-ab13-cec39b998da4 200 in 10ms (compile: 6ms, render: 5ms)
+   226→prisma:query SELECT 1
+   227→prisma:query BEGIN IMMEDIATE
+   228→prisma:query INSERT INTO `main`.`ChatMessage` (`id`, `userId`, `role`, `content`, `createdAt`) VALUES (?,?,?,?,?), (?,?,?,?,?)
+   229→prisma:query COMMIT
+   230→ POST /api/ai-chat 200 in 2.4s (compile: 1976µs, render: 2.4s)
+   231→✓ Compiled in 183ms
+   232→✓ Compiled in 248ms
+   233→✓ Compiled in 435ms
+   234→✓ Compiled in 145ms
+   235→✓ Compiled in 141ms
+   236→✓ Compiled in 6.9s
+   237→✓ Compiled in 150ms
+   238→✓ Compiled in 147ms
+   239→✓ Compiled in 160ms
+   240→✓ Compiled in 130ms
+   241→✓ Compiled in 167ms
+   242→✓ Compiled in 111ms
+   243→✓ Compiled in 812ms
+   244→⨯ ./src/components/dashboard/dashboard-page.tsx:9:1
+   245→Export TrendingFlat doesn't exist in target module
+   246→[0m [90m  7 |[39m [36mimport[39m { [33mProgress[39m } [36mfrom[39m [32m'@/components/ui/progress'[39m
+   247→ [90m  8 |[39m [36mimport[39m { [33mSkeleton[39m } [36mfrom[39m [32m'@/components/ui/skeleton'[39m
+   248→[31m[1m>[22m[39m[90m  9 |[39m [36mimport[39m { [33mTrendingUp[39m[33m,[39m [33mTrendingDown[39m[33m,[39m [33mWallet[39m[33m,[39m [33mHeart[39m[33m,[39m [33mLightbulb[39m[33m,[39m [33mArrowUpRight[39m[33m,[39m [33mArrowDownRight[39m[33m,[39m [33mChevronRight[39m[33m,[39m [33mTrendingFlat[39m[33m,[39m [33mAlertTriangle[39m[33m,[39m [33mSparkles[39m } [36mfrom[39m [32m'lucide-react'[39m
+   249→ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   250→ [90m 10 |[39m [36mimport[39m { [33mPieChart[39m[33m,[39m [33mPie[39m[33m,[39m [33mCell[39m[33m,[39m [33mAreaChart[39m[33m,[39m [33mArea[39m[33m,[39m [33mXAxis[39m[33m,[39m [33mYAxis[39m[33m,[39m [33mTooltip[39m[33m,[39m [33mResponsiveContainer[39m[33m,[39m [33mBarChart[39m[33m,[39m [33mBar[39m[33m,[39m [33mLegend[39m } [36mfrom[39m [32m'recharts'[39m
+   251→ [90m 11 |[39m [36mimport[39m { motion } [36mfrom[39m [32m'framer-motion'[39m
+   252→ [90m 12 |[39m [36mimport[39m { format[33m,[39m startOfMonth[33m,[39m endOfMonth[33m,[39m isWithinInterval } [36mfrom[39m [32m'date-fns'[39m[0m
+   253→
+   254→The export TrendingFlat was not found in module [project]/node_modules/lucide-react/dist/esm/lucide-react.js [app-client] (ecmascript).
+   255→Did you mean to import TrendingUp?
+   256→All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+   257→
+   258→Import traces:
+   259→  Client Component Browser:
+   260→    ./src/components/dashboard/dashboard-page.tsx [Client Component Browser]
+   261→    ./src/app/page.tsx [Client Component Browser]
+   262→    ./src/app/page.tsx [Server Component]
+   263→
+   264→  Client Component SSR:
+   265→    ./src/components/dashboard/dashboard-page.tsx [Client Component SSR]
+   266→    ./src/app/page.tsx [Client Component SSR]
+   267→    ./src/app/page.tsx [Server Component]
+   268→
+   269→
+   270→
+   271→./src/components/dashboard/dashboard-page.tsx:9:1
+   272→Export TrendingFlat doesn't exist in target module
+   273→[0m [90m  7 |[39m [36mimport[39m { [33mProgress[39m } [36mfrom[39m [32m'@/components/ui/progress'[39m
+   274→ [90m  8 |[39m [36mimport[39m { [33mSkeleton[39m } [36mfrom[39m [32m'@/components/ui/skeleton'[39m
+   275→[31m[1m>[22m[39m[90m  9 |[39m [36mimport[39m { [33mTrendingUp[39m[33m,[39m [33mTrendingDown[39m[33m,[39m [33mWallet[39m[33m,[39m [33mHeart[39m[33m,[39m [33mLightbulb[39m[33m,[39m [33mArrowUpRight[39m[33m,[39m [33mArrowDownRight[39m[33m,[39m [33mChevronRight[39m[33m,[39m [33mTrendingFlat[39m[33m,[39m [33mAlertTriangle[39m[33m,[39m [33mSparkles[39m } [36mfrom[39m [32m'lucide-react'[39m
+   276→ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   277→ [90m 10 |[39m [36mimport[39m { [33mPieChart[39m[33m,[39m [33mPie[39m[33m,[39m [33mCell[39m[33m,[39m [33mAreaChart[39m[33m,[39m [33mArea[39m[33m,[39m [33mXAxis[39m[33m,[39m [33mYAxis[39m[33m,[39m [33mTooltip[39m[33m,[39m [33mResponsiveContainer[39m[33m,[39m [33mBarChart[39m[33m,[39m [33mBar[39m[33m,[39m [33mLegend[39m } [36mfrom[39m [32m'recharts'[39m
+   278→ [90m 11 |[39m [36mimport[39m { motion } [36mfrom[39m [32m'framer-motion'[39m
+   279→ [90m 12 |[39m [36mimport[39m { format[33m,[39m startOfMonth[33m,[39m endOfMonth[33m,[39m isWithinInterval } [36mfrom[39m [32m'date-fns'[39m[0m
+   280→
+   281→The export TrendingFlat was not found in module [project]/node_modules/lucide-react/dist/esm/lucide-react.js [app-ssr] (ecmascript).
+   282→Did you mean to import TrendingUp?
+   283→All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+   284→
+   285→Import traces:
+   286→  Client Component Browser:
+   287→    ./src/components/dashboard/dashboard-page.tsx [Client Component Browser]
+   288→    ./src/app/page.tsx [Client Component Browser]
+   289→    ./src/app/page.tsx [Server Component]
+   290→
+   291→  Client Component SSR:
+   292→    ./src/components/dashboard/dashboard-page.tsx [Client Component SSR]
+   293→    ./src/app/page.tsx [Client Component SSR]
+   294→    ./src/app/page.tsx [Server Component]
+   295→
+   296→
+   297→ GET / 500 in 330ms (compile: 209ms, render: 122ms)
+   298→✓ Compiled in 244ms
+   299→✓ Compiled in 142ms
+   300→ GET / 200 in 303ms (compile: 51ms, render: 252ms)
+   301→ GET / 200 in 98ms (compile: 5ms, render: 93ms)
+   302→ GET / 200 in 81ms (compile: 10ms, render: 71ms)
+   303→✓ Compiled in 171ms
+   304→ GET / 200 in 112ms (compile: 4ms, render: 109ms)
+   305→ GET / 200 in 58ms (compile: 3ms, render: 54ms)
+   306→ in 58ms (compile: 3ms, render: 54ms)
+   307→

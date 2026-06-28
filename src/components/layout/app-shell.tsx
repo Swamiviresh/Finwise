@@ -10,11 +10,12 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import {
   LayoutDashboard, Receipt, TrendingUp, PieChart, Target,
   BarChart3, MessageSquare, Settings, Shield, LogOut,
-  Menu, Sun, Moon, Zap, X, Bell, Search, ChevronRight, AlertTriangle
+  Menu, Sun, Moon, Zap, X, Bell, Search, ChevronRight, AlertTriangle, Plus
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import QuickExpenseFab from '@/components/shared/quick-expense-fab'
 
 const NAV_ITEMS: { icon: typeof LayoutDashboard; label: string; view: ViewType }[] = [
   { icon: LayoutDashboard, label: 'Dashboard', view: 'dashboard' },
@@ -217,6 +218,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </motion.div>
           </AnimatePresence>
         </main>
+        <QuickExpenseFab />
       </div>
     </div>
   )

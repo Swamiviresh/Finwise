@@ -72,7 +72,9 @@ function FadeInWhenVisible({ children, delay = 0, className = '' }: { children: 
 }
 
 function FloatingParticles() {
-  const particles = Array.from({ length: 20 }, (_, i) => ({
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+  const particles = mounted ? Array.from({ length: 20 }, (_, i) => ({
     id: i,
     x: Math.random() * 100,
     y: Math.random() * 100,
@@ -80,7 +82,7 @@ function FloatingParticles() {
     duration: Math.random() * 20 + 15,
     delay: Math.random() * 10,
     opacity: Math.random() * 0.3 + 0.1,
-  }))
+  })) : []
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {particles.map(p => (

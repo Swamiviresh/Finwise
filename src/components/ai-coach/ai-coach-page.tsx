@@ -159,7 +159,7 @@ export default function AICoachPage() {
               {SUGGESTIONS.map((s, i) => (
                 <motion.button key={s} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
                   onClick={() => handleSend(s)}
-                  className="w-full text-left p-3 rounded-xl glass text-sm text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all">
+                  className="w-full text-left p-3 rounded-xl glass-subtle text-sm text-muted-foreground hover:text-foreground hover:bg-white/5 hover:glow-border-emerald transition-all">
                   {s}
                 </motion.button>
               ))}

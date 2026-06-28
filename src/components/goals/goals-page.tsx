@@ -135,7 +135,7 @@ export default function GoalsPage() {
 
             return (
               <motion.div key={g.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ delay: i * 0.06 }}>
-                <Card className="glass border-0 h-full relative overflow-hidden card-hover">
+                <Card className={`glass border-0 h-full relative overflow-hidden card-hover ${pct >= 90 ? 'animated-border' : ''}`}>
                   <div className="absolute left-0 top-0 bottom-0 w-1" style={{ background: g.color }} />
                   <CardContent className="p-5 pl-6">
                     <div className="flex items-start justify-between mb-3">

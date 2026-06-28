@@ -149,7 +149,7 @@ export default function ExpensesPage() {
           <Card className="glass border-0">
             <CardHeader className="pb-2"><CardTitle className="text-base">Transactions ({filtered.length})</CardTitle></CardHeader>
             <CardContent>
-              <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1 scroll-fade-bottom">
                 <AnimatePresence>
                   {filtered.map(e => {
                     const Icon = CATEGORY_ICONS[e.category] || MoreHorizontal
@@ -160,8 +160,13 @@ export default function ExpensesPage() {
                           <Icon className="w-4 h-4" style={{ color: CATEGORY_COLORS[e.category] || '#94a3b8' }} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{e.title}</p>
-                          <p className="text-xs text-muted-foreground">{format(new Date(e.date), 'MMM d, yyyy')}{e.isRecurring ? ' · Recurring' : ''}</p>
+                          <p className="text-sm font-medium truncate flex items-center gap-1.5">
+                            {e.title}
+                            {e.isRecurring && (
+                              <span className="badge-amber text-[9px] px-1 py-0">↻</span>
+                            )}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{format(new Date(e.date), 'MMM d, yyyy')}</p>
                         </div>
                         <Badge variant="secondary" className="text-[10px] shrink-0 hidden sm:block">{e.category}</Badge>
                         <span className="text-sm font-medium text-rose-400 shrink-0">-{fmt(e.amount)}</span>
