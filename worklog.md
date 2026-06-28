@@ -6,58 +6,67 @@ Task: Build AI Personal Finance Coach - Full Application
 Work Log:
 - Created Prisma schema with User, Expense, Income, Budget, Goal, ChatMessage models
 - Pushed schema to SQLite database
-- Created globals.css with dark premium glassmorphism design system (mesh backgrounds, glass effects, gradient text, glow shadows, animations)
-- Created Zustand store for app state management (auth, navigation, data)
-- Created all API routes: auth (register+login), expenses (CRUD), incomes, budgets (CRUD), goals (CRUD), ai-chat (LLM), health-score (algorithmic), reports (analytics), seed (demo data)
-- Built Landing Page with: sticky nav, hero with animated dashboard preview, 6 feature cards, security section, testimonials, 3-tier pricing, FAQ accordion, CTA, footer
-- Built Login page with pre-filled demo credentials, glass card design
-- Built Register page with password strength meter (5 criteria checks)
-- Built App Shell with: collapsible sidebar (260px/72px), mobile drawer, header with search/notifications/theme toggle, animated view transitions
-- Built Dashboard with: 4 summary cards (income/expense/savings/health score), donut chart (spending by category), area chart (6-month trend), recent transactions, active budgets, AI insights
-- Built Health Score Ring SVG component with animated scoring (0-100)
-- Built Expenses page with: CRUD dialog, category filter pills, search, transaction list, donut chart, top expenses bar chart
-- Built Income page with: CRUD, source filtering, 6-month area trend chart
-- Built Budgets page with: overall progress bar, budget grid with color-coded progress, distribution bar chart, create dialog
-- Built Goals page with: progress bars, add funds inline, emoji/color picker, celebration animation on completion
-- Built AI Coach page with: chat interface (user/AI bubbles), typing indicator, 8 suggestion cards, financial summary sent to LLM
-- Built Reports page with: weekly/monthly/annual tabs, 4 charts (spending trend, category breakdown, top expenses, income vs expenses)
-- Built Settings page with: profile, appearance (theme switcher), privacy controls, connected devices, data management, delete account with confirmation
-- Built Security Center page with: security score, 6 security features, privacy controls, AI privacy guarantees
-- Wired up main page.tsx as client-side view router
+- Created globals.css with dark premium glassmorphism design system
+- Created Zustand store for app state management
+- Created all API routes (auth, expenses, incomes, budgets, goals, ai-chat, health-score, reports, seed)
+- Built all 12+ pages/views and wired up main page.tsx as view router
+
+---
+Task ID: 2
+Agent: WebDevReview (Cron Round 1)
+Task: QA Testing, Styling Improvements, New Features
+
+Work Log:
+- QA tested all pages via agent-browser: landing, login, dashboard, expenses, income, budgets, goals, reports, AI coach, settings, security - all render correctly with 200 status codes
+- AI Coach chat verified: POST /api/ai-chat returns 200 in 2.4s with LLM response
+- No JavaScript console errors found
+- Enhanced landing page: added FloatingParticles component with 20 animated particles, violet orb gradient, "How It Works" 3-step section with numbered icons and connecting line, "Stats Bar" section (10K+ users, $2.5M+ tracked, 50K+ insights, 99.9% uptime)
+- Built /api/forecast API route with linear regression prediction for next 3 months and category trend analysis
+- Enhanced dashboard: added Forecast section with AI badge, spending trend indicator (increasing/decreasing/stable), area chart showing historical + predicted income/expenses, 3 forecast cards with net savings. Added Category Trends panel showing top 5 categories with month-over-month change percentages
+- Enhanced app shell header: replaced static bell icon with interactive notification dropdown showing budget alert count and per-category utilization percentages with animated badge
+- Enhanced sidebar: added over-budget count badge (rose) next to Budgets nav item when any budget exceeds 85%
+- Fixed TrendingFlat import error (doesn't exist in lucide-react), replaced with Minus icon
 
 Stage Summary:
-- Full application with 12+ pages/views working end-to-end
-- Browser verified: landing page, login flow, dashboard, AI Coach, Budgets, Goals all render correctly
-- Demo login: demo@finwise.ai / demo123 (auto-seeds 6 months of realistic financial data)
-- Premium dark glassmorphism design with Framer Motion animations
-- Recharts for all data visualizations
-- LLM integration for AI Finance Coach
-- Lint passes clean
-- Cron job set up for continuous development
+- All existing pages verified working, no regressions
+- 2 new features: AI Forecasting (dashboard) + Budget Alert Notifications (header dropdown + sidebar badge)
+- 2 new landing page sections: How It Works + Stats Bar
+- 1 new API route: /api/forecast
+- Landing page enhanced with floating particles and additional visual depth
+- Lint passes clean after all changes
 
 ## Current Project Status
 
-### Assessment: MVP Complete - All Core Features Working
-The application is a fully functional AI Personal Finance Coach with:
+### Assessment: Feature-Rich MVP with Forecasting and Enhanced UX
+The application now has 14+ pages/views with premium dark glassmorphism design:
 - Authentication flow (login/register with demo seeding)
-- Dashboard with real-time analytics from SQLite database
+- Dashboard with real-time analytics, AI-powered forecasting, and category trend analysis
 - Full CRUD for expenses, incomes, budgets, goals
 - AI chat coach powered by z-ai-web-dev-sdk LLM
-- Financial health scoring algorithm
-- Report generation with multiple chart types
-- Settings and security center
+- Financial health scoring algorithm (6-factor model)
+- Spending forecast with 3-month linear regression prediction
+- Report generation with period switching (weekly/monthly/annual)
+- Interactive budget alert notifications in header and sidebar
+- Settings, security center, and privacy controls
+- Landing page with hero, features, how-it-works, stats, security, testimonials, pricing, FAQ
 
 ### Completed Modifications
-- All 12 pages built and verified in browser
-- Login → Seed → Dashboard flow working
-- All navigation (sidebar + mobile drawer) functional
-- Charts rendering with real data
-- AI Coach can receive messages and display responses
+- QA verified all 12+ pages render correctly (mobile + desktop viewports)
+- AI Coach confirmed working (200 response in 2.4s)
+- Fixed TrendingFlat import error
+- Added forecast section to dashboard with charts and prediction cards
+- Added category trends panel to dashboard
+- Added notification dropdown with budget alert details
+- Added over-budget badge to sidebar Budgets nav item
+- Enhanced landing page with particles, how-it-works, and stats sections
+- Lint passes clean
 
 ### Unresolved Issues / Next Phase Recommendations
-1. **Styling polish** - Add more micro-interactions, improve mobile responsive layouts, add page transition animations
-2. **Features to add** - File upload for statements, CSV import, PDF export for reports, forecasting page, subscription detection, onboarding flow
-3. **Data validation** - Add zod schemas to all API routes
-4. **Error boundaries** - Add React error boundaries for resilience
-5. **Performance** - Add loading skeletons to all pages, optimize re-renders
-6. **Mobile** - Test and improve all pages on mobile viewports
+1. **File upload** - Add CSV/PDF statement upload and parsing (receipt upload, bank statement import)
+2. **Export** - Add PDF/CSV export for reports page
+3. **Onboarding flow** - Add first-time user onboarding with quick setup wizard
+4. **Subscription detection** - Auto-detect recurring expenses and flag them
+5. **Mobile polish** - Improve responsive layouts at sm/md breakpoints for all pages
+6. **Data validation** - Add zod schemas to all API routes for input validation
+7. **Quick actions** - Add floating action button for quick expense entry on any page
+8. **Dark/light theme** - Improve light mode styling (currently dark-optimized)

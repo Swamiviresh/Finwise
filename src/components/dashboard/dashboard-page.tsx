@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
-import { TrendingUp, TrendingDown, Wallet, Heart, Lightbulb, ArrowUpRight, ArrowDownRight, ChevronRight } from 'lucide-react'
-import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { TrendingUp, TrendingDown, Wallet, Heart, Lightbulb, ArrowUpRight, ArrowDownRight, ChevronRight, AlertTriangle, Sparkles, Minus } from 'lucide-react'
+import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts'
 import { motion } from 'framer-motion'
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
 import HealthScoreRing from './health-score-ring'
@@ -41,6 +41,7 @@ function AnimatedCard({ children, index }: { children: React.ReactNode; index: n
 export default function DashboardPage() {
   const { user, expenses, incomes, budgets, setExpenses, setIncomes, setBudgets, healthScore, setHealthScore, setView, setLoading } = useAppStore()
   const [loading, setLoadingState] = useState(true)
+  const [forecast, setForecast] = useState<any>(null)
 
   useEffect(() => {
     if (!user?.id) return
@@ -49,18 +50,20 @@ export default function DashboardPage() {
 
     const fetchData = async () => {
       try {
-        const [expRes, incRes, budRes, healthRes] = await Promise.all([
+        const [expRes, incRes, budRes, healthRes, forecastRes] = await Promise.all([
           fetch(`/api/expenses?userId=${user.id}`),
           fetch(`/api/incomes?userId=${user.id}`),
           fetch(`/api/budgets?userId=${user.id}`),
           fetch(`/api/health-score?userId=${user.id}`),
+          fetch(`/api/forecast?userId=${user.id}`),
         ])
         if (cancelled) return
-        const [expData, incData, budData, healthData] = await Promise.all([expRes.json(), incRes.json(), budRes.json(), healthRes.json()])
+        const [expData, incData, budData, healthData, forecastData] = await Promise.all([expRes.json(), incRes.json(), budRes.json(), healthRes.json(), forecastRes.json()])
         setExpenses(expData)
         setIncomes(incData)
         setBudgets(budData)
         setHealthScore(healthData.score)
+        setForecast(forecastData)
       } catch (e) { console.error(e) }
       finally { if (!cancelled) setLoadingState(false) }
     }
@@ -112,6 +115,14 @@ export default function DashboardPage() {
 
   const recentExpenses = monthExpenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5)
   const topBudgets = budgets.slice(0, 3)
+
+  const forecastChartData = useMemo(() => {
+    if (!forecast) return []
+    return [
+      ...forecast.historical,
+      ...forecast.forecast.map((f: any) => ({ month: f.month, income: f.predictedIncome, expenses: f.predictedExpense })),
+    ]
+  }, [forecast])
 
   if (loading) {
     return (
@@ -354,6 +365,88 @@ export default function DashboardPage() {
           </Card>
         </AnimatedCard>
       </div>
+
+      {/* Forecast & Category Trends */}
+      {forecast && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <AnimatedCard index={9}>
+            <Card className="glass border-0">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-cyan-400" /> Spending Forecast
+                  <Badge variant="secondary" className="text-[10px] bg-cyan-500/10 text-cyan-400 border-0 ml-auto">AI Powered</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${forecast.trend.direction === 'increasing' ? 'bg-rose-500/10' : forecast.trend.direction === 'decreasing' ? 'bg-emerald-500/10' : 'bg-amber-500/10'}`}>
+                    {forecast.trend.direction === 'increasing' ? <TrendingUp className="w-4 h-4 text-rose-400" /> : forecast.trend.direction === 'decreasing' ? <TrendingDown className="w-4 h-4 text-emerald-400" /> : <Minus className="w-4 h-4 text-amber-400" />}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Spending is {forecast.trend.direction}</p>
+                    <p className="text-xs text-muted-foreground">{forecast.trend.percent > 0 ? '+' : ''}{forecast.trend.percent}% vs last month</p>
+                  </div>
+                </div>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={forecastChartData}>
+                      <defs>
+                        <linearGradient id="fIncGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity={0.3} /><stop offset="100%" stopColor="#10b981" stopOpacity={0} /></linearGradient>
+                        <linearGradient id="fExpGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f43f5e" stopOpacity={0.3} /><stop offset="100%" stopColor="#f43f5e" stopOpacity={0} /></linearGradient>
+                      </defs>
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
+                      <Tooltip contentStyle={{ background: 'rgba(15,23,42,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px' }} formatter={(v: number) => formatCurrency(v)} />
+                      <Area type="monotone" dataKey="income" stroke="#10b981" fill="url(#fIncGrad)" strokeWidth={2} name="Income" />
+                      <Area type="monotone" dataKey="expenses" stroke="#f43f5e" fill="url(#fExpGrad)" strokeWidth={2} name="Expenses" strokeDasharray="0" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mt-4">
+                  {forecast.forecast.map((f: any, i: number) => (
+                    <div key={i} className="glass rounded-lg p-2.5 text-center">
+                      <p className="text-[10px] text-muted-foreground mb-1">{f.month}</p>
+                      <p className={`text-sm font-bold ${f.predictedSavings >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{formatCurrency(f.predictedSavings)}</p>
+                      <p className="text-[10px] text-muted-foreground">net savings</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </AnimatedCard>
+
+          <AnimatedCard index={10}>
+            <Card className="glass border-0">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-400" /> Category Trends
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {forecast.categoryTrends.map((ct: any, i: number) => (
+                    <div key={ct.category} className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${CATEGORY_COLORS[ct.category] || '#94a3b8'}15` }}>
+                        <span className="text-xs font-bold" style={{ color: CATEGORY_COLORS[ct.category] || '#94a3b8' }}>{ct.category[0]}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{ct.category}</p>
+                        <p className="text-xs text-muted-foreground">{formatCurrency(ct.current)} this month</p>
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-sm font-semibold ${ct.change > 10 ? 'text-rose-400' : ct.change < -10 ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+                          {ct.change > 0 ? '+' : ''}{ct.change}%
+                        </span>
+                        <p className="text-[10px] text-muted-foreground">vs last month</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </AnimatedCard>
+        </div>
+      )}
     </div>
   )
 }

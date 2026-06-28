@@ -1,14 +1,14 @@
 'use client'
 
 import { motion, useInView } from 'framer-motion'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useAppStore } from '@/store/use-app-store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import {
   Shield, Brain, Target, TrendingUp, Lock, BarChart3,
-  ArrowRight, Check, Star, Zap, Eye, Sparkles, ChevronRight
+  ArrowRight, Check, Star, Zap, Eye, Sparkles, ChevronRight, Wallet, PieChart, Bot, Globe
 } from 'lucide-react'
 
 const NAV_ITEMS = ['Features', 'Security', 'Pricing']
@@ -71,6 +71,29 @@ function FadeInWhenVisible({ children, delay = 0, className = '' }: { children: 
   )
 }
 
+function FloatingParticles() {
+  const particles = Array.from({ length: 20 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    size: Math.random() * 4 + 2,
+    duration: Math.random() * 20 + 15,
+    delay: Math.random() * 10,
+    opacity: Math.random() * 0.3 + 0.1,
+  }))
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map(p => (
+        <motion.div key={p.id} className="absolute rounded-full bg-emerald-400"
+          style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size, opacity: p.opacity }}
+          animate={{ y: [0, -30, 0], x: [0, 15, 0], opacity: [p.opacity, p.opacity * 2, p.opacity] }}
+          transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
+        />
+      ))}
+    </div>
+  )
+}
+
 export default function LandingPage() {
   const setView = useAppStore(s => s.setView)
 
@@ -100,9 +123,11 @@ export default function LandingPage() {
       </motion.nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 relative">
+      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <div className="absolute top-20 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full filter blur-[120px] pointer-events-none" />
         <div className="absolute top-40 right-1/4 w-72 h-72 bg-cyan-500/8 rounded-full filter blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-500/5 rounded-full filter blur-[150px] pointer-events-none" />
+        <FloatingParticles />
         <div className="max-w-7xl mx-auto text-center relative">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
             <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-sm text-muted-foreground mb-6">
@@ -172,6 +197,59 @@ export default function LandingPage() {
                     <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
                   </CardContent>
                 </Card>
+              </FadeInWhenVisible>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <div className="absolute inset-0 grid-pattern opacity-30 pointer-events-none" />
+        <div className="max-w-7xl mx-auto relative">
+          <FadeInWhenVisible className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-sm text-cyan-400 mb-4">
+              <Zap className="w-4 h-4" /> Simple Workflow
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Get started in <span className="gradient-text">3 simple steps</span></h2>
+          </FadeInWhenVisible>
+          <div className="grid md:grid-cols-3 gap-8 relative">
+            <div className="hidden md:block absolute top-16 left-1/6 right-1/6 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
+            {[
+              { step: '01', icon: Wallet, title: 'Upload Your Data', desc: 'Import your bank statements (CSV, PDF, Excel) or manually add transactions. No bank credentials needed — you stay in full control.', color: '#10b981' },
+              { step: '02', icon: Brain, title: 'AI Analyzes Everything', desc: 'Our AI automatically categorizes transactions, identifies patterns, detects subscriptions, and generates a personalized financial health score.', color: '#06b6d4' },
+              { step: '03', icon: Target, title: 'Get Actionable Insights', desc: 'Receive smart recommendations to save more, reduce unnecessary spending, and reach your financial goals faster.', color: '#f59e0b' },
+            ].map((item, i) => (
+              <FadeInWhenVisible key={item.step} delay={i * 0.15}>
+                <div className="text-center relative">
+                  <motion.div className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center relative" style={{ background: `${item.color}15` }}
+                    whileHover={{ scale: 1.05, rotate: 2 }} transition={{ type: 'spring', stiffness: 300 }}>
+                    <item.icon className="w-7 h-7" style={{ color: item.color }} />
+                    <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-[10px] font-bold text-white shadow-lg">{item.step}</span>
+                  </motion.div>
+                  <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">{item.desc}</p>
+                </div>
+              </FadeInWhenVisible>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Bar */}
+      <section className="py-12 border-y border-border/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {[
+              { value: '10K+', label: 'Active Users', icon: Globe },
+              { value: '$2.5M+', label: 'Money Tracked', icon: TrendingUp },
+              { value: '50K+', label: 'AI Insights', icon: Bot },
+              { value: '99.9%', label: 'Uptime', icon: Shield },
+            ].map((stat, i) => (
+              <FadeInWhenVisible key={stat.label} delay={i * 0.1} className="text-center">
+                <stat.icon className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
+                <p className="text-2xl md:text-3xl font-bold gradient-text">{stat.value}</p>
+                <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
               </FadeInWhenVisible>
             ))}
           </div>

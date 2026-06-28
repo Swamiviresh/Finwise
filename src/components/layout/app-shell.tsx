@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import {
   LayoutDashboard, Receipt, TrendingUp, PieChart, Target,
   BarChart3, MessageSquare, Settings, Shield, LogOut,
-  Menu, Sun, Moon, Zap, X, Bell, Search, ChevronRight
+  Menu, Sun, Moon, Zap, X, Bell, Search, ChevronRight, AlertTriangle
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -39,7 +39,8 @@ const PAGE_TITLES: Record<ViewType, string> = {
 }
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
-  const { currentView, setView, user, setUser } = useAppStore()
+  const { currentView, setView, user, setUser, budgets } = useAppStore()
+  const overBudgets = budgets.filter(b => (b.spent / b.limit) > 0.85).length
 
   const handleNav = (view: ViewType) => {
     setView(view)
@@ -76,6 +77,9 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
               <span className="truncate">{item.label}</span>
               {item.view === 'ai-coach' && (
                 <span className="ml-auto text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full font-medium">AI</span>
+              )}
+              {item.view === 'budgets' && overBudgets > 0 && (
+                <span className="ml-auto text-[10px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded-full font-medium">{overBudgets}</span>
               )}
             </button>
           )
@@ -121,10 +125,13 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const { currentView, sidebarOpen, setSidebarOpen } = useAppStore()
+  const { currentView, sidebarOpen, setSidebarOpen, budgets } = useAppStore()
   const { theme, setTheme } = useTheme()
   const mounted = useSyncExternalStore(() => () => {}, () => true, () => false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [notifOpen, setNotifOpen] = useState(false)
+
+  const overBudgets = budgets.filter(b => (b.spent / b.limit) > 0.85)
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -163,10 +170,30 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <Search className="w-4 h-4 text-muted-foreground" />
               <input type="text" placeholder="Search..." className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground" />
             </div>
-            <button className="relative p-2 rounded-lg hover:bg-white/5 transition-colors">
+            <div className="relative">
+            <button onClick={() => setNotifOpen(!notifOpen)} className="relative p-2 rounded-lg hover:bg-white/5 transition-colors">
               <Bell className="w-5 h-5 text-muted-foreground" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-400 rounded-full" />
+              {overBudgets.length > 0 && (
+                <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-1 right-1 w-4 h-4 bg-rose-500 rounded-full flex items-center justify-center">
+                  <span className="text-[9px] font-bold text-white">{overBudgets.length}</span>
+                </motion.span>
+              )}
             </button>
+            <AnimatePresence>
+              {notifOpen && overBudgets.length > 0 && (
+                <motion.div initial={{ opacity: 0, y: -8, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                  className="absolute right-0 top-12 w-72 glass rounded-xl border border-border/30 p-3 z-50 shadow-2xl">
+                  <p className="text-xs font-semibold text-rose-400 flex items-center gap-1 mb-2"><AlertTriangle className="w-3 h-3" /> Budget Alerts</p>
+                  {overBudgets.map(b => (
+                    <div key={b.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors">
+                      <span className="text-xs">{b.category}</span>
+                      <span className="text-xs font-medium text-rose-400">{Math.round((b.spent / b.limit) * 100)}%</span>
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
             {mounted && (
               <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-2 rounded-lg hover:bg-white/5 transition-colors">
                 {theme === 'dark' ? <Sun className="w-5 h-5 text-muted-foreground" /> : <Moon className="w-5 h-5 text-muted-foreground" />}
