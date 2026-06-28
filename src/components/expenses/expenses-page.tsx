@@ -132,10 +132,10 @@ export default function ExpensesPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search expenses..." className="glass pl-9" />
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           {['All', ...CATEGORIES].map(c => (
             <button key={c} onClick={() => setFilter(c)}
-              className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filter === c ? 'bg-emerald-500/20 text-emerald-400' : 'glass text-muted-foreground hover:text-foreground'}`}>
+              className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${filter === c ? 'bg-emerald-500/20 text-emerald-400' : 'glass text-foreground/60 hover:text-foreground'}`}>
               {c}
             </button>
           ))}

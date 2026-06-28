@@ -989,3 +989,12 @@ input, textarea, select {
   mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
 }
+
+/* ── 28. Hide Scrollbar Utility ─────────────────────────────────────── */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

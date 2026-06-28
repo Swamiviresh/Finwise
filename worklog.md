@@ -217,3 +217,84 @@ The application is now a feature-rich, visually polished finance SaaS applicatio
 8. **Custom categories** - Allow users to create/edit expense categories
 9. **Sankey diagram** - Money flow visualization
 10. **Recurring management** - Bulk edit recurring transactions
+
+---
+Task ID: 6+11
+Agent: Full-Stack Developer
+Task: Global Transaction Search + Bills & Subscriptions Tracker
+
+Work Log:
+- **Global Transaction Search**:
+  - Replaced placeholder search input in app-shell.tsx with full GlobalSearch component
+  - Search combines expenses + incomes, filters by title/category/description (case-insensitive), sorts by date desc, limits to 8 results
+  - Each result: colored category dot, title, category Badge, formatted date, amount (green=income, red=expense), type label
+  - Dropdown: glass styling, AnimatePresence, staggered animations, click-outside close, keyboard shortcuts (/ to focus, Escape to close)
+  - Empty state with Search icon and helpful message
+- **Bills & Subscriptions Tracker**:
+  - New `'bills'` ViewType added to store, new BillsPage component created
+  - Filters recurring expenses, groups by category with collapsible sections
+  - Summary: Monthly Total, Annual Total, Count cards with glass-accent-top colored borders
+  - "Potential Savings" card for entertainment/subscriptions categories
+  - Next payment date calculation, overdue detection (Active vs Overdue status badges)
+  - 15 total views after integration
+
+Stage Summary:
+- 2 features implemented: Global Search + Bills Tracker
+- Lint: 0 errors, 0 warnings
+
+### Unresolved Issues / Next Phase Recommendations
+1. **Mobile polish** - Improve responsive layouts at sm/md breakpoints
+2. **Data validation** - Add zod schemas to API routes
+3. **Light mode polish** - Improve light mode styling
+4. **PDF export** - Add PDF report generation
+5. **File upload** - CSV/PDF statement import
+6. **Custom categories** - User-created categories
+7. **Sankey diagram** - Money flow visualization
+8. **Multi-currency** - Currency conversion support
+9. **Transaction search** - Already implemented ✓
+10. **Bills tracker** - Already implemented ✓
+
+---
+Task ID: 6+11
+Agent: Full-Stack Developer
+Task: Global Transaction Search + Bills & Subscriptions Tracker
+
+Work Log:
+- **Global Transaction Search (Task 1)**:
+  - Added `useRef`, `useEffect` imports and `Badge`, `format` from date-fns to app-shell.tsx
+  - Defined `CATEGORY_COLORS` and `formatCurrency` helper at module level
+  - Defined `SearchResult` interface for typed results
+  - Created `GlobalSearch` component: controlled input with `useState`, `useRef` for container + input
+  - Search combines expenses + incomes, filters by title/category/description (case-insensitive), sorts by date desc, limits to 8 results
+  - Each result shows: colored category dot in tinted square, title, category Badge, formatted date, amount (green=income, red=expense), type label
+  - Dropdown uses glass styling, `AnimatePresence`, staggered entry animations (delay * 0.03 per item)
+  - Empty state with Search icon and helpful message
+  - Keyboard shortcut: "/" focuses input, Escape closes dropdown
+  - Click outside detection via mousedown listener on document
+  - Clear button (X icon) when query is non-empty
+  - Replaced old static search `<input>` with `<GlobalSearch />` component
+- **Bills & Subscriptions Tracker (Task 2)**:
+  - Added `'bills'` to `ViewType` union in `/src/store/use-app-store.ts`
+  - Created `/src/components/bills/bills-page.tsx` — full recurring bills tracker:
+    - Filters expenses where `isRecurring === true` from Zustand store
+    - Calculates next payment date by adding months from original date until future
+    - Summary section: 3 cards (Monthly Bills Total, Annual Total, Count) with `glass-accent-top` colored top borders
+    - "Potential Savings" card: identifies Entertainment + Subscriptions category bills, shows monthly/annual savings potential with gradient top border
+    - Bills grouped by category with `Collapsible` sections, chevron rotation animation
+    - Each bill shows: colored dot, title, category badge, next payment date (calendar icon), amount/mo, status badge (Active=green, Overdue=red)
+    - Category header shows: icon, name, bill count, monthly total, annual total
+    - Empty state when no recurring expenses
+    - Staggered entry animations via framer-motion `container`/`item` variants
+    - Uses all design system classes: glass, glass-accent-top, card-hover, badge-emerald/rose/amber, number-tick
+  - Added Bills nav item (FileText icon) to NAV_ITEMS after Goals, before Reports
+  - Added 'bills' to PAGE_TITLES as "Bills & Subscriptions"
+  - Added `{currentView === 'bills' && <BillsPage />}` to page.tsx
+  - Imported FileText icon, BillsPage component
+- Lint passes clean (0 errors, 0 warnings). Dev server compiled successfully.
+
+Stage Summary:
+- 2 features implemented: Global Transaction Search + Bills & Subscriptions Tracker
+- 1 new page/view: Bills (now 15 total views)
+- Search: 8-result dropdown, staggered animations, keyboard shortcuts, click-outside close
+- Bills: category grouping with collapsible sections, overdue detection, potential savings analysis6+11
+Agent: Full-Stack DeveloperReview the changes and make sure they are as expected

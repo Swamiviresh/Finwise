@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
-import { TrendingUp, TrendingDown, Wallet, Heart, Lightbulb, ArrowUpRight, ArrowDownRight, ChevronRight, AlertTriangle, Sparkles, Minus, BarChart3 } from 'lucide-react'
+import { TrendingUp, TrendingDown, Wallet, Heart, Lightbulb, ArrowUpRight, ArrowDownRight, ChevronRight, AlertTriangle, Sparkles, Minus, BarChart3, Sun, Moon, CloudSun } from 'lucide-react'
 import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts'
 import { motion } from 'framer-motion'
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
@@ -142,6 +142,40 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      {/* Greeting Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="glass rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shimmer-border"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 flex items-center justify-center text-2xl">
+            {new Date().getHours() < 12 ? <Sun className="w-6 h-6 text-amber-400" /> : new Date().getHours() < 18 ? <CloudSun className="w-6 h-6 text-emerald-400" /> : <Moon className="w-6 h-6 text-violet-400" />}
+          </div>
+          <div>
+            <h2 className="text-lg font-bold">
+              {new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 18 ? 'Good afternoon' : 'Good evening'},{' '}
+              <span className="gradient-text">{user?.name?.split(' ')[0] || 'there'}</span>
+            </h2>
+            <p className="text-sm text-foreground/60 mt-0.5">
+              {new Date().getHours() < 12
+                ? "Here's your financial overview for today. Start strong!"
+                : new Date().getHours() < 18
+                  ? "Midday check — here's how your finances are looking."
+                  : "End of day summary. Review your spending and plan ahead."}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="text-right hidden sm:block">
+            <p className="text-xs text-foreground/50">{format(new Date(), 'EEEE, MMMM d')}</p>
+            <p className="text-xs text-foreground/40">{format(new Date(), 'yyyy')}</p>
+          </div>
+          <div className="pulse-dot" />
+          <span className="text-xs text-foreground/50 font-medium">Live</span>
+        </div>
+      </motion.div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
         <AnimatedCard index={0}>
@@ -234,9 +268,9 @@ export default function DashboardPage() {
                   <div key={c.name} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full" style={{ background: CATEGORY_COLORS[c.name] || '#94a3b8' }} />
-                      <span className="text-xs text-foreground/80 truncate max-w-[80px]">{c.name}</span>
+                      <span className="text-xs text-foreground/80 truncate max-w-[72px]" title={c.name}>{c.name}</span>
                     </div>
-                    <span className="font-medium">{formatCurrency(c.value)}</span>
+                    <span className="font-medium text-xs tabular-nums">{formatCurrency(c.value)}</span>
                   </div>
                 ))}
               </div>

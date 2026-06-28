@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useAppStore } from '@/store/use-app-store'
 import LandingPage from '@/components/landing/landing-page'
 import LoginPage from '@/components/auth/login-page'
@@ -15,9 +16,18 @@ import ReportsPage from '@/components/reports/reports-page'
 import AICoachPage from '@/components/ai-coach/ai-coach-page'
 import SettingsPage from '@/components/settings/settings-page'
 import SecurityPage from '@/components/settings/security-page'
+import BillsPage from '@/components/bills/bills-page'
 
 export default function Home() {
-  const { currentView, isAuthenticated, hasCompletedOnboarding } = useAppStore()
+  const { currentView, isAuthenticated, hasCompletedOnboarding, setHasCompletedOnboarding } = useAppStore()
+
+  // Sync onboarding state from localStorage (fixes SSR hydration issue)
+  useEffect(() => {
+    if (isAuthenticated && !hasCompletedOnboarding) {
+      const stored = localStorage.getItem('finwise_onboarding_done')
+      if (stored === 'true') setHasCompletedOnboarding(true)
+    }
+  }, [isAuthenticated, hasCompletedOnboarding, setHasCompletedOnboarding])
 
   // Public views (no shell)
   if (!isAuthenticated) {
@@ -41,6 +51,7 @@ export default function Home() {
       {currentView === 'income' && <IncomePage />}
       {currentView === 'budgets' && <BudgetsPage />}
       {currentView === 'goals' && <GoalsPage />}
+      {currentView === 'bills' && <BillsPage />}
       {currentView === 'reports' && <ReportsPage />}
       {currentView === 'ai-coach' && <AICoachPage />}
       {currentView === 'settings' && <SettingsPage />}

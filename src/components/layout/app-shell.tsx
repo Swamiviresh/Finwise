@@ -1,21 +1,44 @@
 'use client'
 
-import { useState, useCallback, useSyncExternalStore } from 'react'
+import { useState, useCallback, useRef, useEffect, useSyncExternalStore } from 'react'
 import { useAppStore, type ViewType } from '@/store/use-app-store'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Badge } from '@/components/ui/badge'
 import {
   LayoutDashboard, Receipt, TrendingUp, PieChart, Target,
   BarChart3, MessageSquare, Settings, Shield, LogOut,
-  Menu, Sun, Moon, Zap, X, Bell, Search, ChevronRight, AlertTriangle, Plus
+  Menu, Sun, Moon, Zap, X, Bell, Search, ChevronRight, AlertTriangle, Plus, FileText
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { format } from 'date-fns'
 import QuickExpenseFab from '@/components/shared/quick-expense-fab'
+
+const CATEGORY_COLORS: Record<string, string> = {
+  Food: '#34d399', Rent: '#22d3ee', Shopping: '#fbbf24', Healthcare: '#fb7185',
+  Education: '#a78bfa', Transportation: '#38bdf8', Entertainment: '#f97316',
+  Utilities: '#2dd4bf', Investments: '#4ade80', Insurance: '#c084fc',
+  Subscriptions: '#f472b6', Others: '#94a3b8'
+}
+
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount)
+}
+
+interface SearchResult {
+  id: string
+  title: string
+  category: string
+  date: string
+  amount: number
+  type: 'expense' | 'income'
+  description?: string
+}
 
 const NAV_ITEMS: { icon: typeof LayoutDashboard; label: string; view: ViewType }[] = [
   { icon: LayoutDashboard, label: 'Dashboard', view: 'dashboard' },
@@ -23,6 +46,7 @@ const NAV_ITEMS: { icon: typeof LayoutDashboard; label: string; view: ViewType }
   { icon: TrendingUp, label: 'Income', view: 'income' },
   { icon: PieChart, label: 'Budgets', view: 'budgets' },
   { icon: Target, label: 'Goals', view: 'goals' },
+  { icon: FileText, label: 'Bills', view: 'bills' },
   { icon: BarChart3, label: 'Reports', view: 'reports' },
   { icon: MessageSquare, label: 'AI Coach', view: 'ai-coach' },
 ]
@@ -35,7 +59,7 @@ const BOTTOM_NAV = [
 const PAGE_TITLES: Record<ViewType, string> = {
   landing: 'Welcome', login: 'Sign In', register: 'Create Account',
   dashboard: 'Dashboard', expenses: 'Expenses', income: 'Income',
-  budgets: 'Budgets', goals: 'Goals', reports: 'Reports',
+  budgets: 'Budgets', goals: 'Goals', bills: 'Bills & Subscriptions', reports: 'Reports',
   'ai-coach': 'AI Finance Coach', settings: 'Settings', security: 'Security Center',
 }
 
@@ -125,6 +149,173 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
+function GlobalSearch() {
+  const { expenses, incomes, setView } = useAppStore()
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const results = query.trim().length > 0
+    ? ([
+        ...expenses.map(e => ({
+          id: e.id, title: e.title, category: e.category,
+          date: e.date, amount: e.amount, type: 'expense' as const,
+          description: e.description,
+        })),
+        ...incomes.map(i => ({
+          id: i.id, title: i.title, category: i.source,
+          date: i.date, amount: i.amount, type: 'income' as const,
+          description: undefined,
+        })),
+      ]
+        .filter(r => {
+          const q = query.toLowerCase()
+          return (
+            r.title.toLowerCase().includes(q) ||
+            r.category.toLowerCase().includes(q) ||
+            (r.description && r.description.toLowerCase().includes(q))
+          )
+        })
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, 8))
+    : []
+
+  const handleSelect = (result: SearchResult) => {
+    setView(result.type === 'expense' ? 'expenses' : 'income')
+    setOpen(false)
+    setQuery('')
+  }
+
+  // Keyboard shortcut "/" to focus
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === '/' && document.activeElement !== inputRef.current) {
+        e.preventDefault()
+        inputRef.current?.focus()
+      }
+      if (e.key === 'Escape' && open) {
+        setOpen(false)
+        inputRef.current?.blur()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [open])
+
+  // Click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [open])
+
+  return (
+    <div ref={containerRef} className="relative hidden md:block">
+      <div className={cn(
+        'flex items-center glass rounded-xl px-3.5 py-2 gap-2.5 w-72 transition-all duration-300',
+        open ? 'glow-border-emerald' : 'focus-within:glow-border-emerald'
+      )}>
+        <Search className="w-4 h-4 text-foreground/40 shrink-0" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
+          onFocus={() => { if (query.trim()) setOpen(true) }}
+          placeholder="Search transactions..."
+          className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-foreground/30"
+        />
+        {query && (
+          <button onClick={() => { setQuery(''); setOpen(false); inputRef.current?.focus() }} className="p-0.5 rounded hover:bg-white/10">
+            <X className="w-3.5 h-3.5 text-foreground/40" />
+          </button>
+        )}
+        {!query && (
+          <kbd className="text-[10px] text-foreground/20 border border-white/10 rounded px-1.5 py-0.5 font-mono">/</kbd>
+        )}
+      </div>
+
+      <AnimatePresence>
+        {open && results.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.97 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="absolute right-0 top-full mt-2 w-96 glass rounded-xl border border-white/10 z-50 shadow-2xl overflow-hidden"
+          >
+            <div className="p-2 border-b border-white/5">
+              <p className="text-[11px] text-muted-foreground px-2 font-medium">
+                {results.length} result{results.length !== 1 ? 's' : ''} found
+              </p>
+            </div>
+            <div className="max-h-96 overflow-y-auto p-1.5 space-y-0.5">
+              {results.map((result, i) => {
+                const color = CATEGORY_COLORS[result.category] || '#94a3b8'
+                return (
+                  <motion.button
+                    key={`${result.type}-${result.id}`}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.03, duration: 0.15 }}
+                    onClick={() => handleSelect(result)}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-white/5 transition-colors text-left group"
+                  >
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ background: `${color}15` }}
+                    >
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{result.title}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-white/10 text-foreground/50 font-normal">
+                          {result.category}
+                        </Badge>
+                        <span className="text-[10px] text-muted-foreground">{format(new Date(result.date), 'MMM d, yyyy')}</span>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className={cn(
+                        'text-sm font-semibold',
+                        result.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
+                      )}>
+                        {result.type === 'income' ? '+' : '-'}{formatCurrency(result.amount)}
+                      </span>
+                      <p className="text-[10px] text-muted-foreground capitalize">{result.type}</p>
+                    </div>
+                  </motion.button>
+                )
+              })}
+            </div>
+          </motion.div>
+        )}
+        {open && query.trim().length > 0 && results.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.97 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="absolute right-0 top-full mt-2 w-80 glass rounded-xl border border-white/10 z-50 shadow-2xl p-6 text-center"
+          >
+            <Search className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">No transactions match &ldquo;{query}&rdquo;</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">Try searching by title, category, or description</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { currentView, sidebarOpen, setSidebarOpen, budgets } = useAppStore()
   const { theme, setTheme } = useTheme()
@@ -167,11 +358,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="hidden md:flex items-center glass rounded-xl px-3.5 py-2 gap-2.5 w-72 transition-all duration-300 focus-within:glow-border-emerald">
-              <Search className="w-4 h-4 text-foreground/40" />
-              <input type="text" placeholder="Search transactions..." className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-foreground/30" />
-              <kbd className="text-[10px] text-foreground/20 border border-white/10 rounded px-1.5 py-0.5 font-mono">/</kbd>
-            </div>
+            <GlobalSearch />
             <div className="relative">
             <button onClick={() => setNotifOpen(!notifOpen)} className="relative p-2 rounded-lg hover:bg-white/5 transition-colors">
               <Bell className="w-5 h-5 text-muted-foreground" />

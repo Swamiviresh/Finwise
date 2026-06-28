@@ -124,7 +124,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen mesh-bg-enhanced text-foreground overflow-x-hidden">
       {/* Navbar */}
-      <motion.nav initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5 }} className="fixed top-0 left-0 right-0 z-50 glass-strong">
+      <nav className="fixed top-0 left-0 right-0 z-50 glass-strong" style={{ animation: 'fadeIn 0.3s ease-out' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
@@ -144,7 +144,7 @@ export default function LandingPage() {
             </Button>
           </div>
         </div>
-      </motion.nav>
+      </nav>
 
       {/* Hero */}
       <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
@@ -315,24 +315,25 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <FadeInWhenVisible className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">Loved by <span className="gradient-text">thousands</span></h2>
-            <p className="text-muted-foreground">See what our users have to say about their experience.</p>
+            <p className="text-foreground/50 max-w-3xl mx-auto">See what our users have to say about their experience.</p>
           </FadeInWhenVisible>
           <div className="grid md:grid-cols-3 gap-6">
             {TESTIMONIALS.map((t, i) => (
               <FadeInWhenVisible key={t.name} delay={i * 0.1}>
-                <Card className="glass card-hover border-0 h-full">
-                  <CardContent className="p-6">
+                <Card className="glass card-float border-0 h-full relative overflow-hidden group">
+                  <div className="absolute top-4 right-4 text-6xl text-white/5 font-serif leading-none select-none group-hover:text-emerald-400/10 transition-colors">&ldquo;</div>
+                  <CardContent className="p-6 pt-7 relative">
                     <div className="flex gap-1 mb-4">
                       {Array.from({ length: t.rating }).map((_, j) => <Star key={j} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
                     </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed mb-6">&ldquo;{t.text}&rdquo;</p>
+                    <p className="text-sm text-foreground/70 leading-relaxed mb-6">{t.text}</p>
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-white font-semibold text-sm">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-white font-semibold text-sm shadow-lg shadow-emerald-500/15">
                         {t.name.split(' ').map(n => n[0]).join('')}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold">{t.name}</p>
-                        <p className="text-xs text-muted-foreground">{t.role}</p>
+                        <p className="text-sm font-semibold text-foreground">{t.name}</p>
+                        <p className="text-xs text-foreground/50">{t.role}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -353,9 +354,9 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {PRICING.map((plan, i) => (
               <FadeInWhenVisible key={plan.name} delay={i * 0.1}>
-                <Card className={`card-hover border-0 h-full relative ${plan.highlighted ? 'glass glow-emerald' : 'glass'}`}>
+                <Card className={`card-float border-0 h-full relative overflow-hidden ${plan.highlighted ? 'glass shimmer-border' : 'glass'}`}>
                   {plan.highlighted && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-xs font-semibold px-4 py-1 rounded-full">Most Popular</div>
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-xs font-semibold px-4 py-1 rounded-full shadow-lg shadow-emerald-500/20">Most Popular</div>
                   )}
                   <CardContent className="p-6 pt-8">
                     <h3 className="text-lg font-semibold mb-2">{plan.name}</h3>

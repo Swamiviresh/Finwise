@@ -11,6 +11,7 @@ export type ViewType =
   | 'goals'
   | 'reports'
   | 'ai-coach'
+  | 'bills'
   | 'settings'
   | 'security'
 
@@ -157,9 +158,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   isLoading: false,
   setLoading: (loading) => set({ isLoading: loading }),
 
-  // Onboarding
-  hasCompletedOnboarding: false,
-  setHasCompletedOnboarding: (v) => set({ hasCompletedOnboarding: v }),
+  // Onboarding (persisted to localStorage)
+  hasCompletedOnboarding: typeof window !== 'undefined' ? localStorage.getItem('finwise_onboarding_done') === 'true' : false,
+  setHasCompletedOnboarding: (v) => {
+    if (typeof window !== 'undefined') localStorage.setItem('finwise_onboarding_done', String(v))
+    set({ hasCompletedOnboarding: v })
+  },
   onboardingData: {},
   setOnboardingData: (data) => set((s) => ({ onboardingData: { ...s.onboardingData, ...data } })),
 }))
