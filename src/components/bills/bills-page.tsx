@@ -165,7 +165,7 @@ export default function BillsPage() {
                 <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
                   <Receipt className="w-5 h-5 text-violet-400" />
                 </div>
-                <Badge className="badge-amber text-[10px]">{billCount} bill{,billCount !== 1 ? 's' : ''}</Badge>
+                <Badge className="badge-amber text-[10px]">{billCount} bill{billCount !== 1 ? 's' : ''}</Badge>
               </div>
               <p className="text-2xl font-bold number-tick">{billCount}</p>
               <p className="text-xs text-muted-foreground mt-1">Active Recurring Bills</p>

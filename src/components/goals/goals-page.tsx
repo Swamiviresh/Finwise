@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useAppStore } from '@/store/use-app-store'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Plus, Trash2, PartyPopper } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog'
+import { Plus, Trash2, PartyPopper, PiggyBank, Wallet } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format, differenceInDays, differenceInMonths } from 'date-fns'
 import { toast } from 'sonner'
@@ -16,13 +16,21 @@ function fmt(n: number) { return new Intl.NumberFormat('en-US', { style: 'curren
 const EMOJIS = ['🎯', '💻', '✈️', '📈', '🚗', '🏠', '🎓', '💎', '🛡️', '📱', '🎮', '🎁']
 const COLORS = ['#10b981', '#06b6d4', '#f59e0b', '#8b5cf6', '#f43f5e']
 
+const MILESTONES = [25, 50, 75, 100] as const
+
+interface ContributionRecord {
+  amount: number
+  date: string
+}
+
 export default function GoalsPage() {
   const { user, goals, setGoals } = useAppStore()
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [addFundOpen, setAddFundOpen] = useState<string | null>(null)
+  const [addFundGoalId, setAddFundGoalId] = useState<string | null>(null)
   const [fundAmount, setFundAmount] = useState('')
   const [form, setForm] = useState({ title: '', targetAmount: '', deadline: '', icon: '🎯', color: '#10b981' })
   const [celebration, setCelebration] = useState<string | null>(null)
+  const [contributions, setContributions] = useState<Record<string, ContributionRecord>>({})
 
   useEffect(() => {
     if (user?.id) fetch(`/api/goals?userId=${user.id}`).then(r => r.json()).then(setGoals).catch(console.error)
@@ -44,25 +52,36 @@ export default function GoalsPage() {
     } catch { toast.error('Failed') }
   }
 
-  const handleAddFunds = async (goalId: string) => {
+  const handleAddFunds = useCallback(async (goalId: string) => {
     const goal = goals.find(g => g.id === goalId)
-    if (!goal || !fundAmount) return
-    const newAmount = goal.currentAmount + parseFloat(fundAmount)
+    if (!goal || !fundAmount || parseFloat(fundAmount) <= 0) return
     try {
-      await fetch('/api/goals', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: goalId, currentAmount: newAmount }) })
+      const formData = new FormData()
+      formData.append('goalId', goalId)
+      formData.append('amount', fundAmount)
+      await fetch('/api/goals', { method: 'POST', body: formData })
       const data = await fetch(`/api/goals?userId=${user.id}`).then(r => r.json())
       setGoals(data)
-      setAddFundOpen(null)
+
+      // Track contribution locally
+      const addAmt = parseFloat(fundAmount)
+      setContributions(prev => ({
+        ...prev,
+        [goalId]: { amount: addAmt, date: new Date().toISOString() },
+      }))
+
+      const newTotal = goal.currentAmount + addAmt
+      setAddFundGoalId(null)
       setFundAmount('')
-      if (newAmount >= goal.targetAmount) {
+      if (newTotal >= goal.targetAmount) {
         setCelebration(goalId)
         setTimeout(() => setCelebration(null), 3000)
         toast.success('🎉 Goal completed!')
       } else {
-        toast.success(`Added ${fmt(parseFloat(fundAmount))} to ${goal.title}`)
+        toast.success(`Added ${fmt(addAmt)} to ${goal.title}`)
       }
-    } catch { toast.error('Failed') }
-  }
+    } catch { toast.error('Failed to add funds') }
+  }, [fundAmount, goals, setGoals, user])
 
   const handleDelete = async (id: string) => {
     try {
@@ -70,6 +89,22 @@ export default function GoalsPage() {
       setGoals(goals.filter(g => g.id !== id))
       toast.success('Goal deleted')
     } catch { toast.error('Failed') }
+  }
+
+  const getDeadlineText = (deadline: string) => {
+    const now = new Date()
+    const target = new Date(deadline)
+    const days = differenceInDays(target, now)
+
+    if (days > 0) {
+      if (days === 1) return '1 day left'
+      if (days <= 30) return `${days} days left`
+      const months = differenceInMonths(target, now)
+      if (months > 0) return `${months} month${months > 1 ? 's' : ''} left`
+      return `${days} days left`
+    }
+    if (days === 0) return 'Due today'
+    return `${Math.abs(days)} days overdue`
   }
 
   return (
@@ -130,8 +165,9 @@ export default function GoalsPage() {
           {goals.map((g, i) => {
             const pct = Math.round((g.currentAmount / g.targetAmount) * 100)
             const isComplete = g.currentAmount >= g.targetAmount
+            const deadlineText = g.deadline ? getDeadlineText(g.deadline) : null
             const daysLeft = g.deadline ? differenceInDays(new Date(g.deadline), new Date()) : null
-            const monthsLeft = g.deadline ? differenceInMonths(new Date(g.deadline), new Date()) : null
+            const contribution = contributions[g.id]
 
             return (
               <motion.div key={g.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ delay: i * 0.06 }}>
@@ -151,9 +187,24 @@ export default function GoalsPage() {
                       </button>
                     </div>
 
+                    {/* Progress bar with milestone indicators */}
                     <div className="mb-3">
-                      <div className="h-3 bg-white/5 rounded-full overflow-hidden mb-2">
+                      <div className="relative h-3 bg-white/5 rounded-full overflow-hidden mb-2">
                         <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(pct, 100)}%` }} transition={{ duration: 0.8 }} className="h-full rounded-full" style={{ background: g.color }} />
+                        {/* Milestone tick marks */}
+                        {MILESTONES.map(ms => {
+                          const left = `${ms}%`
+                          const reached = pct >= ms
+                          return (
+                            <div
+                              key={ms}
+                              className="absolute top-0 bottom-0 flex flex-col items-center justify-center"
+                              style={{ left, transform: 'translateX(-50%)' }}
+                            >
+                              <div className={`w-0.5 h-3 ${reached ? 'bg-white/50' : 'bg-white/10'} transition-colors`} />
+                            </div>
+                          )
+                        })}
                       </div>
                       <div className="flex justify-between text-xs text-muted-foreground">
                         <span>{fmt(g.currentAmount)} / {fmt(g.targetAmount)}</span>
@@ -161,24 +212,89 @@ export default function GoalsPage() {
                       </div>
                     </div>
 
+                    {/* Deadline + Add Funds */}
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">
-                        {daysLeft !== null ? (daysLeft > 0 ? `${daysLeft} days remaining` : 'Overdue') : monthsLeft !== null ? `${monthsLeft} months remaining` : 'No deadline'}
+                      <span className={`text-xs ${deadlineText && daysLeft !== null && daysLeft < 0 ? 'text-rose-400' : 'text-muted-foreground'}`}>
+                        {deadlineText || 'No deadline'}
                       </span>
                       {!isComplete && (
-                        <Button size="sm" variant="ghost" className="text-xs h-7 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10" onClick={() => { setAddFundOpen(g.id); setFundAmount('') }}>
-                          + Add Funds
-                        </Button>
+                        <Dialog open={addFundGoalId === g.id} onOpenChange={(open) => { if (!open) { setAddFundGoalId(null); setFundAmount('') } else { setAddFundGoalId(g.id); setFundAmount('') } }}>
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="ghost" className="text-xs h-7 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10">
+                              <Wallet className="w-3 h-3 mr-1" /> Add Funds
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="glass border-0 sm:max-w-sm">
+                            <DialogHeader>
+                              <DialogTitle className="flex items-center gap-2">
+                                <span className="text-lg">{g.icon}</span>
+                                Add Funds to {g.title}
+                              </DialogTitle>
+                              <DialogDescription>
+                                Current: {fmt(g.currentAmount)} of {fmt(g.targetAmount)} ({pct}%)
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-2">
+                              <div className="space-y-2">
+                                <Label>Amount ($)</Label>
+                                <div className="relative">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                                  <Input
+                                    type="number"
+                                    placeholder="0"
+                                    value={fundAmount}
+                                    onChange={e => setFundAmount(e.target.value)}
+                                    className="glass pl-7"
+                                    autoFocus
+                                    min="1"
+                                    step="any"
+                                  />
+                                </div>
+                                {fundAmount && parseFloat(fundAmount) > 0 && (
+                                  <p className="text-xs text-muted-foreground">
+                                    New total: {fmt(g.currentAmount + parseFloat(fundAmount))} ({Math.min(Math.round(((g.currentAmount + parseFloat(fundAmount)) / g.targetAmount) * 100), 100)}%)
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex gap-2">
+                                {[10, 50, 100, 500].map(quick => (
+                                  <button
+                                    key={quick}
+                                    onClick={() => setFundAmount(String(quick))}
+                                    className="flex-1 text-xs py-1.5 rounded-lg glass hover:bg-emerald-500/10 text-muted-foreground hover:text-emerald-400 transition-colors font-medium"
+                                  >
+                                    ${quick}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <Button
+                                variant="outline"
+                                className="glass"
+                                onClick={() => { setAddFundGoalId(null); setFundAmount('') }}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                onClick={() => handleAddFunds(g.id)}
+                                disabled={!fundAmount || parseFloat(fundAmount) <= 0}
+                                className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0"
+                              >
+                                Add Funds
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
                       )}
                     </div>
 
-                    {addFundOpen === g.id && (
-                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="mt-3 pt-3 border-t border-border/30">
-                        <div className="flex gap-2">
-                          <Input type="number" placeholder="Amount" value={fundAmount} onChange={e => setFundAmount(e.target.value)} className="glass h-8 text-sm" autoFocus />
-                          <Button size="sm" onClick={() => handleAddFunds(g.id)} className="h-8 bg-emerald-500 hover:bg-emerald-600 text-white border-0 text-xs px-3">Add</Button>
-                        </div>
-                      </motion.div>
+                    {/* Contribution History */}
+                    {contribution && (
+                      <p className="text-xs text-muted-foreground/70 mt-2 flex items-center gap-1">
+                        <Wallet className="w-3 h-3" />
+                        Last contribution: {fmt(contribution.amount)} on {format(new Date(contribution.date), 'MMM d')}
+                      </p>
                     )}
 
                     {/* Celebration */}
@@ -199,10 +315,21 @@ export default function GoalsPage() {
           })}
         </AnimatePresence>
         {goals.length === 0 && (
-          <div className="col-span-full text-center py-16">
-            <p className="text-4xl mb-3">🎯</p>
-            <p className="text-muted-foreground">No goals yet</p>
-            <p className="text-sm text-muted-foreground mt-1">Create your first savings goal to get started</p>
+          <div className="col-span-full text-center py-20">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 mb-5">
+              <PiggyBank className="w-10 h-10 text-emerald-400/70" />
+            </div>
+            <p className="text-4xl mb-4">🐷</p>
+            <h3 className="text-lg font-semibold text-foreground/90 mb-1">Start Your Savings Journey</h3>
+            <p className="text-muted-foreground max-w-sm mx-auto">
+              Set your first financial goal and watch your savings grow. Every dollar brings you closer to your dreams!
+            </p>
+            <Button
+              onClick={() => setDialogOpen(true)}
+              className="mt-5 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0"
+            >
+              <Plus className="w-4 h-4 mr-2" /> Create First Goal
+            </Button>
           </div>
         )}
       </div>

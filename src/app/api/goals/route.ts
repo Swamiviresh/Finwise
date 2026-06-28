@@ -22,6 +22,37 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const contentType = req.headers.get('content-type') || ''
+
+    // Handle add-funds via FormData
+    if (contentType.includes('multipart/form-data') || contentType.includes('application/x-www-form-urlencoded')) {
+      const formData = await req.formData()
+      const goalId = formData.get('goalId') as string | null
+      const amount = formData.get('amount') as string | null
+
+      if (!goalId || !amount) {
+        return NextResponse.json({ error: 'goalId and amount are required' }, { status: 400 })
+      }
+
+      const existing = await db.goal.findUnique({ where: { id: goalId } })
+      if (!existing) {
+        return NextResponse.json({ error: 'Goal not found' }, { status: 404 })
+      }
+
+      const addAmount = parseFloat(amount)
+      if (isNaN(addAmount) || addAmount <= 0) {
+        return NextResponse.json({ error: 'Invalid amount' }, { status: 400 })
+      }
+
+      const updated = await db.goal.update({
+        where: { id: goalId },
+        data: { currentAmount: existing.currentAmount + addAmount },
+      })
+
+      return NextResponse.json(updated)
+    }
+
+    // Handle goal creation via JSON
     const data = await req.json()
     const { userId, title, targetAmount, deadline, icon, color } = data
 

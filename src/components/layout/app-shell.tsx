@@ -18,6 +18,8 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import QuickExpenseFab from '@/components/shared/quick-expense-fab'
+import KeyboardShortcuts from '@/components/layout/keyboard-shortcuts'
+import NotificationToasts from '@/components/layout/notification-toast'
 
 const CATEGORY_COLORS: Record<string, string> = {
   Food: '#34d399', Rent: '#22d3ee', Shopping: '#fbbf24', Healthcare: '#fb7185',
@@ -95,7 +97,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             <button key={item.view} onClick={() => handleNav(item.view)}
               className={cn(
                 'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative group',
-                active ? 'bg-emerald-500/10 text-emerald-400' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
+                active ? 'bg-emerald-500/10 text-emerald-400' : 'text-muted-foreground hover:text-foreground hover-surface'
               )}>
               {active && <motion.div layoutId="nav-active" className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-gradient-to-b from-emerald-500 to-cyan-500 rounded-r-full" />}
               <item.icon className="w-5 h-5 shrink-0" />
@@ -119,7 +121,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             <button key={item.view} onClick={() => handleNav(item.view)}
               className={cn(
                 'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all',
-                active ? 'bg-emerald-500/10 text-emerald-400 font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
+                active ? 'bg-emerald-500/10 text-emerald-400 font-medium' : 'text-muted-foreground hover:text-foreground hover-surface'
               )}>
               <item.icon className="w-5 h-5" />
               <span>{item.label}</span>
@@ -140,7 +142,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             <p className="text-sm font-medium truncate">{user?.name || 'User'}</p>
             <p className="text-xs text-muted-foreground truncate">{user?.email || ''}</p>
           </div>
-          <button onClick={handleLogout} className="p-1.5 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-rose-400 transition-colors" title="Logout">
+          <button onClick={handleLogout} className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground hover:text-rose-400 transition-colors" title="Logout">
             <LogOut className="w-4 h-4" />
           </button>
         </div>
@@ -233,7 +235,7 @@ function GlobalSearch() {
           className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-foreground/30"
         />
         {query && (
-          <button onClick={() => { setQuery(''); setOpen(false); inputRef.current?.focus() }} className="p-0.5 rounded hover:bg-white/10">
+          <button onClick={() => { setQuery(''); setOpen(false); inputRef.current?.focus() }} className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10">
             <X className="w-3.5 h-3.5 text-foreground/40" />
           </button>
         )}
@@ -266,7 +268,7 @@ function GlobalSearch() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.03, duration: 0.15 }}
                     onClick={() => handleSelect(result)}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-white/5 transition-colors text-left group"
+                    className="w-full flex items-center gap-3 p-2.5 rounded-lg hover-surface transition-colors text-left group"
                   >
                     <div
                       className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
@@ -347,10 +349,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {/* Header */}
         <header className="h-16 border-b border-border/30 glass-strong flex items-center justify-between px-4 md:px-6 shrink-0">
           <div className="flex items-center gap-3">
-            <button onClick={() => setMobileOpen(true)} className="md:hidden p-2 rounded-lg hover:bg-white/5">
+            <button onClick={() => setMobileOpen(true)} className="md:hidden p-2 rounded-lg hover-surface">
               <Menu className="w-5 h-5" />
             </button>
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="hidden md:block p-2 rounded-lg hover:bg-white/5">
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="hidden md:block p-2 rounded-lg hover-surface">
               <Menu className="w-5 h-5" />
             </button>
             <div>
@@ -360,7 +362,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2">
             <GlobalSearch />
             <div className="relative">
-            <button onClick={() => setNotifOpen(!notifOpen)} className="relative p-2 rounded-lg hover:bg-white/5 transition-colors">
+            <button onClick={() => setNotifOpen(!notifOpen)} className="relative p-2 rounded-lg hover-surface transition-colors">
               <Bell className="w-5 h-5 text-muted-foreground" />
               {overBudgets.length > 0 && (
                 <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-1 right-1 w-4 h-4 bg-rose-500 rounded-full flex items-center justify-center">
@@ -377,7 +379,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     {overBudgets.map(b => {
                       const pct = Math.round((b.spent / b.limit) * 100)
                       return (
-                        <div key={b.id} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-white/5 transition-colors">
+                        <div key={b.id} className="flex items-center justify-between p-2.5 rounded-lg hover-surface transition-colors">
                           <div className="flex items-center gap-2">
                             <div className={`w-2 h-2 rounded-full ${pct > 95 ? 'bg-rose-400 animate-breathe' : 'bg-amber-400'}`} />
                             <span className="text-sm">{b.category}</span>
@@ -395,7 +397,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </AnimatePresence>
           </div>
             {mounted && (
-              <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-2 rounded-lg hover:bg-white/5 transition-colors">
+              <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-2 rounded-lg hover-surface transition-colors">
                 {theme === 'dark' ? <Sun className="w-5 h-5 text-muted-foreground" /> : <Moon className="w-5 h-5 text-muted-foreground" />}
               </button>
             )}
@@ -418,6 +420,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </AnimatePresence>
         </main>
         <QuickExpenseFab />
+        <KeyboardShortcuts />
+        <NotificationToasts />
       </div>
     </div>
   )

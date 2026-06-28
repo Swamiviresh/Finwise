@@ -19,7 +19,7 @@ import SecurityPage from '@/components/settings/security-page'
 import BillsPage from '@/components/bills/bills-page'
 
 export default function Home() {
-  const { currentView, isAuthenticated, hasCompletedOnboarding, setHasCompletedOnboarding } = useAppStore()
+  const { currentView, isAuthenticated, hasCompletedOnboarding, setHasCompletedOnboarding, setView, setUserId, setUser, login } = useAppStore()
 
   // Sync onboarding state from localStorage (fixes SSR hydration issue)
   useEffect(() => {
@@ -28,6 +28,12 @@ export default function Home() {
       if (stored === 'true') setHasCompletedOnboarding(true)
     }
   }, [isAuthenticated, hasCompletedOnboarding, setHasCompletedOnboarding])
+
+  // Expose store for automation/testing
+  useEffect(() => {
+    const state = useAppStore.getState()
+    ;(window as any).__finwise = { setView: state.setView, getState: useAppStore.getState }
+  }, [])
 
   // Public views (no shell)
   if (!isAuthenticated) {

@@ -362,7 +362,7 @@ export default function OnboardingWizard() {
   const handleDone = () => { setHasCompletedOnboarding(true) }
 
   return (
-    <div className="min-h-screen mesh-bg-enhanced flex items-center justify-center p-4">
+    <div className="dark min-h-screen mesh-bg-enhanced flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
         {/* Progress bar */}
         <div className="flex items-center gap-3 mb-6">

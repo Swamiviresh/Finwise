@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useAppStore } from '@/store/use-app-store'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { TrendingUp, TrendingDown, Wallet, Heart, Lightbulb, ArrowUpRight, ArrowDownRight, ChevronRight, AlertTriangle, Sparkles, Minus, BarChart3, Sun, Moon, CloudSun } from 'lucide-react'
@@ -13,6 +14,8 @@ import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
 import HealthScoreRing from './health-score-ring'
 import ActivityFeed from './activity-feed'
 import SpendingCalendar from './spending-calendar'
+import NetWorthTracker from './net-worth-tracker'
+import SmartInsights from './smart-insights'
 
 const CATEGORY_COLORS: Record<string, string> = {
   Food: '#34d399', Rent: '#22d3ee', Shopping: '#fbbf24', Healthcare: '#fb7185',
@@ -157,7 +160,7 @@ export default function DashboardPage() {
               {new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 18 ? 'Good afternoon' : 'Good evening'},{' '}
               <span className="gradient-text">{user?.name?.split(' ')[0] || 'there'}</span>
             </h2>
-            <p className="text-sm text-foreground/60 mt-0.5">
+            <p className="text-sm text-foreground/70 mt-0.5">
               {new Date().getHours() < 12
                 ? "Here's your financial overview for today. Start strong!"
                 : new Date().getHours() < 18
@@ -168,7 +171,7 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <div className="text-right hidden sm:block">
-            <p className="text-xs text-foreground/50">{format(new Date(), 'EEEE, MMMM d')}</p>
+            <p className="text-xs text-foreground/60">{format(new Date(), 'EEEE, MMMM d')}</p>
             <p className="text-xs text-foreground/40">{format(new Date(), 'yyyy')}</p>
           </div>
           <div className="pulse-dot" />
@@ -268,7 +271,7 @@ export default function DashboardPage() {
                   <div key={c.name} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full" style={{ background: CATEGORY_COLORS[c.name] || '#94a3b8' }} />
-                      <span className="text-xs text-foreground/80 truncate max-w-[72px]" title={c.name}>{c.name}</span>
+                      <span className="text-xs text-foreground/80 truncate max-w-[100px]" title={c.name}>{c.name}</span>
                     </div>
                     <span className="font-medium text-xs tabular-nums">{formatCurrency(c.value)}</span>
                   </div>
@@ -314,6 +317,11 @@ export default function DashboardPage() {
         </AnimatedCard>
       </div>
 
+      {/* Net Worth Tracker */}
+      <AnimatedCard index={14}>
+        <NetWorthTracker />
+      </AnimatedCard>
+
       {/* Bottom Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Recent Transactions */}
@@ -330,20 +338,39 @@ export default function DashboardPage() {
                 {recentExpenses.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-8">No transactions this month</p>
                 ) : recentExpenses.map(e => (
-                  <div key={e.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${CATEGORY_COLORS[e.category] || '#94a3b8'}15` }}>
-                        <span className="text-xs font-bold" style={{ color: CATEGORY_COLORS[e.category] || '#94a3b8' }}>
-                          {e.category[0]}
-                        </span>
+                  <Popover key={e.id}>
+                    <PopoverTrigger asChild>
+                      <div className="flex items-center justify-between cursor-pointer hover:bg-white/5 rounded-lg p-2 -mx-2 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${CATEGORY_COLORS[e.category] || '#94a3b8'}15` }}>
+                            <span className="text-xs font-bold" style={{ color: CATEGORY_COLORS[e.category] || '#94a3b8' }}>
+                              {e.category[0]}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">{e.title}</p>
+                            <p className="text-xs text-muted-foreground">{format(new Date(e.date), 'MMM d')}</p>
+                          </div>
+                        </div>
+                        <span className="text-sm font-medium text-rose-400">-{formatCurrency(e.amount)}</span>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium">{e.title}</p>
-                        <p className="text-xs text-muted-foreground">{format(new Date(e.date), 'MMM d')}</p>
+                    </PopoverTrigger>
+                    <PopoverContent className="glass border-0 w-72 p-4">
+                      <div className="space-y-3">
+                        <p className="font-bold text-base">{e.title}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: CATEGORY_COLORS[e.category] || '#94a3b8' }} />
+                          <span className="text-sm text-foreground/80">{e.category}</span>
+                          {e.isRecurring && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-amber-500/30 text-amber-400 ml-auto">Recurring</Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{format(new Date(e.date), 'MMMM d, yyyy')}</p>
+                        <p className="text-2xl font-bold text-rose-400">-{formatCurrency(e.amount)}</p>
+                        <p className="text-sm text-muted-foreground">{e.description || 'No description'}</p>
                       </div>
-                    </div>
-                    <span className="text-sm font-medium text-rose-400">-{formatCurrency(e.amount)}</span>
-                  </div>
+                    </PopoverContent>
+                  </Popover>
                 ))}
               </div>
             </CardContent>
@@ -506,6 +533,24 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <SpendingPatterns expenses={expenses} incomes={incomes} />
+          </CardContent>
+        </Card>
+      </AnimatedCard>
+
+      {/* Smart Insights */}
+      <AnimatedCard index={15}>
+        <Card className="glass border-0">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-emerald-500/10 flex items-center justify-center">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              </div>
+              Smart Insights
+              <Badge variant="secondary" className="text-[10px] bg-emerald-500/10 text-emerald-400 border-0 ml-auto">AI Powered</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SmartInsights />
           </CardContent>
         </Card>
       </AnimatedCard>
