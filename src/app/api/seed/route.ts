@@ -60,7 +60,7 @@ export async function POST() {
         id: userId,
         email: 'demo@finwise.ai',
         name: 'Alex Morgan',
-        passwordHash: 'demo_hashed_password',
+        passwordHash: Buffer.from('demo123').toString('base64'),
         currency: 'USD',
       },
     })

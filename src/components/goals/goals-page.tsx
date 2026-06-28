@@ -1,212 +1,67 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, Wallet, Target, TrendingUp, X, PartyPopper } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useAppStore } from '@/store/use-app-store'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { useAppStore, type Goal } from '@/store/use-app-store'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Plus, Trash2, PartyPopper } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { format, differenceInDays, differenceInMonths } from 'date-fns'
 import { toast } from 'sonner'
-import { differenceInMonths, format } from 'date-fns'
 
-const EMOJI_OPTIONS = ['🎯', '💻', '✈️', '📈', '🚗', '🏠', '🎓', '💎', '🛡️', '💰', '🎁', '🏖️']
-const COLOR_OPTIONS = ['#10b981', '#06b6d4', '#f59e0b', '#8b5cf6', '#f43f5e', '#ec4899', '#14b8a6', '#f97316']
-
-function ConfettiParticle({ color, delay }: { color: string; delay: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 1, y: 0, x: 0, scale: 1, rotate: 0 }}
-      animate={{
-        opacity: 0,
-        y: [0, -80, 60, 120],
-        x: [0, (Math.random() - 0.5) * 120, (Math.random() - 0.5) * 160],
-        scale: [1, 1.2, 0.6, 0.2],
-        rotate: [0, 180, 360, 540],
-      }}
-      transition={{ duration: 1.8, delay, ease: 'easeOut' }}
-      className="absolute w-2 h-2 rounded-full pointer-events-none"
-      style={{ backgroundColor: color }}
-    />
-  )
-}
-
-function GoalCard({ goal, onDelete, onAddFunds, celebrate }: {
-  goal: Goal
-  onDelete: (id: string) => void
-  onAddFunds: (goal: Goal) => void
-  celebrate: boolean
-}) {
-  const progress = Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100))
-  const isComplete = progress >= 100
-
-  let deadlineText = ''
-  if (goal.deadline) {
-    const months = differenceInMonths(new Date(goal.deadline), new Date())
-    if (months < 0) deadlineText = 'Overdue'
-    else if (months === 0) deadlineText = 'Due this month'
-    else deadlineText = `${months} month${months > 1 ? 's' : ''} remaining`
-  }
-
-  const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9, y: -10 }}
-      transition={{ duration: 0.3 }}
-      className="glass rounded-2xl p-5 card-hover relative overflow-hidden group"
-      style={{ borderLeft: `4px solid ${goal.color}` }}
-    >
-      {/* Confetti celebration */}
-      <AnimatePresence>
-        {celebrate && (
-          <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center">
-            {Array.from({ length: 20 }).map((_, i) => (
-              <ConfettiParticle
-                key={i}
-                color={COLOR_OPTIONS[i % COLOR_OPTIONS.length]}
-                delay={i * 0.03}
-              />
-            ))}
-            <motion.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.5 }}
-              className="relative z-10 flex flex-col items-center gap-2 bg-background/80 backdrop-blur-sm rounded-2xl px-6 py-4"
-            >
-              <PartyPopper className="size-8 text-amber-500" />
-              <span className="text-sm font-semibold text-foreground">Goal Reached! 🎉</span>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Delete button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => onDelete(goal.id)}
-        className="absolute top-3 right-3 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10"
-      >
-        <Trash2 className="size-3.5" />
-      </Button>
-
-      {/* Icon & Title */}
-      <div className="flex items-start gap-3 mb-4">
-        <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
-          style={{ backgroundColor: goal.color + '15' }}
-        >
-          {goal.icon}
-        </div>
-        <div className="min-w-0">
-          <h3 className="font-semibold text-foreground text-sm truncate">{goal.title}</h3>
-          {deadlineText && (
-            <p className={`text-xs mt-0.5 ${deadlineText === 'Overdue' ? 'text-rose-400' : 'text-muted-foreground'}`}>
-              {deadlineText}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Progress Bar */}
-      <div className="mb-3">
-        <div className="flex justify-between text-xs mb-1.5">
-          <span className="text-muted-foreground">
-            {fmt.format(goal.currentAmount)} / {fmt.format(goal.targetAmount)}
-          </span>
-          <span className="font-semibold" style={{ color: goal.color }}>
-            {progress}%
-          </span>
-        </div>
-        <div className="h-2.5 bg-white/5 rounded-full overflow-hidden">
-          <motion.div
-            className="h-full rounded-full"
-            style={{ backgroundColor: goal.color }}
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
-          />
-        </div>
-      </div>
-
-      {/* Remaining */}
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
-          {isComplete
-            ? '🎉 Goal complete!'
-            : `${fmt.format(goal.targetAmount - goal.currentAmount)} to go`}
-        </p>
-        {!isComplete && (
-          <Button
-            size="sm"
-            onClick={() => onAddFunds(goal)}
-            className="h-7 text-xs bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0 px-3"
-          >
-            <Wallet className="size-3 mr-1" />
-            Add Funds
-          </Button>
-        )}
-      </div>
-    </motion.div>
-  )
-}
+function fmt(n: number) { return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n) }
+const EMOJIS = ['🎯', '💻', '✈️', '📈', '🚗', '🏠', '🎓', '💎', '🛡️', '📱', '🎮', '🎁']
+const COLORS = ['#10b981', '#06b6d4', '#f59e0b', '#8b5cf6', '#f43f5e']
 
 export default function GoalsPage() {
-  const { goals, setGoals, user, addChatMessage } = useAppStore()
-  const [createOpen, setCreateOpen] = useState(false)
-  const [celebratingGoalId, setCelebratingGoalId] = useState<string | null>(null)
-  const [addFundsOpen, setAddFundsOpen] = useState(false)
-  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
-  const [addAmount, setAddAmount] = useState('')
-  const [form, setForm] = useState({
-    title: '',
-    targetAmount: '',
-    deadline: '',
-    icon: '🎯',
-    color: '#10b981',
-  })
+  const { user, goals, setGoals } = useAppStore()
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [addFundOpen, setAddFundOpen] = useState<string | null>(null)
+  const [fundAmount, setFundAmount] = useState('')
+  const [form, setForm] = useState({ title: '', targetAmount: '', deadline: '', icon: '🎯', color: '#10b981' })
+  const [celebration, setCelebration] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!user) return
-    fetch(`/api/goals?userId=${user.id}`)
-      .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data)) setGoals(data)
-      })
-      .catch(() => {})
-  }, [user, setGoals])
+    if (user?.id) fetch(`/api/goals?userId=${user.id}`).then(r => r.json()).then(setGoals).catch(console.error)
+  }, [user?.id, setGoals])
 
-  const totalSaved = useMemo(() => goals.reduce((s, g) => s + g.currentAmount, 0), [goals])
-  const totalTarget = useMemo(() => goals.reduce((s, g) => s + g.targetAmount, 0), [goals])
-  const overallProgress = totalTarget > 0 ? Math.round((totalSaved / totalTarget) * 100) : 0
+  const totalSaved = goals.reduce((s, g) => s + g.currentAmount, 0)
+  const totalTarget = goals.reduce((s, g) => s + g.targetAmount, 0)
+  const overallPct = totalTarget > 0 ? Math.round((totalSaved / totalTarget) * 100) : 0
 
-  const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
-
-  const handleCreate = async () => {
-    if (!user || !form.title || !form.targetAmount) {
-      toast.error('Please fill in title and target amount')
-      return
-    }
+  const handleAdd = async () => {
+    if (!user?.id || !form.title || !form.targetAmount) return
     try {
-      const res = await fetch('/api/goals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, userId: user.id }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      setGoals([...goals, data])
-      setCreateOpen(false)
+      await fetch('/api/goals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, ...form }) })
+      const data = await fetch(`/api/goals?userId=${user.id}`).then(r => r.json())
+      setGoals(data)
+      setDialogOpen(false)
       setForm({ title: '', targetAmount: '', deadline: '', icon: '🎯', color: '#10b981' })
-      toast.success('Goal created!')
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create goal')
-    }
+      toast.success('Goal created')
+    } catch { toast.error('Failed') }
+  }
+
+  const handleAddFunds = async (goalId: string) => {
+    const goal = goals.find(g => g.id === goalId)
+    if (!goal || !fundAmount) return
+    const newAmount = goal.currentAmount + parseFloat(fundAmount)
+    try {
+      await fetch('/api/goals', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: goalId, currentAmount: newAmount }) })
+      const data = await fetch(`/api/goals?userId=${user.id}`).then(r => r.json())
+      setGoals(data)
+      setAddFundOpen(null)
+      setFundAmount('')
+      if (newAmount >= goal.targetAmount) {
+        setCelebration(goalId)
+        setTimeout(() => setCelebration(null), 3000)
+        toast.success('🎉 Goal completed!')
+      } else {
+        toast.success(`Added ${fmt(parseFloat(fundAmount))} to ${goal.title}`)
+      }
+    } catch { toast.error('Failed') }
   }
 
   const handleDelete = async (id: string) => {
@@ -214,228 +69,143 @@ export default function GoalsPage() {
       await fetch(`/api/goals?id=${id}`, { method: 'DELETE' })
       setGoals(goals.filter(g => g.id !== id))
       toast.success('Goal deleted')
-    } catch {
-      toast.error('Failed to delete goal')
-    }
-  }
-
-  const handleAddFunds = async () => {
-    if (!selectedGoal || !addAmount || parseFloat(addAmount) <= 0) {
-      toast.error('Please enter a valid amount')
-      return
-    }
-    try {
-      const newAmount = selectedGoal.currentAmount + parseFloat(addAmount)
-      const res = await fetch('/api/goals', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: selectedGoal.id, currentAmount: newAmount }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      setGoals(goals.map(g => g.id === selectedGoal.id ? { ...g, currentAmount: newAmount } : g))
-
-      if (newAmount >= selectedGoal.targetAmount) {
-        setCelebratingGoalId(selectedGoal.id)
-        setTimeout(() => setCelebratingGoalId(null), 2500)
-        addChatMessage({
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          content: `🎉 **Congratulations!** You've reached your **${selectedGoal.title}** goal of ${fmt.format(selectedGoal.targetAmount)}! That's a huge milestone. Consider setting a new financial goal to keep the momentum going!`,
-          createdAt: new Date().toISOString(),
-        })
-      }
-
-      setAddFundsOpen(false)
-      setSelectedGoal(null)
-      setAddAmount('')
-      toast.success(`Added ${fmt.format(parseFloat(addAmount))} to ${selectedGoal.title}`)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to add funds')
-    }
+    } catch { toast.error('Failed') }
   }
 
   return (
-    <div className="space-y-6 h-full overflow-y-auto pr-1">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Savings Goals</h1>
-          <p className="text-sm text-muted-foreground mt-1">Track your financial targets and watch your savings grow</p>
+          <h2 className="text-2xl font-bold">Savings Goals</h2>
+          <p className="text-sm text-muted-foreground">Track progress towards your financial dreams</p>
         </div>
-        <Button
-          onClick={() => setCreateOpen(true)}
-          className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0 shrink-0"
-        >
-          <Plus className="size-4 mr-2" />
-          Create New Goal
-        </Button>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0">
+              <Plus className="w-4 h-4 mr-2" /> New Goal
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="glass border-0 sm:max-w-md">
+            <DialogHeader><DialogTitle>Create Savings Goal</DialogTitle></DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2"><Label>Goal Title</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Emergency Fund" className="glass" /></div>
+              <div className="space-y-2"><Label>Target Amount ($)</Label><Input type="number" value={form.targetAmount} onChange={e => setForm({ ...form, targetAmount: e.target.value })} className="glass" /></div>
+              <div className="space-y-2"><Label>Deadline (optional)</Label><Input type="date" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} className="glass" /></div>
+              <div className="space-y-2"><Label>Icon</Label>
+                <div className="flex gap-2 flex-wrap">
+                  {EMOJIS.map(e => (
+                    <button key={e} onClick={() => setForm({ ...form, icon: e })} className={`w-10 h-10 rounded-lg text-lg flex items-center justify-center transition-all ${form.icon === e ? 'bg-emerald-500/20 ring-1 ring-emerald-500' : 'glass hover:bg-white/10'}`}>{e}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2"><Label>Color</Label>
+                <div className="flex gap-2">
+                  {COLORS.map(c => (
+                    <button key={c} onClick={() => setForm({ ...form, color: c })} className={`w-8 h-8 rounded-full transition-all ${form.color === c ? 'ring-2 ring-offset-2 ring-offset-background' : ''}`} style={{ background: c, ringColor: c }} />
+                  ))}
+                </div>
+              </div>
+              <Button onClick={handleAdd} className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white border-0">Create Goal</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 stagger-children">
-        <div className="glass rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Wallet className="size-4 text-emerald-400" />
-            <span className="text-xs text-muted-foreground">Total Saved</span>
-          </div>
-          <p className="text-xl font-bold text-emerald-400 counter-animate">{fmt.format(totalSaved)}</p>
-        </div>
-        <div className="glass rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Target className="size-4 text-cyan-400" />
-            <span className="text-xs text-muted-foreground">Total Target</span>
-          </div>
-          <p className="text-xl font-bold text-cyan-400 counter-animate">{fmt.format(totalTarget)}</p>
-        </div>
-        <div className="glass rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <TrendingUp className="size-4 text-amber-400" />
-            <span className="text-xs text-muted-foreground">Overall Progress</span>
-          </div>
-          <p className="text-xl font-bold text-amber-400 counter-animate">{overallProgress}%</p>
-        </div>
+      {/* Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[
+          { label: 'Total Saved', value: fmt(totalSaved), color: 'text-emerald-400' },
+          { label: 'Total Target', value: fmt(totalTarget), color: 'text-cyan-400' },
+          { label: 'Overall Progress', value: `${overallPct}%`, color: 'text-violet-400' },
+        ].map((c, i) => (
+          <motion.div key={c.label} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
+            <Card className="glass border-0"><CardContent className="p-5"><p className="text-sm text-muted-foreground">{c.label}</p><p className={`text-xl font-bold mt-1 ${c.color}`}>{c.value}</p></CardContent></Card>
+          </motion.div>
+        ))}
       </div>
 
       {/* Goals Grid */}
-      {goals.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="glass rounded-2xl p-12 text-center"
-        >
-          <Target className="size-12 text-muted-foreground/30 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-1">No goals yet</h3>
-          <p className="text-sm text-muted-foreground">Create your first savings goal to start tracking your progress</p>
-        </motion.div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          <AnimatePresence mode="popLayout">
-            {goals.map((goal) => (
-              <GoalCard
-                key={goal.id}
-                goal={goal}
-                onDelete={handleDelete}
-                onAddFunds={(g) => { setSelectedGoal(g); setAddFundsOpen(true) }}
-                celebrate={celebratingGoalId === goal.id}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
-      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <AnimatePresence>
+          {goals.map((g, i) => {
+            const pct = Math.round((g.currentAmount / g.targetAmount) * 100)
+            const isComplete = g.currentAmount >= g.targetAmount
+            const daysLeft = g.deadline ? differenceInDays(new Date(g.deadline), new Date()) : null
+            const monthsLeft = g.deadline ? differenceInMonths(new Date(g.deadline), new Date()) : null
 
-      {/* Create Goal Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="glass-strong border-white/10 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Create New Goal</DialogTitle>
-            <DialogDescription>Set a savings target and start tracking your progress</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label className="text-xs">Title</Label>
-              <Input
-                value={form.title}
-                onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))}
-                placeholder="e.g. Emergency Fund"
-                className="bg-white/5 border-white/10"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs">Target Amount ($)</Label>
-              <Input
-                type="number"
-                value={form.targetAmount}
-                onChange={(e) => setForm(f => ({ ...f, targetAmount: e.target.value }))}
-                placeholder="10000"
-                className="bg-white/5 border-white/10"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs">Deadline</Label>
-              <Input
-                type="date"
-                value={form.deadline}
-                onChange={(e) => setForm(f => ({ ...f, deadline: e.target.value }))}
-                className="bg-white/5 border-white/10"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs">Icon</Label>
-              <div className="flex flex-wrap gap-2">
-                {EMOJI_OPTIONS.map((emoji) => (
-                  <button
-                    key={emoji}
-                    onClick={() => setForm(f => ({ ...f, icon: emoji }))}
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg transition-all ${
-                      form.icon === emoji ? 'bg-emerald-500/20 ring-2 ring-emerald-500 scale-110' : 'bg-white/5 hover:bg-white/10'
-                    }`}
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs">Color</Label>
-              <div className="flex flex-wrap gap-2">
-                {COLOR_OPTIONS.map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => setForm(f => ({ ...f, color }))}
-                    className={`w-8 h-8 rounded-full transition-all ${
-                      form.color === color ? 'ring-2 ring-white scale-110 ring-offset-2 ring-offset-background' : 'hover:scale-110'
-                    }`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setCreateOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreate} className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0">
-              Create Goal
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            return (
+              <motion.div key={g.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ delay: i * 0.06 }}>
+                <Card className="glass border-0 h-full relative overflow-hidden card-hover">
+                  <div className="absolute left-0 top-0 bottom-0 w-1" style={{ background: g.color }} />
+                  <CardContent className="p-5 pl-6">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">{g.icon}</span>
+                        <div>
+                          <h3 className="font-semibold">{g.title}</h3>
+                          {isComplete && <span className="text-xs text-emerald-400 font-medium">Completed! 🎉</span>}
+                        </div>
+                      </div>
+                      <button onClick={() => handleDelete(g.id)} className="p-1 rounded-lg hover:bg-rose-500/10 text-muted-foreground hover:text-rose-400 transition-colors">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
 
-      {/* Add Funds Dialog */}
-      <Dialog open={addFundsOpen} onOpenChange={setAddFundsOpen}>
-        <DialogContent className="glass-strong border-white/10 sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Add Funds</DialogTitle>
-            <DialogDescription>
-              Add money to &quot;{selectedGoal?.title}&quot;
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label className="text-xs">Amount ($)</Label>
-              <Input
-                type="number"
-                value={addAmount}
-                onChange={(e) => setAddAmount(e.target.value)}
-                placeholder="500"
-                className="bg-white/5 border-white/10"
-                autoFocus
-              />
-            </div>
-            {selectedGoal && (
-              <div className="text-xs text-muted-foreground">
-                Current: {fmt.format(selectedGoal.currentAmount)} / {fmt.format(selectedGoal.targetAmount)}
-              </div>
-            )}
+                    <div className="mb-3">
+                      <div className="h-3 bg-white/5 rounded-full overflow-hidden mb-2">
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(pct, 100)}%` }} transition={{ duration: 0.8 }} className="h-full rounded-full" style={{ background: g.color }} />
+                      </div>
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>{fmt(g.currentAmount)} / {fmt(g.targetAmount)}</span>
+                        <span className="font-medium" style={{ color: g.color }}>{pct}%</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">
+                        {daysLeft !== null ? (daysLeft > 0 ? `${daysLeft} days remaining` : 'Overdue') : monthsLeft !== null ? `${monthsLeft} months remaining` : 'No deadline'}
+                      </span>
+                      {!isComplete && (
+                        <Button size="sm" variant="ghost" className="text-xs h-7 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10" onClick={() => { setAddFundOpen(g.id); setFundAmount('') }}>
+                          + Add Funds
+                        </Button>
+                      )}
+                    </div>
+
+                    {addFundOpen === g.id && (
+                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="mt-3 pt-3 border-t border-border/30">
+                        <div className="flex gap-2">
+                          <Input type="number" placeholder="Amount" value={fundAmount} onChange={e => setFundAmount(e.target.value)} className="glass h-8 text-sm" autoFocus />
+                          <Button size="sm" onClick={() => handleAddFunds(g.id)} className="h-8 bg-emerald-500 hover:bg-emerald-600 text-white border-0 text-xs px-3">Add</Button>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Celebration */}
+                    <AnimatePresence>
+                      {celebration === g.id && (
+                        <motion.div initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+                          <div className="text-center">
+                            <PartyPopper className="w-10 h-10 text-emerald-400 mx-auto mb-1" />
+                            <p className="text-sm font-semibold text-emerald-400">Goal Achieved!</p>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )
+          })}
+        </AnimatePresence>
+        {goals.length === 0 && (
+          <div className="col-span-full text-center py-16">
+            <p className="text-4xl mb-3">🎯</p>
+            <p className="text-muted-foreground">No goals yet</p>
+            <p className="text-sm text-muted-foreground mt-1">Create your first savings goal to get started</p>
           </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => { setAddFundsOpen(false); setSelectedGoal(null) }}>Cancel</Button>
-            <Button onClick={handleAddFunds} className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0">
-              Add Funds
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        )}
+      </div>
     </div>
   )
 }

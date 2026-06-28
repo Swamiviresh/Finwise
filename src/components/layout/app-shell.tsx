@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState, useCallback, useSyncExternalStore } from 'react'
 import { useAppStore, type ViewType } from '@/store/use-app-store'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
@@ -123,10 +123,8 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { currentView, sidebarOpen, setSidebarOpen } = useAppStore()
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
+  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false)
   const [mobileOpen, setMobileOpen] = useState(false)
-
-  useEffect(() => { setMounted(true) }, [])
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

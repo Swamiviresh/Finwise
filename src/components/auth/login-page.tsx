@@ -23,6 +23,9 @@ export default function LoginPage() {
     setError('')
 
     try {
+      // Seed demo data first (creates/updates demo user)
+      await fetch('/api/seed', { method: 'POST' })
+      
       const res = await fetch('/api/auth', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -36,7 +39,6 @@ export default function LoginPage() {
       }
 
       setUser(data)
-      await fetch('/api/seed', { method: 'POST' })
       setView('dashboard')
     } catch {
       setError('Something went wrong')
