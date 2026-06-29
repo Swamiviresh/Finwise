@@ -126,8 +126,8 @@ export default function ExpensesPage() {
           { label: 'Top Category', value: topCat ? `${topCat[0]} (${fmt(topCat[1])})` : 'N/A', color: 'text-cyan-400' },
         ].map((c, i) => (
           <motion.div key={c.label} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
-            <Card className="glass border-0"><CardContent className="p-5">
-              <p className="text-sm text-muted-foreground">{c.label}</p>
+            <Card className="glass border-0 card-depth-1"><CardContent className="p-5">
+              <p className="text-xs text-secondary">{c.label}</p>
               <p className={`text-xl font-bold mt-1 ${c.color}`}>{c.value}</p>
             </CardContent></Card>
           </motion.div>

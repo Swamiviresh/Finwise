@@ -249,7 +249,7 @@ export default function SmartInsights({ compact = false }: SmartInsightsProps) {
                 <Icon className={`w-4 h-4 ${style.text}`} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-muted-foreground">{insight.title}</p>
+                <p className="text-xs text-secondary">{insight.title}</p>
                 <p className="text-sm font-bold mt-0.5 text-foreground">{insight.metric}</p>
               </div>
             </div>

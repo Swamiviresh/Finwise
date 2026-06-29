@@ -18,6 +18,8 @@ import SettingsPage from '@/components/settings/settings-page'
 import SecurityPage from '@/components/settings/security-page'
 import BillsPage from '@/components/bills/bills-page'
 import WalletsPage from '@/components/wallets/wallets-page'
+import InsightsPage from '@/components/insights/insights-page'
+import NotesPage from '@/components/notes/notes-page'
 
 export default function Home() {
   const { currentView, isAuthenticated, hasCompletedOnboarding, setHasCompletedOnboarding, setView, setUserId, setUser, login } = useAppStore()
@@ -62,7 +64,9 @@ export default function Home() {
       {currentView === 'bills' && <BillsPage />}
       {currentView === 'wallets' && <WalletsPage />}
       {currentView === 'reports' && <ReportsPage />}
+      {currentView === 'insights' && <InsightsPage />}
       {currentView === 'ai-coach' && <AICoachPage />}
+      {currentView === 'notes' && <NotesPage />}
       {currentView === 'settings' && <SettingsPage />}
       {currentView === 'security' && <SecurityPage />}
       </div>

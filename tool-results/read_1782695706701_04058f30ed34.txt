@@ -1,0 +1,561 @@
+   309→
+   310→    for (const e of expenses) {
+   311→      const d = new Date(e.date)
+   312→      if (d.getFullYear() === curYear && d.getMonth() === curMonth) {
+   313→        curMap[e.category] = (curMap[e.category] || 0) + e.amount
+   314→      }
+   315→      if (d.getFullYear() === prevYear && d.getMonth() === prevMonth) {
+   316→        prevMap[e.category] = (prevMap[e.category] || 0) + e.amount
+   317→      }
+   318→    }
+   319→
+   320→    const allCats = new Set([...Object.keys(curMap), ...Object.keys(prevMap)])
+   321→
+   322→    return Array.from(allCats)
+   323→      .map((cat) => {
+   324→        const cur = curMap[cat] || 0
+   325→        const prev = prevMap[cat] || 0
+   326→        const diff = cur - prev
+   327→        return {
+   328→          category: cat,
+   329→          current: cur,
+   330→          previous: prev,
+   331→          change: diff,
+   332→          percentChange: prev > 0 ? (diff / prev) * 100 : cur > 0 ? 100 : 0,
+   333→        }
+   334→      })
+   335→      .sort((a, b) => Math.abs(b.change) - Math.abs(a.change))
+   336→  }, [expenses])
+   337→
+   338→  // ─── 6. Spending Consistency Score ─────────────────────────────────────────
+   339→
+   340→  const consistencyScore = useMemo(() => {
+   341→    const now = new Date()
+   342→    const monthTotals: number[] = []
+   343→
+   344→    for (let i = 5; i >= 0; i--) {
+   345→      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+   346→      const yr = d.getFullYear()
+   347→      const mo = d.getMonth()
+   348→      const total = expenses
+   349→        .filter((e) => {
+   350→          const ed = new Date(e.date)
+   351→          return ed.getFullYear() === yr && ed.getMonth() === mo
+   352→        })
+   353→        .reduce((s, e) => s + e.amount, 0)
+   354→      monthTotals.push(total)
+   355→    }
+   356→
+   357→    if (monthTotals.length < 2) return 50
+   358→
+   359→    const mean = monthTotals.reduce((a, b) => a + b, 0) / monthTotals.length
+   360→    const variance =
+   361→      monthTotals.reduce((sum, v) => sum + (v - mean) ** 2, 0) / monthTotals.length
+   362→    const stdDev = Math.sqrt(variance)
+   363→
+   364→    // Coefficient of variation → 0 = perfectly consistent, 1+ = very inconsistent
+   365→    const cv = mean > 0 ? stdDev / mean : 1
+   366→
+   367→    // Map CV to 0-100 score: CV 0 → 100, CV 0.5+ → 0
+   368→    const score = Math.max(0, Math.min(100, 100 - cv * 200))
+   369→    return score
+   370→  }, [expenses])
+   371→
+   372→  // ─── Render ────────────────────────────────────────────────────────────────
+   373→
+   374→  return (
+   375→    <motion.div
+   376→      className="space-y-6 max-w-7xl mx-auto"
+   377→      variants={container}
+   378→      initial="hidden"
+   379→      animate="show"
+   380→    >
+   381→      {/* ── 1. Spending Trend Chart ─────────────────────────────────────────── */}
+   382→      <motion.div variants={item}>
+   383→        <Card className="glass card-depth-1 border-white/[0.06]">
+   384→          <CardHeader className="pb-2">
+   385→            <CardTitle className="text-base font-semibold flex items-center gap-2">
+   386→              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+   387→                <Activity className="w-4 h-4 text-emerald-400" />
+   388→              </div>
+   389→              Spending &amp; Income Trend
+   390→            </CardTitle>
+   391→            <p className="text-xs text-tertiary mt-1">Last 6 months overview</p>
+   392→          </CardHeader>
+   393→          <CardContent className="pt-0">
+   394→            <div className="h-72">
+   395→              <ResponsiveContainer width="100%" height="100%">
+   396→                <AreaChart data={trendData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+   397→                  <defs>
+   398→                    <linearGradient id="gradExpenses" x1="0" y1="0" x2="0" y2="1">
+   399→                      <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.35} />
+   400→                      <stop offset="100%" stopColor="#f43f5e" stopOpacity={0} />
+   401→                    </linearGradient>
+   402→                    <linearGradient id="gradIncome" x1="0" y1="0" x2="0" y2="1">
+   403→                      <stop offset="0%" stopColor="#10b981" stopOpacity={0.35} />
+   404→                      <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+   405→                    </linearGradient>
+   406→                  </defs>
+   407→                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+   408→                  <XAxis
+   409→                    dataKey="label"
+   410→                    tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 11 }}
+   411→                    axisLine={{ stroke: 'rgba(255,255,255,0.06)' }}
+   412→                    tickLine={false}
+   413→                  />
+   414→                  <YAxis
+   415→                    tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 11 }}
+   416→                    axisLine={false}
+   417→                    tickLine={false}
+   418→                    tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
+   419→                  />
+   420→                  <Tooltip content={<ChartTooltip />} />
+   421→                  <Area
+   422→                    type="monotone"
+   423→                    dataKey="expenses"
+   424→                    name="Expenses"
+   425→                    stroke="#f43f5e"
+   426→                    strokeWidth={2}
+   427→                    fill="url(#gradExpenses)"
+   428→                  />
+   429→                  <Area
+   430→                    type="monotone"
+   431→                    dataKey="income"
+   432→                    name="Income"
+   433→                    stroke="#10b981"
+   434→                    strokeWidth={2}
+   435→                    fill="url(#gradIncome)"
+   436→                  />
+   437→                </AreaChart>
+   438→              </ResponsiveContainer>
+   439→            </div>
+   440→          </CardContent>
+   441→        </Card>
+   442→      </motion.div>
+   443→
+   444→      {/* ── 2. Category Evolution + 3. Spending Velocity (side by side) ──── */}
+   445→      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+   446→        {/* Category Evolution */}
+   447→        <motion.div variants={item} className="lg:col-span-2">
+   448→          <Card className="glass card-depth-1 border-white/[0.06] h-full">
+   449→            <CardHeader className="pb-2">
+   450→              <CardTitle className="text-base font-semibold flex items-center gap-2">
+   451→                <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
+   452→                  <Trophy className="w-4 h-4 text-violet-400" />
+   453→                </div>
+   454→                Category Evolution
+   455→              </CardTitle>
+   456→              <p className="text-xs text-tertiary mt-1">Top 5 spending categories — 6 month trend</p>
+   457→            </CardHeader>
+   458→            <CardContent className="pt-0">
+   459→              <div className="space-y-4">
+   460→                {categoryEvolution.map((cat) => {
+   461→                  const isIncreasing =
+   462→                    cat.monthly.length >= 2 &&
+   463→                    cat.monthly[cat.monthly.length - 1] >= cat.monthly[cat.monthly.length - 2]
+   464→                  return (
+   465→                    <div
+   466→                      key={cat.category}
+   467→                      className="flex items-center gap-4 p-3 rounded-xl hover-glow-emerald transition-all duration-200 group"
+   468→                    >
+   469→                      <div
+   470→                        className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold"
+   471→                        style={{ background: `${cat.color}15`, color: cat.color }}
+   472→                      >
+   473→                        {cat.category.charAt(0)}
+   474→                      </div>
+   475→                      <div className="flex-1 min-w-0">
+   476→                        <div className="flex items-center justify-between mb-1">
+   477→                          <span className="text-sm font-medium truncate">{cat.category}</span>
+   478→                          <span className="text-sm font-semibold number-tick">{fmt(cat.total)}</span>
+   479→                        </div>
+   480→                        <div className="flex items-center gap-2">
+   481→                          <Sparkline data={cat.monthly} color={cat.color} />
+   482→                          <span
+   483→                            className={cn(
+   484→                              'text-[11px] font-medium flex items-center gap-0.5',
+   485→                              isIncreasing ? 'text-rose-400' : 'text-emerald-400'
+   486→                            )}
+   487→                          >
+   488→                            {isIncreasing ? (
+   489→                              <ArrowUpRight className="w-3 h-3" />
+   490→                            ) : (
+   491→                              <ArrowDownRight className="w-3 h-3" />
+   492→                            )}
+   493→                            {isIncreasing ? 'Up' : 'Down'} trend
+   494→                          </span>
+   495→                        </div>
+   496→                      </div>
+   497→                    </div>
+   498→                  )
+   499→                })}
+   500→                {categoryEvolution.length === 0 && (
+   501→                  <div className="flex flex-col items-center justify-center py-10 text-tertiary">
+   502→                    <Flame className="w-8 h-8 mb-2 opacity-30" />
+   503→                    <p className="text-sm">No expense data yet</p>
+   504→                  </div>
+   505→                )}
+   506→              </div>
+   507→            </CardContent>
+   508→          </Card>
+   509→        </motion.div>
+   510→
+   511→        {/* Spending Velocity */}
+   512→        <motion.div variants={item}>
+   513→          <Card className="glass card-depth-1 border-white/[0.06] h-full">
+   514→            <CardHeader className="pb-2">
+   515→              <CardTitle className="text-base font-semibold flex items-center gap-2">
+   516→                <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+   517→                  <Zap className="w-4 h-4 text-amber-400" />
+   518→                </div>
+   519→                Spending Velocity
+   520→              </CardTitle>
+   521→              <p className="text-xs text-tertiary mt-1">Last 3 months vs previous 3</p>
+   522→            </CardHeader>
+   523→            <CardContent className="pt-0 flex flex-col items-center justify-center flex-1 py-6">
+   524→              <div
+   525→                className={cn(
+   526→                  'w-24 h-24 rounded-2xl flex items-center justify-center mb-4',
+   527→                  spendingVelocity.change > 0
+   528→                    ? 'bg-rose-500/10'
+   529→                    : spendingVelocity.change < 0
+   530→                      ? 'bg-emerald-500/10'
+   531→                      : 'bg-white/5'
+   532→                )}
+   533→              >
+   534→                {spendingVelocity.change > 5 ? (
+   535→                  <TrendingUp className="w-10 h-10 text-rose-400" />
+   536→                ) : spendingVelocity.change < -5 ? (
+   537→                  <TrendingDown className="w-10 h-10 text-emerald-400" />
+   538→                ) : (
+   539→                  <DollarSign className="w-10 h-10 text-amber-400" />
+   540→                )}
+   541→              </div>
+   542→              <div className="text-center">
+   543→                <p
+   544→                  className={cn(
+   545→                    'text-2xl font-bold number-tick flex items-center justify-center gap-1.5',
+   546→                    spendingVelocity.change > 5
+   547→                      ? 'text-rose-400'
+   548→                      : spendingVelocity.change < -5
+   549→                        ? 'text-emerald-400'
+   550→                        : 'text-amber-400'
+   551→                  )}
+   552→                >
+   553→                  {spendingVelocity.change > 0 ? (
+   554→                    <ArrowUpRight className="w-5 h-5" />
+   555→                  ) : spendingVelocity.change < 0 ? (
+   556→                    <ArrowDownRight className="w-5 h-5" />
+   557→                  ) : null}
+   558→                  {Math.abs(spendingVelocity.change).toFixed(1)}%
+   559→                </p>
+   560→                <p className="text-sm text-secondary mt-1">
+   561→                  {spendingVelocity.change > 5
+   562→                    ? 'Spending is accelerating'
+   563→                    : spendingVelocity.change < -5
+   564→                      ? 'Spending is decelerating'
+   565→                      : 'Spending is stable'}
+   566→                </p>
+   567→              </div>
+   568→              <div className="grid grid-cols-2 gap-4 mt-6 w-full">
+   569→                <div className="text-center p-3 rounded-xl bg-white/[0.03]">
+   570→                  <p className="text-xs text-tertiary mb-1">Last 3 mo avg</p>
+   571→                  <p className="text-sm font-semibold number-tick">{fmt(spendingVelocity.avgLast)}</p>
+   572→                </div>
+   573→                <div className="text-center p-3 rounded-xl bg-white/[0.03]">
+   574→                  <p className="text-xs text-tertiary mb-1">Previous 3 mo avg</p>
+   575→                  <p className="text-sm font-semibold number-tick">{fmt(spendingVelocity.avgPrev)}</p>
+   576→                </div>
+   577→              </div>
+   578→            </CardContent>
+   579→          </Card>
+   580→        </motion.div>
+   581→      </div>
+   582→
+   583→      {/* ── 4. Top 5 Expenses + 5. MoM Changes (side by side) ─────────────── */}
+   584→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   585→        {/* Top 5 Expenses */}
+   586→        <motion.div variants={item}>
+   587→          <Card className="glass card-depth-1 border-white/[0.06] h-full">
+   588→            <CardHeader className="pb-2">
+   589→              <CardTitle className="text-base font-semibold flex items-center gap-2">
+   590→                <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center">
+   591→                  <Flame className="w-4 h-4 text-rose-400" />
+   592→                </div>
+   593→                Top 5 Expenses of All Time
+   594→              </CardTitle>
+   595→              <p className="text-xs text-tertiary mt-1">Highest single transactions</p>
+   596→            </CardHeader>
+   597→            <CardContent className="pt-0">
+   598→              <div className="space-y-2.5">
+   599→                {topExpenses.map((exp, i) => {
+   600→                  const color = CATEGORY_COLORS[exp.category] || '#94a3b8'
+   601→                  return (
+   602→                    <motion.div
+   603→                      key={exp.id}
+   604→                      initial={{ opacity: 0, x: -10 }}
+   605→                      animate={{ opacity: 1, x: 0 }}
+   606→                      transition={{ delay: 0.4 + i * 0.06, duration: 0.3 }}
+   607→                      className="flex items-center gap-3 p-3 rounded-xl hover-surface transition-colors group"
+   608→                    >
+   609→                      <span className="text-xs font-bold text-tertiary w-5 text-center shrink-0">
+   610→                        {i + 1}
+   611→                      </span>
+   612→                      <div
+   613→                        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+   614→                        style={{ background: `${color}15` }}
+   615→                      >
+   616→                        <span className="text-xs font-bold" style={{ color }}>
+   617→                          {exp.category.charAt(0)}
+   618→                        </span>
+   619→                      </div>
+   620→                      <div className="flex-1 min-w-0">
+   621→                        <p className="text-sm font-medium truncate group-hover:text-emerald-400 transition-colors">
+   622→                          {exp.title}
+   623→                        </p>
+   624→                        <div className="flex items-center gap-2 mt-0.5">
+   625→                          <Badge
+   626→                            variant="outline"
+   627→                            className="text-[10px] px-1.5 py-0 h-4 border-white/10 text-foreground/50 font-normal"
+   628→                            style={{ borderColor: `${color}30`, color }}
+   629→                          >
+   630→                            {exp.category}
+   631→                          </Badge>
+   632→                          <span className="text-[10px] text-tertiary">
+   633→                            {format(new Date(exp.date), 'MMM d, yyyy')}
+   634→                          </span>
+   635→                        </div>
+   636→                      </div>
+   637→                      <span className="text-sm font-semibold text-rose-400 number-tick shrink-0">
+   638→                        -{fmt(exp.amount)}
+   639→                      </span>
+   640→                    </motion.div>
+   641→                  )
+   642→                })}
+   643→                {topExpenses.length === 0 && (
+   644→                  <div className="flex flex-col items-center justify-center py-10 text-tertiary">
+   645→                    <Flame className="w-8 h-8 mb-2 opacity-30" />
+   646→                    <p className="text-sm">No expense data yet</p>
+   647→                  </div>
+   648→                )}
+   649→              </div>
+   650→            </CardContent>
+   651→          </Card>
+   652→        </motion.div>
+   653→
+   654→        {/* Month-over-Month Changes */}
+   655→        <motion.div variants={item}>
+   656→          <Card className="glass card-depth-1 border-white/[0.06] h-full">
+   657→            <CardHeader className="pb-2">
+   658→              <CardTitle className="text-base font-semibold flex items-center gap-2">
+   659→                <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+   660→                  <TrendingUp className="w-4 h-4 text-cyan-400" />
+   661→                </div>
+   662→                Month-over-Month Changes
+   663→              </CardTitle>
+   664→              <p className="text-xs text-tertiary mt-1">
+   665→                Category changes this month vs last month
+   666→              </p>
+   667→            </CardHeader>
+   668→            <CardContent className="pt-0">
+   669→              <div className="h-72">
+   670→                <ResponsiveContainer width="100%" height="100%">
+   671→                  <BarChart
+   672→                    data={momChanges}
+   673→                    layout="vertical"
+   674→                    margin={{ top: 4, right: 16, left: 0, bottom: 4 }}
+   675→                  >
+   676→                    <CartesianGrid
+   677→                      strokeDasharray="3 3"
+   678→                      stroke="rgba(255,255,255,0.04)"
+   679→                      horizontal={false}
+   680→                    />
+   681→                    <XAxis
+   682→                      type="number"
+   683→                      tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 11 }}
+   684→                      axisLine={false}
+   685→                      tickLine={false}
+   686→                      tickFormatter={(v: number) => `$${(Math.abs(v) / 1000).toFixed(1)}k`}
+   687→                    />
+   688→                    <YAxis
+   689→                      type="category"
+   690→                      dataKey="category"
+   691→                      tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11 }}
+   692→                      axisLine={false}
+   693→                      tickLine={false}
+   694→                      width={90}
+   695→                    />
+   696→                    <Tooltip
+   697→                      content={({ active, payload }) => {
+   698→                        if (!active || !payload?.[0]) return null
+   699→                        const d = payload[0].payload as (typeof momChanges)[number]
+   700→                        return (
+   701→                          <div className="glass rounded-lg border border-white/10 px-3 py-2 shadow-xl">
+   702→                            <p className="text-xs font-medium text-secondary mb-1">
+   703→                              {d.category}
+   704→                            </p>
+   705→                            <div className="text-xs space-y-0.5">
+   706→                              <div className="flex justify-between gap-4">
+   707→                                <span className="text-tertiary">This month</span>
+   708→                                <span className="font-semibold">{fmt(d.current)}</span>
+   709→                              </div>
+   710→                              <div className="flex justify-between gap-4">
+   711→                                <span className="text-tertiary">Last month</span>
+   712→                                <span className="font-semibold">{fmt(d.previous)}</span>
+   713→                              </div>
+   714→                              <div
+   715→                                className={cn(
+   716→                                  'flex justify-between gap-4 pt-1 border-t border-white/5',
+   717→                                  d.change > 0 ? 'text-rose-400' : 'text-emerald-400'
+   718→                                )}
+   719→                              >
+   720→                                <span>Change</span>
+   721→                                <span className="font-semibold">
+   722→                                  {d.change > 0 ? '+' : ''}
+   723→                                  {fmt(d.change)} ({d.percentChange > 0 ? '+' : ''}
+   724→                                  {d.percentChange.toFixed(0)}%)
+   725→                                </span>
+   726→                              </div>
+   727→                            </div>
+   728→                          </div>
+   729→                        )
+   730→                      }}
+   731→                    />
+   732→                    <Bar dataKey="change" radius={[0, 4, 4, 0]} barSize={14}>
+   733→                      {momChanges.map((entry, idx) => (
+   734→                        <rect key={idx} fill="transparent" />
+   735→                      ))}
+   736→                    </Bar>
+   737→                    {momChanges.map((entry, idx) => (
+   738→                      <Bar
+   739→                        key={idx}
+   740→                        dataKey="change"
+   741→                        fill={entry.change >= 0 ? '#f43f5e' : '#10b981'}
+   742→                        radius={[0, 4, 4, 0]}
+   743→                        barSize={14}
+   744→                        opacity={0.8}
+   745→                      />
+   746→                    ))}
+   747→                  </BarChart>
+   748→                </ResponsiveContainer>
+   749→              </div>
+   750→              {momChanges.length === 0 && (
+   751→                <div className="flex flex-col items-center justify-center py-10 text-tertiary">
+   752→                  <TrendingUp className="w-8 h-8 mb-2 opacity-30" />
+   753→                  <p className="text-sm">No comparative data yet</p>
+   754→                </div>
+   755→              )}
+   756→            </CardContent>
+   757→          </Card>
+   758→        </motion.div>
+   759→      </div>
+   760→
+   761→      {/* ── 6. Spending Consistency Score ─────────────────────────────────── */}
+   762→      <motion.div variants={item}>
+   763→        <Card className="glass card-depth-1 border-white/[0.06]">
+   764→          <CardHeader className="pb-2">
+   765→            <CardTitle className="text-base font-semibold flex items-center gap-2">
+   766→              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+   767→                <Activity className="w-4 h-4 text-emerald-400" />
+   768→              </div>
+   769→              Spending Consistency Score
+   770→            </CardTitle>
+   771→            <p className="text-xs text-tertiary mt-1">
+   772→              How stable your monthly spending is — low variance = high consistency
+   773→            </p>
+   774→          </CardHeader>
+   775→          <CardContent className="pt-0">
+   776→            <div className="flex flex-col sm:flex-row items-center gap-8 py-4">
+   777→              <ConsistencyRing score={consistencyScore} />
+   778→              <div className="flex-1 space-y-3">
+   779→                <p className="text-sm text-secondary leading-relaxed">
+   780→                  {consistencyScore >= 75
+   781→                    ? 'Your spending is very consistent month to month. You have strong financial discipline and predictable habits.'
+   782→                    : consistencyScore >= 50
+   783→                      ? 'Your spending shows moderate variation. Some months are higher than others, but overall patterns are reasonably stable.'
+   784→                      : consistencyScore >= 25
+   785→                        ? 'Your spending varies significantly between months. Consider reviewing your budget to identify what causes spikes.'
+   786→                        : 'Your spending is highly unpredictable. Large swings between months may indicate irregular expenses or impulse spending.'}
+   787→                </p>
+   788→                <div className="grid grid-cols-3 gap-3">
+   789→                  <div className="p-3 rounded-xl bg-white/[0.03] text-center">
+   790→                    <p className="text-[10px] text-tertiary mb-0.5">Avg Monthly</p>
+   791→                    <p className="text-sm font-semibold number-tick">
+   792→                      {fmt(
+   793→                        expenses.length > 0
+   794→                          ? (() => {
+   795→                              const now = new Date()
+   796→                              let sum = 0
+   797→                              let count = 0
+   798→                              for (let i = 5; i >= 0; i--) {
+   799→                                const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+   800→                                const total = expenses
+   801→                                  .filter((e) => {
+   802→                                    const ed = new Date(e.date)
+   803→                                    return ed.getFullYear() === d.getFullYear() && ed.getMonth() === d.getMonth()
+   804→                                  })
+   805→                                  .reduce((s, e) => s + e.amount, 0)
+   806→                                if (total > 0) {
+   807→                                  sum += total
+   808→                                  count++
+   809→                                }
+   810→                              }
+   811→                              return count > 0 ? sum / count : 0
+   812→                            })()
+   813→                          : 0
+   814→                      )}
+   815→                    </p>
+   816→                  </div>
+   817→                  <div className="p-3 rounded-xl bg-white/[0.03] text-center">
+   818→                    <p className="text-[10px] text-tertiary mb-0.5">Highest Month</p>
+   819→                    <p className="text-sm font-semibold number-tick">
+   820→                      {fmt(
+   821→                        (() => {
+   822→                          const now = new Date()
+   823→                          let maxVal = 0
+   824→                          for (let i = 5; i >= 0; i--) {
+   825→                            const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+   826→                            const total = expenses
+   827→                              .filter((e) => {
+   828→                                const ed = new Date(e.date)
+   829→                                return ed.getFullYear() === d.getFullYear() && ed.getMonth() === d.getMonth()
+   830→                              })
+   831→                              .reduce((s, e) => s + e.amount, 0)
+   832→                            maxVal = Math.max(maxVal, total)
+   833→                          }
+   834→                          return maxVal
+   835→                        })()
+   836→                      )}
+   837→                    </p>
+   838→                  </div>
+   839→                  <div className="p-3 rounded-xl bg-white/[0.03] text-center">
+   840→                    <p className="text-[10px] text-tertiary mb-0.5">Lowest Month</p>
+   841→                    <p className="text-sm font-semibold number-tick">
+   842→                      {fmt(
+   843→                        (() => {
+   844→                          const now = new Date()
+   845→                          let minVal = Infinity
+   846→                          for (let i = 5; i >= 0; i--) {
+   847→                            const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+   848→                            const total = expenses
+   849→                              .filter((e) => {
+   850→                                const ed = new Date(e.date)
+   851→                                return ed.getFullYear() === d.getFullYear() && ed.getMonth() === d.getMonth()
+   852→                              })
+   853→                              .reduce((s, e) => s + e.amount, 0)
+   854→                            minVal = Math.min(minVal, total)
+   855→                          }
+   856→                          return minVal === Infinity ? 0 : minVal
+   857→                        })()
+   858→                      )}
+   859→                    </p>
+   860→                  </div>
+   861→                </div>
+   862→              </div>
+   863→            </div>
+   864→          </CardContent>
+   865→        </Card>
+   866→      </motion.div>
+   867→    </motion.div>
+   868→  )
+   869→}

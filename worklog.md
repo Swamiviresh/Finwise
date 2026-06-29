@@ -1212,3 +1212,105 @@ The FinWise AI application is a comprehensive, feature-rich personal finance Saa
 8. **LOW**: Add internationalization (i18n) support
 9. **LOW**: Add accessibility audit (ARIA labels, keyboard navigation, screen reader testing)
 10. **LOW**: Add Sankey diagram for money flow visualization
+
+---
+Task ID: 7-a
+Agent: Main
+Task: Add Transaction Split Feature — Split one expense into multiple sub-expenses
+
+Work Log:
+- Created `/src/components/shared/split-expense-dialog.tsx` — full-featured Dialog component:
+  - Receives expense object as prop (id, title, amount, category, date, description, userId)
+  - Shows original expense info at top (title, amount, category, date) in a glass-subtle card
+  - "Split Into" field with +/- buttons and number input (min 2, max 10) — dynamically creates that many rows
+  - Each row has: title input (pre-filled with "Expense Name — Part N"), amount input (pre-filled with equal split, $ prefix), category Select (pre-filled with parent category)
+  - Each row has a colored dot indicator (cycling through emerald, cyan, violet, amber, rose colors)
+  - Live "Remaining" indicator showing unallocated amount (emerald if 0, amber if <0, rose if >0) with contextual bg
+  - "Split Expense" button only enabled when remaining is exactly 0 and all parts have title + category
+  - On submit: calls POST /api/expenses for each split part, then DELETE the original expense, then refreshes the expenses list
+  - Uses Framer Motion AnimatePresence with layout animations on add/remove of split rows
+  - Uses existing shadcn Dialog, Input, Select, Button, Label components
+  - All secondary text uses text-secondary/text-tertiary classes; glass/glass-subtle styling throughout
+
+- Integrated into TransactionDetail component (`/src/components/shared/transaction-detail.tsx`):
+  - Added "Split Expense" button with Scissors icon in the transaction detail popover, above the delete section
+  - Only shown for expenses (not income) — conditionally rendered based on `isExpense`
+  - Opens the SplitExpenseDialog with full expense data + user ID
+  - Added `user` to store destructure and `splitOpen` state
+
+- Lint passes clean (0 errors, 0 warnings)
+
+Stage Summary:
+- 1 new component: SplitExpenseDialog with full split functionality
+- 1 modified component: TransactionDetail (added Split button + dialog integration)
+- Split dialog features: dynamic row count (2-10), equal split default, live remaining indicator, Framer Motion animations, colored dot indicators
+- Zero lint errors/warnings
+
+---
+Task ID: 7-c
+Agent: Main
+Task: Add Financial Notes/Journal Feature
+
+Work Log:
+- Added `Note` model to Prisma schema with fields: id, userId, title, content (Text), category (default "general"), color (default "#10b981"), isPinned (default false), createdAt, updatedAt
+- Added `notes Note[]` relation to User model
+- Ran `bun run db:push` to apply schema — success
+- Added `Note` interface to Zustand store matching Prisma model
+- Added `notes: Note[]` and `setNotes` to Zustand store state
+- Added `'notes'` to ViewType union type
+- Created `/api/notes/route.ts` with full CRUD:
+  - GET: list notes by userId, ordered by isPinned desc then createdAt desc
+  - POST: create note (userId, title, content, category, color)
+  - PUT: update note by id with any fields
+  - DELETE: delete note by id (query param)
+- Created `/src/components/notes/notes-page.tsx`:
+  - **Pinned Notes** section: horizontal scrollable cards with accent color left border, title preview, pin icon indicator
+  - **Add Note** dialog: title input, content textarea (4 rows), category Select (General/Goal/Budget/Insight/Idea), 5 preset color picker (emerald/cyan/violet/amber/rose), isPinned toggle switch
+  - **Notes Grid**: Masonry-like layout (2 cols lg, 1 col mobile) with:
+    - Each card: colored accent top border (3px), title (bold), content preview (2 lines line-clamp), category badge with icon, date
+    - Hover: card-depth-1 shadow lift effect
+    - Click: expand in Dialog with full content, edit/delete/pin/unpin actions
+    - Pinned notes have small pin icon indicator
+  - **Search bar** to filter notes by title/content with clear button
+  - **Empty state** when no notes (with icon and CTA button)
+  - **Search empty state** when no matches found
+  - Framer Motion staggered animations on grid, slide-in on pinned cards, AnimatePresence on sections
+- Integrated into app-shell.tsx: added StickyNote nav item after Spending Insights, 'notes' already in PAGE_TITLES
+- Integrated into page.tsx: imported NotesPage, added `{currentView === 'notes' && <NotesPage />}` view route
+- Lint passes clean (0 errors, 0 warnings)
+
+Stage Summary:
+- 1 new Prisma model: Note
+- 1 new API route: /api/notes (GET/POST/PUT/DELETE)
+- 1 new component: NotesPage with full notes/journal functionality
+- 3 modified files: use-app-store.ts (Note interface + state), app-shell.tsx (nav item), page.tsx (view routing)
+- Features: CRUD notes, 5 categories with icons, 5 accent colors, pin/unpin, search filter, masonry grid, staggered animations, empty states
+- Zero lint errors/warnings
+
+---
+Task ID: 7-b
+Agent: Main
+Task: Add Spending Insights & Trend Analysis Page
+
+Work Log:
+- Added `'insights'` to ViewType union in `/src/store/use-app-store.ts`
+- Added `insights: 'Spending Insights'` to PAGE_TITLES in `/src/components/layout/app-shell.tsx`
+- NAV_ITEMS already had Spending Insights entry with Lightbulb icon (from prior task)
+- Created `/src/components/insights/insights-page.tsx` with 6 analytics sections:
+  1. **Spending Trend Chart**: Recharts AreaChart showing 6 months of expenses (rose) and income (emerald) with gradient fills, custom glass tooltip, responsive container
+  2. **Category Evolution**: Top 5 most-spent categories, each with a custom SVG sparkline showing 6-month trend, colored category icon, total amount, and up/down trend indicator
+  3. **Spending Velocity Card**: Compares last 3 months average vs previous 3 months average. Shows accelerating/decelerating/stable status with colored icon, percentage change with arrow, and comparison breakdown
+  4. **Top 5 Expenses of All Time**: Ranked list with numbered position, colored category icon, title, category badge (styled), date, and amount. Staggered Framer Motion entry animations
+  5. **Month-over-Month Changes**: Horizontal BarChart using Recharts Cell component for per-bar coloring (rose for increase, emerald for decrease). Custom tooltip shows current/previous month amounts + change. Sorted by absolute change magnitude
+  6. **Spending Consistency Score**: 0-100 circular progress ring (SVG with Framer Motion animated stroke-dashoffset). Color-coded: green ≥75, amber ≥50, orange ≥25, rose <25. Includes contextual description text and 3 stat cards (avg monthly, highest month, lowest month)
+- All sections use glass cards with card-depth-1, staggered Framer Motion entry (container/item variants)
+- All data computed client-side from Zustand store (expenses, incomes) — no API calls
+- All secondary text uses text-secondary/text-tertiary classes
+- Added `{currentView === 'insights' && <InsightsPage />}` to page.tsx view routing
+- Lint passes clean (0 errors, 0 warnings)
+
+Stage Summary:
+- 1 new component: InsightsPage with 6 analytics sections
+- 3 modified files: use-app-store.ts (ViewType), app-shell.tsx (PAGE_TITLES), page.tsx (routing)
+- All data computed from Zustand store — zero API calls
+- Zero lint errors/warnings

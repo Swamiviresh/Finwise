@@ -100,10 +100,10 @@ export default function AICoachPage() {
       {/* Disclaimer */}
       <Card className="glass border-0 shrink-0">
         <CardContent className="p-3 flex items-center gap-3">
-          <div className="w-6 h-6 rounded-lg bg-amber-500/15 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+          <div className="w-6 h-6 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-300" />
           </div>
-          <p className="text-xs text-secondary">AI-generated insights for educational purposes only. Not financial advice. Always consult a qualified advisor.</p>
+          <p className="text-xs text-secondary font-medium">AI-generated insights for educational purposes only. Not financial advice. Always consult a qualified advisor.</p>
         </CardContent>
       </Card>
 
@@ -230,7 +230,7 @@ export default function AICoachPage() {
                 Suggested Questions
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 overflow-y-auto p-3 max-h-[calc(100vh-20rem)]">
+            <CardContent className="space-y-1.5 overflow-y-auto p-3 max-h-[calc(100vh-20rem)]">
               {SUGGESTIONS.map((s, i) => (
                 <motion.button
                   key={s.text}

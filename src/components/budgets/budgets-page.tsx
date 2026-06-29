@@ -58,7 +58,7 @@ export default function BudgetsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Budgets</h2>
-          <p className="text-sm text-muted-foreground">Set spending limits and stay on track</p>
+          <p className="text-sm text-secondary">Set spending limits and stay on track</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -91,8 +91,8 @@ export default function BudgetsPage() {
               <p className="text-3xl font-bold mt-1" style={{ color: overallColor }}>{totalPct}%</p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-muted-foreground">Spent / Limit</p>
-              <p className="text-lg font-semibold">{fmt(totalSpent)} <span className="text-muted-foreground font-normal">/ {fmt(totalLimit)}</span></p>
+              <p className="text-xs text-secondary">Spent / Limit</p>
+              <p className="text-lg font-semibold">{fmt(totalSpent)} <span className="text-tertiary font-normal">/ {fmt(totalLimit)}</span></p>
               <p className="text-sm text-emerald-400">{fmt(totalLimit - totalSpent)} remaining</p>
             </div>
           </div>
@@ -139,8 +139,8 @@ export default function BudgetsPage() {
           })}
           {budgets.length === 0 && (
             <div className="col-span-2 text-center py-16">
-              <p className="text-muted-foreground">No budgets created yet</p>
-              <p className="text-sm text-muted-foreground mt-1">Click &quot;Create Budget&quot; to get started</p>
+              <p className="text-secondary">No budgets created yet</p>
+              <p className="text-sm text-secondary mt-1">Click "Create Budget" to get started</p>
             </div>
           )}
         </div>
@@ -153,7 +153,7 @@ export default function BudgetsPage() {
                 <BarChart data={chartData} layout="vertical">
                   <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={v => `$${v}`} />
                   <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} width={80} />
-                  <Tooltip contentStyle={{ background: 'rgba(15,23,42,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px' }} formatter={(v: number) => fmt(v)} />
+                  <Tooltip contentStyle={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', fontSize: '12px', color: '#e8edf5' }} formatter={(v: number) => fmt(v)} />
                   <Bar dataKey="spent" radius={[0, 6, 6, 0]} barSize={14}>
                     {chartData.map((entry, i) => <Cell key={i} fill={entry.pct > 90 ? '#f43f5e' : entry.pct > 70 ? '#f59e0b' : '#10b981'} />)}
                   </Bar>

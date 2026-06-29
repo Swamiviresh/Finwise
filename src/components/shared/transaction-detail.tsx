@@ -8,7 +8,8 @@ import { useAppStore } from '@/store/use-app-store'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Trash2, RotateCcw, Calendar, Tag, FileText } from 'lucide-react'
+import { Trash2, RotateCcw, Calendar, Tag, FileText, Scissors } from 'lucide-react'
+import SplitExpenseDialog from '@/components/shared/split-expense-dialog'
 
 interface TransactionDetailProps {
   type: 'expense' | 'income'
@@ -35,9 +36,10 @@ function fmt(n: number) {
 }
 
 export default function TransactionDetail({ type, data, children }: TransactionDetailProps) {
-  const { expenses, setExpenses, incomes, setIncomes } = useAppStore()
+  const { expenses, setExpenses, incomes, setIncomes, user } = useAppStore()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [splitOpen, setSplitOpen] = useState(false)
 
   const isExpense = type === 'expense'
   const amountColor = isExpense ? 'text-rose-400' : 'text-emerald-400'
@@ -137,6 +139,22 @@ export default function TransactionDetail({ type, data, children }: TransactionD
             </div>
           )}
 
+          {/* Split (expenses only) */}
+          {isExpense && (
+            <div className="pt-2 border-t border-white/5">
+              <Button
+                variant="ghost"
+                size="sm"
+                type="button"
+                onClick={() => setSplitOpen(true)}
+                className="w-full text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 text-xs gap-2"
+              >
+                <Scissors className="w-3.5 h-3.5" />
+                Split Expense
+              </Button>
+            </div>
+          )}
+
           {/* Delete */}
           <div className="pt-2 border-t border-white/5">
             {!confirmDelete ? (
@@ -183,6 +201,23 @@ export default function TransactionDetail({ type, data, children }: TransactionD
           </div>
         </motion.div>
       </PopoverContent>
+
+      {/* Split Dialog */}
+      {isExpense && user && (
+        <SplitExpenseDialog
+          open={splitOpen}
+          onOpenChange={(v) => { setSplitOpen(v); if (!v) setConfirmDelete(false) }}
+          expense={{
+            id: data.id,
+            title: data.title,
+            amount: data.amount,
+            category: data.category || 'Others',
+            date: data.date,
+            description: data.description,
+            userId: user.id,
+          }}
+        />
+      )}
     </Popover>
   )
 }

@@ -285,7 +285,7 @@ export default function DashboardPage() {
                 onClick={() => setView(action.view)}
                 className={`
                   glass-subtle flex items-center gap-2.5 px-5 py-2.5 rounded-full
-                  border border-white/[0.06] text-sm font-medium text-foreground/80
+                  border border-white/[0.06] text-sm font-semibold text-foreground/80
                   transition-all duration-300 group
                   ${action.color}
                   hover:text-foreground

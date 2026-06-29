@@ -23,6 +23,7 @@ model User {
   incomes     Income[]
   wallets     Wallet[]
   chatMessages ChatMessage[]
+  notes        Note[]
 }
 
 model Expense {
@@ -116,6 +117,22 @@ model ChatMessage {
   role      String
   content   String
   createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Note {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  content     String
+  category    String   @default("general")
+  color       String   @default("#10b981")
+  isPinned    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

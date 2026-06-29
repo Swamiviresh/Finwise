@@ -13,8 +13,10 @@ export type ViewType =
   | 'ai-coach'
   | 'bills'
   | 'wallets'
+  | 'notes'
   | 'settings'
   | 'security'
+  | 'insights'
 
 export interface User {
   id: string
@@ -88,6 +90,18 @@ export interface ChatMessage {
   createdAt: string
 }
 
+export interface Note {
+  id: string
+  userId: string
+  title: string
+  content: string
+  category: string
+  color: string
+  isPinned: boolean
+  createdAt: string
+  updatedAt: string
+}
+
 interface AppState {
   // Navigation
   currentView: ViewType
@@ -118,6 +132,8 @@ interface AppState {
   chatMessages: ChatMessage[]
   addChatMessage: (msg: ChatMessage) => void
   clearChatMessages: () => void
+  notes: Note[]
+  setNotes: (notes: Note[]) => void
 
   // Health score
   healthScore: number
@@ -167,6 +183,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   chatMessages: [],
   addChatMessage: (msg) => set((s) => ({ chatMessages: [...s.chatMessages, msg] })),
   clearChatMessages: () => set({ chatMessages: [] }),
+  notes: [],
+  setNotes: (notes) => set({ notes }),
 
   // Health score
   healthScore: 0,
