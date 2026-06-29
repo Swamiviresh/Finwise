@@ -275,7 +275,7 @@ export default function SettingsPage() {
                             <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">Edit</span>
                           </button>
                         )}
-                        <p className="text-sm text-muted-foreground">{user?.email}</p>
+                        <p className="text-sm text-secondary">{user?.email}</p>
                       </div>
                     </div>
 

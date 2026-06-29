@@ -100,7 +100,7 @@
   --secondary: rgba(30, 41, 59, 0.6);
   --secondary-foreground: #e8edf5;
   --muted: rgba(30, 41, 59, 0.5);
-  --muted-foreground: #a8b8cc;
+  --muted-foreground: #b4c4d8;
   --accent: rgba(30, 41, 59, 0.6);
   --accent-foreground: #e8edf5;
   --destructive: #ef4444;
@@ -1182,4 +1182,191 @@ input, textarea, select {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* ── 37. Achievement Utilities ──────────────────────────────────────── */
+.achievement-locked {
+  filter: grayscale(1);
+  opacity: 0.55;
+  border: 1px dashed rgba(255,255,255,0.12);
+}
+.achievement-unlocked {
+  animation: achievement-glow-pulse 2.5s ease-in-out infinite;
+}
+@keyframes achievement-glow-pulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.08); }
+}
+.achievement-glow {
+  box-shadow: 0 0 20px var(--achievement-color, rgba(16,185,129,0.3));
+}
+
+/* ── 38. Enhanced Interactive States ───────────────────────────────── */
+.btn-glass {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.btn-glass:hover::after {
+  opacity: 1;
+}
+.btn-glass:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(16,185,129,0.15);
+}
+.btn-glass:active {
+  transform: translateY(0);
+}
+
+/* ── 39. Card Depth Layers ─────────────────────────────────────────── */
+.card-depth-1 {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+}
+.dark .card-depth-1 {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.15);
+}
+.card-depth-2 {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06);
+}
+.dark .card-depth-2 {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.2);
+}
+
+/* ── 40. Improved Contrast Text ────────────────────────────────────── */
+.text-secondary {
+  color: #64748b;
+}
+.dark .text-secondary {
+  color: #c1cfe0;
+}
+.text-tertiary {
+  color: #94a3b8;
+}
+.dark .text-tertiary {
+  color: #a8b8cc;
+}
+.text-quaternary {
+  color: #94a3b8;
+}
+.dark .text-quaternary {
+  color: #8899ad;
+}
+
+/* ── 41. Subtle Border Glow on Hover ───────────────────────────────── */
+.hover-glow-emerald {
+  transition: all 0.3s ease;
+  border: 1px solid rgba(16,185,129,0.1);
+}
+.hover-glow-emerald:hover {
+  border-color: rgba(16,185,129,0.3);
+  box-shadow: 0 0 20px rgba(16,185,129,0.08);
+}
+.hover-glow-cyan {
+  transition: all 0.3s ease;
+  border: 1px solid rgba(6,182,212,0.1);
+}
+.hover-glow-cyan:hover {
+  border-color: rgba(6,182,212,0.3);
+  box-shadow: 0 0 20px rgba(6,182,212,0.08);
+}
+
+/* ── 42. Premium Input Enhancement ─────────────────────────────────── */
+.input-premium {
+  transition: all 0.25s ease;
+}
+.input-premium:focus {
+  box-shadow: 0 0 0 3px rgba(16,185,129,0.15), 0 0 20px rgba(16,185,129,0.08);
+}
+
+/* ── 43. Shimmer Loading Effect ────────────────────────────────────── */
+@keyframes shimmer-load {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer-load {
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.04) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer-load 2s ease-in-out infinite;
+}
+
+/* ── 44. Smooth Page Transitions ───────────────────────────────────── */
+.page-enter {
+  animation: pageEnter 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── 45. Badge Styles ──────────────────────────────────────────────── */
+.badge-glass {
+  background: rgba(16,185,129,0.12);
+  color: #34d399;
+  border: 1px solid rgba(16,185,129,0.2);
+  font-weight: 500;
+}
+.badge-glass-rose {
+  background: rgba(244,63,94,0.12);
+  color: #fb7185;
+  border: 1px solid rgba(244,63,94,0.2);
+  font-weight: 500;
+}
+.badge-glass-amber {
+  background: rgba(245,158,11,0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(245,158,11,0.2);
+  font-weight: 500;
+}
+.badge-glass-cyan {
+  background: rgba(6,182,212,0.12);
+  color: #22d3ee;
+  border: 1px solid rgba(6,182,212,0.2);
+  font-weight: 500;
+}
+.badge-glass-violet {
+  background: rgba(139,92,246,0.12);
+  color: #a78bfa;
+  border: 1px solid rgba(139,92,246,0.2);
+  font-weight: 500;
+}
+
+/* ── 46. Improved Scrollbar for Light Mode ─────────────────────────── */
+:not(.dark) .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.15);
+}
+:not(.dark) .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.25);
+}
+
+/* ── 47. Focus Ring Enhancement ────────────────────────────────────── */
+.focus-ring-emerald:focus-visible {
+  outline: 2px solid rgba(16,185,129,0.5);
+  outline-offset: 2px;
+}
+
+/* ── 48. Improved Tooltip ──────────────────────────────────────────── */
+.tooltip-glass {
+  background: rgba(15,23,42,0.9) !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.tooltip-glass .text-secondary {
+  color: #c1cfe0;
 }

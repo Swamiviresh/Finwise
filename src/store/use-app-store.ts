@@ -12,6 +12,7 @@ export type ViewType =
   | 'reports'
   | 'ai-coach'
   | 'bills'
+  | 'wallets'
   | 'settings'
   | 'security'
 
@@ -67,6 +68,19 @@ export interface Goal {
   color: string
 }
 
+export interface Wallet {
+  id: string
+  userId: string
+  name: string
+  type: 'checking' | 'savings' | 'credit' | 'cash' | 'investment'
+  balance: number
+  currency: string
+  color: string
+  icon: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface ChatMessage {
   id: string
   role: 'user' | 'assistant'
@@ -99,6 +113,8 @@ interface AppState {
   setBudgets: (budgets: Budget[]) => void
   goals: Goal[]
   setGoals: (goals: Goal[]) => void
+  wallets: Wallet[]
+  setWallets: (wallets: Wallet[]) => void
   chatMessages: ChatMessage[]
   addChatMessage: (msg: ChatMessage) => void
   clearChatMessages: () => void
@@ -146,6 +162,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   setBudgets: (budgets) => set({ budgets }),
   goals: [],
   setGoals: (goals) => set({ goals }),
+  wallets: [],
+  setWallets: (wallets) => set({ wallets }),
   chatMessages: [],
   addChatMessage: (msg) => set((s) => ({ chatMessages: [...s.chatMessages, msg] })),
   clearChatMessages: () => set({ chatMessages: [] }),

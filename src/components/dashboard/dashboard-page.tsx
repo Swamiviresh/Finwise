@@ -16,6 +16,7 @@ import ActivityFeed from './activity-feed'
 import SpendingCalendar from './spending-calendar'
 import NetWorthTracker from './net-worth-tracker'
 import SmartInsights from './smart-insights'
+import AchievementsPanel from './achievements-panel'
 
 const CATEGORY_COLORS: Record<string, string> = {
   Food: '#34d399', Rent: '#22d3ee', Shopping: '#fbbf24', Healthcare: '#fb7185',
@@ -258,8 +259,8 @@ export default function DashboardPage() {
                   {greetingText},{' '}
                   <span className="gradient-text">{user?.name?.split(' ')[0] || 'there'}</span>
                 </h2>
-                <p className="text-sm text-foreground/70 mt-0.5">{greetingSubtext}</p>
-                <p className="text-xs text-muted-foreground/60 mt-1">
+                <p className="text-sm text-secondary mt-0.5">{greetingSubtext}</p>
+                <p className="text-xs text-tertiary mt-1">
                   {format(now, 'EEEE, MMMM d, yyyy')}
                 </p>
               </div>
@@ -267,9 +268,9 @@ export default function DashboardPage() {
             <div className="flex flex-col items-end gap-1 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="pulse-dot" />
-                <span className="text-xs text-foreground/50 font-medium">Live</span>
+                <span className="text-xs text-secondary font-medium">Live</span>
               </div>
-              <p className="text-xs text-emerald-400/80 italic text-right max-w-[200px]">
+              <p className="text-xs text-emerald-400 italic text-right max-w-[200px] leading-relaxed">
                 {motivationalTagline}
               </p>
             </div>
@@ -322,7 +323,7 @@ export default function DashboardPage() {
                 </div>
                 <p className="text-sm text-muted-foreground">Total Income</p>
                 <p className="text-2xl font-bold mt-1 counter-animate number-tick text-foreground">{formatCurrency(totalIncome)}</p>
-                <p className="text-[10px] text-muted-foreground/60 mt-1">vs last month</p>
+                <p className="text-[11px] text-tertiary mt-1.5 font-medium">vs last month</p>
               </CardContent>
             </Card>
           </AnimatedCard>
@@ -345,7 +346,7 @@ export default function DashboardPage() {
                 </div>
                 <p className="text-sm text-muted-foreground">Total Expenses</p>
                 <p className="text-2xl font-bold mt-1 counter-animate number-tick text-foreground">{formatCurrency(totalExpense)}</p>
-                <p className="text-[10px] text-muted-foreground/60 mt-1">vs last month</p>
+                <p className="text-[11px] text-tertiary mt-1.5 font-medium">vs last month</p>
               </CardContent>
             </Card>
           </AnimatedCard>
@@ -368,21 +369,21 @@ export default function DashboardPage() {
                 </div>
                 <p className="text-sm text-muted-foreground">Net Savings</p>
                 <p className="text-2xl font-bold mt-1 counter-animate number-tick text-foreground">{formatCurrency(netSavings)}</p>
-                <p className="text-[10px] text-muted-foreground/60 mt-1">vs last month</p>
+                <p className="text-[11px] text-tertiary mt-1.5 font-medium">vs last month</p>
               </CardContent>
             </Card>
           </AnimatedCard>
 
           <AnimatedCard index={3}>
             <Card className="glass border-0 card-hover card-shine glass-accent-top" style={{ '--accent-color': '#a78bfa' } as React.CSSProperties}>
-              <CardContent className="p-4 flex items-center gap-3">
-                <HealthScoreRing score={healthScore} size={64} strokeWidth={5} />
+              <CardContent className="p-5 flex items-center gap-4">
+                <HealthScoreRing score={healthScore} size={68} strokeWidth={5} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-muted-foreground">Health Score</p>
-                  <p className="text-base font-bold text-foreground">Financial Health</p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
+                  <p className="text-[11px] text-tertiary uppercase tracking-wider font-medium">Health Score</p>
+                  <p className="text-sm font-bold text-foreground mt-0.5">Financial Health</p>
+                  <div className="flex items-center gap-1.5 mt-1">
                     <div className="pulse-dot" />
-                    <p className="text-[11px] text-muted-foreground">{healthScore >= 75 ? 'Excellent' : healthScore >= 60 ? 'Good' : healthScore >= 40 ? 'Fair' : 'Needs Work'}</p>
+                    <p className="text-xs text-secondary">{healthScore >= 75 ? 'Excellent' : healthScore >= 60 ? 'Good' : healthScore >= 40 ? 'Fair' : 'Needs Work'}</p>
                   </div>
                 </div>
               </CardContent>
@@ -804,6 +805,15 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Achievements */}
+        <AnimatedCard index={10}>
+          <Card className="glass border-0">
+            <CardContent className="pt-5">
+              <AchievementsPanel />
+            </CardContent>
+          </Card>
+        </AnimatedCard>
 
         {/* Spending Calendar */}
         <motion.div variants={itemVariants}>

@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { Plus, TrendingUp, RotateCcw, Briefcase, Award, DollarSign, Building } from 'lucide-react'
 import TransactionDetail from '@/components/shared/transaction-detail'
+import CsvImportButton from '@/components/shared/csv-import-button'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { motion } from 'framer-motion'
 import { format, startOfMonth, endOfMonth, isWithinInterval, subMonths } from 'date-fns'
@@ -80,12 +81,14 @@ export default function IncomePage() {
           <h2 className="text-2xl font-bold">Income</h2>
           <p className="text-sm text-muted-foreground">Track your earnings and revenue sources</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0">
-              <Plus className="w-4 h-4 mr-2" /> Add Income
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <CsvImportButton defaultType="income" />
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0">
+                <Plus className="w-4 h-4 mr-2" /> Add Income
+              </Button>
+            </DialogTrigger>
           <DialogContent className="glass border-0 sm:max-w-md">
             <DialogHeader><DialogTitle>Add New Income</DialogTitle></DialogHeader>
             <div className="space-y-4">
@@ -104,7 +107,8 @@ export default function IncomePage() {
               <Button onClick={handleAdd} className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white border-0">Save Income</Button>
             </div>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

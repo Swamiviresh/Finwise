@@ -21,6 +21,7 @@ model User {
   budgets     Budget[]
   goals       Goal[]
   incomes     Income[]
+  wallets     Wallet[]
   chatMessages ChatMessage[]
 }
 
@@ -86,6 +87,23 @@ model Goal {
   color         String   @default("#10b981")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  type      String   @default("checking")
+  balance   Float    @default(0)
+  currency  String   @default("USD")
+  color     String   @default("#10b981")
+  icon      String   @default("💳")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

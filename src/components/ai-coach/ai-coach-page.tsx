@@ -103,7 +103,7 @@ export default function AICoachPage() {
           <div className="w-6 h-6 rounded-lg bg-amber-500/15 flex items-center justify-center shrink-0">
             <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
           </div>
-          <p className="text-xs text-foreground/50">AI-generated insights for educational purposes only. Not financial advice. Always consult a qualified advisor.</p>
+          <p className="text-xs text-secondary">AI-generated insights for educational purposes only. Not financial advice. Always consult a qualified advisor.</p>
         </CardContent>
       </Card>
 
@@ -117,10 +117,10 @@ export default function AICoachPage() {
                   <Bot className="w-4 h-4 text-white" />
                 </div>
                 AI Finance Coach
-                <span className="text-[10px] bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full font-medium">Online</span>
+                <span className="text-[10px] bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full font-semibold border border-emerald-500/20">Online</span>
               </CardTitle>
               {chatMessages.length > 0 && (
-                <Button variant="ghost" size="sm" onClick={handleClear} className="text-xs text-foreground/40 hover:text-rose-400 h-8">
+                <Button variant="ghost" size="sm" onClick={handleClear} className="text-xs text-secondary hover:text-rose-400 h-8">
                   <Trash2 className="w-3.5 h-3.5 mr-1" /> Clear Chat
                 </Button>
               )}
@@ -138,7 +138,7 @@ export default function AICoachPage() {
                       <Bot className="w-10 h-10 text-emerald-400" />
                     </motion.div>
                     <h3 className="text-xl font-bold mb-2">Ask me anything about your finances</h3>
-                    <p className="text-sm text-foreground/50 max-w-xs mx-auto mb-6">I analyze your spending patterns, suggest savings strategies, and help you reach your financial goals.</p>
+                    <p className="text-sm text-secondary max-w-xs mx-auto mb-6">I analyze your spending patterns, suggest savings strategies, and help you reach your financial goals.</p>
                     <Button variant="outline" onClick={() => setShowSuggestions(true)} className="glass border-white/10 text-foreground/70 hover:text-foreground hover:bg-white/5">
                       <Sparkles className="w-4 h-4 mr-2 text-emerald-400" /> Show Suggestions
                     </Button>
@@ -148,7 +148,7 @@ export default function AICoachPage() {
                 {/* Suggestion Cards (shown when empty) */}
                 {chatMessages.length === 0 && showSuggestions && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
-                    <p className="text-xs font-semibold text-foreground/40 uppercase tracking-wider mb-2">Quick Questions</p>
+                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Quick Questions</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {SUGGESTIONS.map((s, i) => (
                         <motion.button

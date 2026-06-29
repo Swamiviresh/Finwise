@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { Plus, Search, Utensils, Home, ShoppingBag, Heart, GraduationCap, Car, Film, Zap, TrendingUp, Shield, RotateCcw, MoreHorizontal } from 'lucide-react'
 import TransactionDetail from '@/components/shared/transaction-detail'
+import CsvImportButton from '@/components/shared/csv-import-button'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
@@ -71,14 +72,16 @@ export default function ExpensesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Expenses</h2>
-          <p className="text-sm text-muted-foreground">Track and manage your spending</p>
+          <p className="text-sm text-secondary">Track and manage your spending</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0">
-              <Plus className="w-4 h-4 mr-2" /> Add Expense
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <CsvImportButton defaultType="expense" />
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0">
+                <Plus className="w-4 h-4 mr-2" /> Add Expense
+              </Button>
+            </DialogTrigger>
           <DialogContent className="glass border-0 sm:max-w-md">
             <DialogHeader><DialogTitle>Add New Expense</DialogTitle></DialogHeader>
             <div className="space-y-4">
@@ -100,7 +103,8 @@ export default function ExpensesPage() {
               <Button onClick={handleAdd} className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white border-0">Save Expense</Button>
             </div>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {/* Summary Cards */}

@@ -112,7 +112,7 @@ export default function GoalsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Savings Goals</h2>
-          <p className="text-sm text-muted-foreground">Track progress towards your financial dreams</p>
+          <p className="text-sm text-secondary">Track progress towards your financial dreams</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -206,21 +206,21 @@ export default function GoalsPage() {
                           )
                         })}
                       </div>
-                      <div className="flex justify-between text-xs text-muted-foreground">
+                      <div className="flex justify-between text-xs text-secondary">
                         <span>{fmt(g.currentAmount)} / {fmt(g.targetAmount)}</span>
-                        <span className="font-medium" style={{ color: g.color }}>{pct}%</span>
+                        <span className="font-semibold" style={{ color: g.color }}>{pct}%</span>
                       </div>
                     </div>
 
                     {/* Deadline + Add Funds */}
                     <div className="flex items-center justify-between">
-                      <span className={`text-xs ${deadlineText && daysLeft !== null && daysLeft < 0 ? 'text-rose-400' : 'text-muted-foreground'}`}>
+                      <span className={`text-xs font-medium ${deadlineText && daysLeft !== null && daysLeft < 0 ? 'text-rose-400' : 'text-secondary'}`}>
                         {deadlineText || 'No deadline'}
                       </span>
                       {!isComplete && (
                         <Dialog open={addFundGoalId === g.id} onOpenChange={(open) => { if (!open) { setAddFundGoalId(null); setFundAmount('') } else { setAddFundGoalId(g.id); setFundAmount('') } }}>
                           <DialogTrigger asChild>
-                            <Button size="sm" variant="ghost" className="text-xs h-7 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10">
+                            <Button size="sm" variant="ghost" className="text-xs h-7 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 font-medium">
                               <Wallet className="w-3 h-3 mr-1" /> Add Funds
                             </Button>
                           </DialogTrigger>

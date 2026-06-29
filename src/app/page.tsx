@@ -17,6 +17,7 @@ import AICoachPage from '@/components/ai-coach/ai-coach-page'
 import SettingsPage from '@/components/settings/settings-page'
 import SecurityPage from '@/components/settings/security-page'
 import BillsPage from '@/components/bills/bills-page'
+import WalletsPage from '@/components/wallets/wallets-page'
 
 export default function Home() {
   const { currentView, isAuthenticated, hasCompletedOnboarding, setHasCompletedOnboarding, setView, setUserId, setUser, login } = useAppStore()
@@ -52,16 +53,19 @@ export default function Home() {
   // Authenticated views (with shell)
   return (
     <AppShell>
+      <div key={currentView} className="page-enter">
       {currentView === 'dashboard' && <DashboardPage />}
       {currentView === 'expenses' && <ExpensesPage />}
       {currentView === 'income' && <IncomePage />}
       {currentView === 'budgets' && <BudgetsPage />}
       {currentView === 'goals' && <GoalsPage />}
       {currentView === 'bills' && <BillsPage />}
+      {currentView === 'wallets' && <WalletsPage />}
       {currentView === 'reports' && <ReportsPage />}
       {currentView === 'ai-coach' && <AICoachPage />}
       {currentView === 'settings' && <SettingsPage />}
       {currentView === 'security' && <SecurityPage />}
+      </div>
     </AppShell>
   )
 }
