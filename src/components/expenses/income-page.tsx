@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Plus, TrendingUp, RotateCcw, Briefcase, Award, DollarSign, Building } from 'lucide-react'
+import TransactionDetail from '@/components/shared/transaction-detail'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { motion } from 'framer-motion'
 import { format, startOfMonth, endOfMonth, isWithinInterval, subMonths } from 'date-fns'
@@ -148,20 +149,22 @@ export default function IncomePage() {
         <CardContent className="p-2">
           <div className="space-y-1 max-h-[400px] overflow-y-auto">
             {filtered.map(i => (
-              <motion.div key={i.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${SOURCE_COLORS[i.source] || '#10b981'}15` }}>
-                  <TrendingUp className="w-4 h-4" style={{ color: SOURCE_COLORS[i.source] || '#10b981' }} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{i.title}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <Badge variant="secondary" className="text-[10px]">{i.source}</Badge>
-                    <span className="text-xs text-muted-foreground">{format(new Date(i.date), 'MMM d, yyyy')}</span>
-                    {i.isRecurring && <RotateCcw className="w-3 h-3 text-muted-foreground" />}
+              <TransactionDetail key={i.id} type="income" data={i}>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer">
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${SOURCE_COLORS[i.source] || '#10b981'}15` }}>
+                    <TrendingUp className="w-4 h-4" style={{ color: SOURCE_COLORS[i.source] || '#10b981' }} />
                   </div>
-                </div>
-                <span className="text-sm font-medium text-emerald-400">+{fmt(i.amount)}</span>
-              </motion.div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{i.title}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <Badge variant="secondary" className="text-[10px]">{i.source}</Badge>
+                      <span className="text-xs text-muted-foreground">{format(new Date(i.date), 'MMM d, yyyy')}</span>
+                      {i.isRecurring && <RotateCcw className="w-3 h-3 text-muted-foreground" />}
+                    </div>
+                  </div>
+                  <span className="text-sm font-medium text-emerald-400">+{fmt(i.amount)}</span>
+                </motion.div>
+              </TransactionDetail>
             ))}
             {filtered.length === 0 && <p className="text-sm text-muted-foreground text-center py-12">No income found</p>}
           </div>

@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import {
   LayoutDashboard, Receipt, TrendingUp, PieChart, Target,
   BarChart3, MessageSquare, Settings, Shield, LogOut,
-  Menu, Sun, Moon, Zap, X, Bell, Search, ChevronRight, AlertTriangle, Plus, FileText
+  Menu, Sun, Moon, Zap, X, Bell, Search, ChevronRight, AlertTriangle, Plus, FileText, MoreHorizontal
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -83,10 +83,19 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-4 h-16">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center">
-          <Zap className="w-5 h-5 text-white" />
-        </div>
-        <span className="text-lg font-bold">FinWise <span className="gradient-text">AI</span></span>
+        <motion.div
+          className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center"
+          animate={{ boxShadow: ['0 0 8px rgba(16,185,129,0.3)', '0 0 20px rgba(16,185,129,0.5)', '0 0 8px rgba(16,185,129,0.3)'] }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <motion.div
+            animate={{ scale: [1, 1.08, 1] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <Zap className="w-5 h-5 text-white" />
+          </motion.div>
+        </motion.div>
+        <span className="text-lg font-bold">FinWise <motion.span className="gradient-text" animate={{ opacity: [0.85, 1, 0.85] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>AI</motion.span></span>
       </div>
       <Separator className="bg-border/50" />
 
@@ -245,6 +254,16 @@ function GlobalSearch() {
       </div>
 
       <AnimatePresence>
+        {open && (results.length > 0 || query.trim().length > 0) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 backdrop-blur-sm bg-black/10 z-40"
+            onClick={() => { setOpen(false); inputRef.current?.blur() }}
+          />
+        )}
         {open && results.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: -8, scale: 0.97 }}
@@ -318,14 +337,85 @@ function GlobalSearch() {
   )
 }
 
+const MOBILE_TAB_ITEMS: { icon: typeof LayoutDashboard; label: string; view: ViewType; isMore?: boolean }[] = [
+  { icon: LayoutDashboard, label: 'Dashboard', view: 'dashboard' },
+  { icon: Receipt, label: 'Expenses', view: 'expenses' },
+  { icon: MessageSquare, label: 'AI Coach', view: 'ai-coach' },
+  { icon: Target, label: 'Goals', view: 'goals' },
+  { icon: MoreHorizontal, label: 'More', view: 'dashboard', isMore: true },
+]
+
+function MobileBottomTabBar({ onMoreClick }: { onMoreClick: () => void }) {
+  const { currentView, setView } = useAppStore()
+
+  const handleTab = (item: typeof MOBILE_TAB_ITEMS[number]) => {
+    if (item.isMore) {
+      onMoreClick()
+    } else {
+      setView(item.view)
+    }
+  }
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 md:hidden z-40">
+      <div className="mx-3 mb-3 rounded-2xl border border-white/10 bg-background/60 backdrop-blur-2xl shadow-lg shadow-black/20">
+        <div className="flex items-center justify-around py-1.5 px-2">
+          {MOBILE_TAB_ITEMS.map(item => {
+            const active = !item.isMore && currentView === item.view
+            return (
+              <button
+                key={item.label}
+                onClick={() => handleTab(item)}
+                className="relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors min-w-0"
+              >
+                {active && (
+                  <motion.div
+                    layoutId="mobile-tab-active"
+                    className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500"
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  />
+                )}
+                <item.icon className={cn(
+                  'w-5 h-5 transition-colors',
+                  active ? 'text-emerald-400' : 'text-muted-foreground'
+                )} />
+                <span className={cn(
+                  'text-[10px] font-medium transition-colors truncate max-w-[56px]',
+                  active ? 'text-emerald-400' : 'text-muted-foreground'
+                )}>
+                  {item.label}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { currentView, sidebarOpen, setSidebarOpen, budgets } = useAppStore()
   const { theme, setTheme } = useTheme()
   const mounted = useSyncExternalStore(() => () => {}, () => true, () => false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
+  const notifRef = useRef<HTMLDivElement>(null)
 
   const overBudgets = budgets.filter(b => (b.spent / b.limit) > 0.85)
+
+  // Close notification dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false)
+      }
+    }
+    if (notifOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [notifOpen])
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -347,7 +437,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="h-16 border-b border-border/30 glass-strong flex items-center justify-between px-4 md:px-6 shrink-0">
+        <header className="relative h-16 border-b border-border/30 glass-strong flex items-center justify-between px-4 md:px-6 shrink-0">
+          {/* Animated gradient line below header */}
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] overflow-hidden">
+            <motion.div
+              className="h-full w-[200%]"
+              animate={{ x: ['-50%', '0%'] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+              style={{ background: 'linear-gradient(90deg, transparent, #10b981, #06b6d4, transparent)' }}
+            />
+          </div>
           <div className="flex items-center gap-3">
             <button onClick={() => setMobileOpen(true)} className="md:hidden p-2 rounded-lg hover-surface">
               <Menu className="w-5 h-5" />
@@ -357,11 +456,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </button>
             <div>
               <h1 className="text-lg font-semibold">{PAGE_TITLES[currentView]}</h1>
+              <p className="text-xs text-muted-foreground hidden sm:block">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <GlobalSearch />
-            <div className="relative">
+            <div className="relative" ref={notifRef}>
             <button onClick={() => setNotifOpen(!notifOpen)} className="relative p-2 rounded-lg hover-surface transition-colors">
               <Bell className="w-5 h-5 text-muted-foreground" />
               {overBudgets.length > 0 && (
@@ -405,7 +505,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentView}
@@ -420,6 +520,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </AnimatePresence>
         </main>
         <QuickExpenseFab />
+        <MobileBottomTabBar onMoreClick={() => setMobileOpen(true)} />
         <KeyboardShortcuts />
         <NotificationToasts />
       </div>

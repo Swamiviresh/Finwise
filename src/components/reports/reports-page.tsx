@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { PieChart, Pie, Cell, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { motion } from 'framer-motion'
 import { format } from 'date-fns'
-import { Download, FileSpreadsheet, FileText, ChevronDown } from 'lucide-react'
+import { Download, FileSpreadsheet, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
@@ -67,18 +67,29 @@ export default function ReportsPage() {
           <h2 className="text-2xl font-bold">Financial Reports</h2>
           <p className="text-sm text-muted-foreground">Detailed analysis of your finances</p>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="glass" disabled={exporting}>
-              <Download className="w-4 h-4 mr-2" /> Export <ChevronDown className="w-3 h-3 ml-1" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="glass" align="end">
-            <DropdownMenuItem onClick={() => handleExport('expenses')}><FileSpreadsheet className="w-4 h-4 mr-2 text-emerald-400" /> Export Expenses</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleExport('incomes')}><FileSpreadsheet className="w-4 h-4 mr-2 text-cyan-400" /> Export Income</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleExport('report')}><FileText className="w-4 h-4 mr-2 text-amber-400" /> Export Full Report</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            onClick={() => handleExport('report')}
+            disabled={exporting}
+            className="glass bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border-emerald-500/20 hover:from-emerald-500/20 hover:to-cyan-500/20 text-emerald-400 gap-2"
+          >
+            <Download className="w-4 h-4" />
+            {exporting ? 'Exporting...' : 'Export CSV'}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="outline" className="glass" disabled={exporting}>
+                <FileSpreadsheet className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="glass" align="end">
+              <DropdownMenuItem onClick={() => handleExport('expenses')}><FileSpreadsheet className="w-4 h-4 mr-2 text-emerald-400" /> Export Expenses</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('incomes')}><FileSpreadsheet className="w-4 h-4 mr-2 text-cyan-400" /> Export Income</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('report')}><FileText className="w-4 h-4 mr-2 text-amber-400" /> Export Full Report</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Period Tabs + Summary */}

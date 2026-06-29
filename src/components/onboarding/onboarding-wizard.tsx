@@ -392,25 +392,32 @@ export default function OnboardingWizard() {
             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full filter blur-[80px] pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-500/5 rounded-full filter blur-[60px] pointer-events-none" />
 
-            <div className="w-full relative z-10">
+            <div className="w-full relative z-10 flex flex-col">
+              <div className="flex-1">
               <AnimatePresence mode="wait" custom={direction}>
                 {step === 0 && <StepWelcome key="welcome" userName={user?.name || 'there'} onNext={goNext} />}
                 {step === 1 && <StepPreferences key="prefs" onNext={goNext} onBack={goBack} />}
                 {step === 2 && <StepBudgets key="budgets" onNext={goNext} onBack={goBack} />}
                 {step === 3 && <StepComplete key="complete" userName={user?.name || 'there'} onDone={handleDone} />}
               </AnimatePresence>
+              </div>
+              {step < 3 && (
+                <div className="pt-4 mt-auto">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={handleDone}
+                    className="w-full text-sm text-foreground/50 hover:text-foreground/80 hover:bg-white/5"
+                  >
+                    Skip for now
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Skip */}
-        {step < 3 && (
-          <div className="text-center mt-4">
-            <button onClick={handleDone} className="text-xs text-foreground/30 hover:text-foreground/60 transition-colors">
-              Skip for now
-            </button>
-          </div>
-        )}
+
       </div>
     </div>
   )

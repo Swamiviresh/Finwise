@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Send, Trash2, Bot, AlertTriangle, Loader2, Sparkles, TrendingUp, Target, PiggyBank, Receipt, Lightbulb, BarChart3 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
+import { renderMarkdown } from '@/lib/markdown'
 
 const SUGGESTIONS = [
   { text: 'How can I save more this month?', icon: PiggyBank, color: '#34d399' },
@@ -179,7 +180,10 @@ export default function AICoachPage() {
                             <span className="text-[10px] font-semibold text-emerald-400/70">FinWise AI</span>
                           </div>
                         )}
-                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                        {msg.role === 'assistant'
+                          ? renderMarkdown(msg.content)
+                          : <p className="whitespace-pre-wrap">{msg.content}</p>
+                        }
                       </div>
                     </motion.div>
                   ))}

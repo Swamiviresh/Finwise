@@ -157,12 +157,16 @@ export default function SpendingCalendar() {
                       className={`
                         relative rounded-lg p-1.5 sm:p-2 text-center transition-all duration-200
                         ${inMonth ? 'hover:bg-white/5 cursor-pointer' : 'cursor-default'}
-                        ${today ? 'ring-2 ring-emerald-500/60 ring-offset-1 ring-offset-transparent' : ''}
+                        ${today ? 'ring-2 ring-emerald-400/70 ring-offset-1 ring-offset-transparent shadow-[0_0_12px_rgba(16,185,129,0.15)]' : ''}
                         ${hasData && inMonth ? colors.bg : inMonth ? 'hover:bg-white/[0.03]' : ''}
                         border ${hasData && inMonth ? colors.border : 'border-transparent'}
                         group
                       `}
                     >
+                      {/* Today indicator dot */}
+                      {today && (
+                        <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-[rgba(6,10,16,0.9)]" />
+                      )}
                       <span className={`
                         text-xs sm:text-sm font-medium
                         ${today ? 'text-emerald-400 font-bold' : ''}
@@ -171,12 +175,11 @@ export default function SpendingCalendar() {
                         {format(dayData.date, 'd')}
                       </span>
                       {hasData && inMonth && (
-                        <div className={`text-[9px] sm:text-[10px] mt-0.5 font-medium ${colors.text} leading-tight`}>
-                          {dayData.total >= 1000
+                        <div className={`text-[9px] sm:text-[10px] mt-0.5 font-semibold ${colors.text} leading-tight`}>{
+                          dayData.total >= 1000
                             ? `$${(dayData.total / 1000).toFixed(1)}k`
                             : `$${dayData.total}`
-                          }
-                        </div>
+                        }</div>
                       )}
                     </motion.button>
                   </PopoverTrigger>

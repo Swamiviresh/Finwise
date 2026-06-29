@@ -1108,3 +1108,78 @@ input, textarea, select {
 .dark .hover-surface:hover {
   background-color: rgba(255, 255, 255, 0.05);
 }
+
+/* ==========================================================================
+   FinWise AI — App Shell & Global Styles Enhancement (Task 3-b)
+   ========================================================================== */
+
+/* ── 32. Glass Card Hover — Scale + Emerald Glow ────────────────────── */
+.glass-card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.glass-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.08);
+}
+
+/* ── 33. Glow Pulse Animation ──────────────────────────────────────── */
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+.glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* ── 34. Animated Gradient Border (linear variant) ──────────────────── */
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes gradient-rotate {
+  0% { --angle: 0deg; }
+  100% { --angle: 360deg; }
+}
+.animated-gradient-border {
+  position: relative;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+.animated-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(var(--angle, 0deg), #10b981, #06b6d4, #a78bfa, #10b981);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: exclude;
+  mask-composite: exclude;
+  animation: gradient-rotate 4s linear infinite;
+  pointer-events: none;
+}
+
+/* ── 35. Thin Scrollbar Utility ─────────────────────────────────────── */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* ── 36. Gradient Text Utility ──────────────────────────────────────── */
+.text-gradient {
+  background: linear-gradient(135deg, #10b981, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

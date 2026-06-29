@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import { Plus, Trash2, Search, Filter, Receipt, Utensils, Home, ShoppingBag, Heart, GraduationCap, Car, Film, Zap, TrendingUp, Shield, RotateCcw, MoreHorizontal } from 'lucide-react'
+import { Plus, Search, Utensils, Home, ShoppingBag, Heart, GraduationCap, Car, Film, Zap, TrendingUp, Shield, RotateCcw, MoreHorizontal } from 'lucide-react'
+import TransactionDetail from '@/components/shared/transaction-detail'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
@@ -62,14 +63,6 @@ export default function ExpensesPage() {
         toast.success('Expense added')
       }
     } catch { toast.error('Failed to add expense') }
-  }
-
-  const handleDelete = async (id: string) => {
-    try {
-      await fetch(`/api/expenses?id=${id}`, { method: 'DELETE' })
-      setExpenses(expenses.filter(e => e.id !== id))
-      toast.success('Expense deleted')
-    } catch { toast.error('Failed to delete') }
   }
 
   return (
@@ -154,26 +147,25 @@ export default function ExpensesPage() {
                   {filtered.map(e => {
                     const Icon = CATEGORY_ICONS[e.category] || MoreHorizontal
                     return (
-                      <motion.div key={e.id} layout initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}
-                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors group">
-                        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${CATEGORY_COLORS[e.category] || '#94a3b8'}15` }}>
-                          <Icon className="w-4 h-4" style={{ color: CATEGORY_COLORS[e.category] || '#94a3b8' }} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate flex items-center gap-1.5">
-                            {e.title}
-                            {e.isRecurring && (
-                              <span className="badge-amber text-[9px] px-1 py-0">↻</span>
-                            )}
-                          </p>
-                          <p className="text-xs text-muted-foreground">{format(new Date(e.date), 'MMM d, yyyy')}</p>
-                        </div>
-                        <Badge variant="secondary" className="text-[10px] shrink-0 hidden sm:block">{e.category}</Badge>
-                        <span className="text-sm font-medium text-rose-400 shrink-0">-{fmt(e.amount)}</span>
-                        <button onClick={() => handleDelete(e.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-rose-500/10 text-muted-foreground hover:text-rose-400 transition-all">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </motion.div>
+                      <TransactionDetail key={e.id} type="expense" data={e}>
+                        <motion.div layout initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}
+                          className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors group cursor-pointer">
+                          <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${CATEGORY_COLORS[e.category] || '#94a3b8'}15` }}>
+                            <Icon className="w-4 h-4" style={{ color: CATEGORY_COLORS[e.category] || '#94a3b8' }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate flex items-center gap-1.5">
+                              {e.title}
+                              {e.isRecurring && (
+                                <span className="badge-amber text-[9px] px-1 py-0">↻</span>
+                              )}
+                            </p>
+                            <p className="text-xs text-muted-foreground">{format(new Date(e.date), 'MMM d, yyyy')}</p>
+                          </div>
+                          <Badge variant="secondary" className="text-[10px] shrink-0 hidden sm:block">{e.category}</Badge>
+                          <span className="text-sm font-medium text-rose-400 shrink-0">-{fmt(e.amount)}</span>
+                        </motion.div>
+                      </TransactionDetail>
                     )
                   })}
                 </AnimatePresence>
