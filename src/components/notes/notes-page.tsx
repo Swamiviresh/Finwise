@@ -243,7 +243,7 @@ export default function NotesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
+          <h2 className="text-2xl font-bold flex items-center gap-2 shimmer-text">
             <StickyNote className="w-6 h-6 text-emerald-400" />
             Financial Notes
           </h2>
@@ -259,7 +259,7 @@ export default function NotesPage() {
       </div>
 
       {/* Search Bar */}
-      <div className="flex items-center glass rounded-xl px-4 py-2.5 gap-3">
+      <div className="flex items-center glass-input rounded-xl px-4 py-2.5 gap-3">
         <Search className="w-4 h-4 text-tertiary shrink-0" />
         <input
           type="text"
@@ -280,13 +280,11 @@ export default function NotesPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass rounded-2xl p-12 text-center"
+          className="glass rounded-2xl empty-state-card"
         >
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
-            <BookOpen className="w-8 h-8 text-emerald-400" />
-          </div>
-          <h3 className="text-lg font-semibold mb-2">No notes yet</h3>
-          <p className="text-sm text-secondary max-w-md mx-auto mb-6">
+          <BookOpen className="w-16 h-16 text-emerald-400 empty-state-card-icon" />
+          <h3 className="empty-state-card-title">No notes yet</h3>
+          <p className="empty-state-card-desc">
             Start capturing your financial thoughts, goals, and insights. Notes help you track your financial journey and make better decisions.
           </p>
           <Button
@@ -304,13 +302,11 @@ export default function NotesPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass rounded-2xl p-12 text-center"
+          className="glass rounded-2xl empty-state-card"
         >
-          <Search className="w-10 h-10 text-tertiary mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No matching notes</h3>
-          <p className="text-sm text-secondary">
-            Try a different search term
-          </p>
+          <Search className="w-10 h-10 text-tertiary empty-state-card-icon" />
+          <h3 className="empty-state-card-title">No matching notes</h3>
+          <p className="empty-state-card-desc">Try a different search term</p>
         </motion.div>
       )}
 
@@ -337,7 +333,7 @@ export default function NotesPage() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05, duration: 0.25 }}
                     onClick={() => openNoteView(note)}
-                    className="glass-subtle rounded-xl p-4 min-w-[240px] max-w-[280px] text-left shrink-0 group hover:card-depth-1 transition-all duration-300 border-l-[3px]"
+                    className="glass-subtle card-spotlight rounded-xl p-4 min-w-[240px] max-w-[280px] text-left shrink-0 group hover-scale-subtle transition-all duration-300 border-l-[3px]"
                     style={{ borderLeftColor: note.color }}
                   >
                     <div className="flex items-start justify-between gap-2 mb-2">
@@ -346,10 +342,10 @@ export default function NotesPage() {
                     </div>
                     <p className="text-xs text-secondary line-clamp-2 mb-3 leading-relaxed">{note.content}</p>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-white/10 text-foreground/50 font-normal gap-1">
+                      <span className="tag-pill gap-1">
                         <CatIcon className="w-2.5 h-2.5" />
                         {CATEGORY_LABELS[note.category] || note.category}
-                      </Badge>
+                      </span>
                       <span className="text-[10px] text-tertiary ml-auto">{format(new Date(note.createdAt), 'MMM d')}</span>
                     </div>
                   </motion.button>
@@ -359,6 +355,8 @@ export default function NotesPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <hr className="glass-divider" />
 
       {/* Notes Grid */}
       {unpinnedNotes.length > 0 && (
@@ -378,7 +376,7 @@ export default function NotesPage() {
               >
                 <button
                   onClick={() => openNoteView(note)}
-                  className="w-full glass rounded-xl p-4 text-left group hover:card-depth-1 transition-all duration-300 border-t-[3px]"
+                  className="w-full glass card-spotlight rounded-xl p-4 text-left group hover-scale-subtle transition-all duration-300 border-t-[3px]"
                   style={{ borderTopColor: note.color }}
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
@@ -387,10 +385,10 @@ export default function NotesPage() {
                   </div>
                   <p className="text-xs text-secondary line-clamp-2 mb-3 leading-relaxed whitespace-pre-line">{note.content}</p>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-white/10 text-foreground/50 font-normal badge-glass gap-1">
+                    <span className="tag-pill gap-1">
                       <CatIcon className="w-2.5 h-2.5" />
                       {CATEGORY_LABELS[note.category] || note.category}
-                    </Badge>
+                    </span>
                     <span className="text-[10px] text-tertiary ml-auto">{format(new Date(note.createdAt), 'MMM d, yyyy')}</span>
                   </div>
                 </button>
@@ -418,7 +416,7 @@ export default function NotesPage() {
                 value={formData.title}
                 onChange={(e) => setFormData(f => ({ ...f, title: e.target.value }))}
                 placeholder="Give your note a title..."
-                className="input-premium"
+                className="input-premium glass-input"
               />
             </div>
 
@@ -429,14 +427,14 @@ export default function NotesPage() {
                 onChange={(e) => setFormData(f => ({ ...f, content: e.target.value }))}
                 placeholder="Write your note..."
                 rows={4}
-                className="input-premium resize-none"
+                className="input-premium glass-input resize-none"
               />
             </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-secondary">Category</label>
               <Select value={formData.category} onValueChange={(v) => setFormData(f => ({ ...f, category: v }))}>
-                <SelectTrigger className="input-premium">
+                <SelectTrigger className="input-premium glass-input">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="glass border-white/10">
@@ -592,7 +590,7 @@ export default function NotesPage() {
                 value={formData.title}
                 onChange={(e) => setFormData(f => ({ ...f, title: e.target.value }))}
                 placeholder="Note title..."
-                className="input-premium"
+                className="input-premium glass-input"
               />
             </div>
 
@@ -603,14 +601,14 @@ export default function NotesPage() {
                 onChange={(e) => setFormData(f => ({ ...f, content: e.target.value }))}
                 placeholder="Note content..."
                 rows={4}
-                className="input-premium resize-none"
+                className="input-premium glass-input resize-none"
               />
             </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-secondary">Category</label>
               <Select value={formData.category} onValueChange={(v) => setFormData(f => ({ ...f, category: v }))}>
-                <SelectTrigger className="input-premium">
+                <SelectTrigger className="input-premium glass-input">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="glass border-white/10">

@@ -206,10 +206,10 @@ export default function WalletsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="section-header justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Wallets</h2>
-          <p className="text-sm text-muted-foreground mt-1">Manage your accounts and track balances</p>
+          <div className="section-header-title text-2xl">Wallets</div>
+          <p className="section-header-subtitle">Manage your accounts and track balances</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -298,12 +298,12 @@ export default function WalletsPage() {
         className="grid grid-cols-1 sm:grid-cols-3 gap-4"
       >
         <motion.div variants={item}>
-          <Card className="glass border-white/10 overflow-hidden">
+          <Card className="glass border-gradient-emerald overflow-hidden">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Balance</p>
-                  <p className="text-2xl font-bold mt-1">{formatCurrency(totalBalance)}</p>
+                  <p className="text-sm text-tertiary">Total Balance</p>
+                  <p className="text-2xl font-bold mt-1 stat-number">{formatCurrency(totalBalance)}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
                   <CircleDollarSign className="w-6 h-6 text-emerald-400" />
@@ -318,8 +318,8 @@ export default function WalletsPage() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Number of Wallets</p>
-                  <p className="text-2xl font-bold mt-1">{wallets.length}</p>
+                  <p className="text-sm text-tertiary">Number of Wallets</p>
+                  <p className="text-2xl font-bold mt-1 stat-number">{wallets.length}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center">
                   <WalletIcon className="w-6 h-6 text-cyan-400" />
@@ -334,10 +334,10 @@ export default function WalletsPage() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Highest Balance</p>
-                  <p className="text-2xl font-bold mt-1">{formatCurrency(highestBalance)}</p>
+                  <p className="text-sm text-tertiary">Highest Balance</p>
+                  <p className="text-2xl font-bold mt-1 stat-number">{formatCurrency(highestBalance)}</p>
                   {highestWallet && (
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-[160px]">{highestWallet.name}</p>
+                    <p className="text-xs text-tertiary mt-0.5 truncate max-w-[160px]">{highestWallet.name}</p>
                   )}
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
@@ -355,13 +355,11 @@ export default function WalletsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="flex flex-col items-center justify-center py-20 text-center"
+          className="glass rounded-2xl empty-state-card"
         >
-          <div className="w-20 h-20 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6">
-            <WalletIcon className="w-10 h-10 text-emerald-400/60" />
-          </div>
-          <h3 className="text-xl font-semibold mb-2">No Wallets Yet</h3>
-          <p className="text-sm text-muted-foreground max-w-sm mb-6">
+          <WalletIcon className="w-20 h-20 text-emerald-400 empty-state-card-icon" />
+          <h3 className="empty-state-card-title">No Wallets Yet</h3>
+          <p className="empty-state-card-desc">
             Start tracking your finances by adding your first wallet or bank account.
           </p>
           <Button
@@ -387,7 +385,7 @@ export default function WalletsPage() {
                 layout
                 exit={{ opacity: 0, scale: 0.9 }}
               >
-                <Card className="glass glass-card-hover border-white/10 overflow-hidden group relative">
+                <Card className="glass-card-interactive glass-card-hover border-white/10 overflow-hidden group relative card-spotlight hover-scale-subtle">
                   {/* Color accent bar */}
                   <div
                     className="h-1 w-full"
@@ -417,24 +415,24 @@ export default function WalletsPage() {
                       </div>
                       <button
                         onClick={() => setDeleteTarget(wallet)}
-                        className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-rose-500/10 text-muted-foreground hover:text-rose-400 transition-all"
+                        className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-rose-500/10 text-tertiary hover:text-rose-400 transition-all"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
 
                     <div className="mb-4">
-                      <p className="text-3xl font-bold tracking-tight">
+                      <p className="text-3xl font-bold tracking-tight stat-number">
                         {formatCurrency(wallet.balance)}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">{wallet.currency}</p>
+                      <p className="text-xs text-tertiary mt-1">{wallet.currency}</p>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="flex-1 border-white/10 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/30 text-xs h-8"
+                        className="icon-glow-emerald flex-1 border-white/10 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/30 text-xs h-8"
                         onClick={() => handleUpdateBalance(wallet, 100)}
                         disabled={loading}
                       >
@@ -444,7 +442,7 @@ export default function WalletsPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="flex-1 border-white/10 hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/30 text-xs h-8"
+                        className="icon-glow-rose flex-1 border-white/10 hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/30 text-xs h-8"
                         onClick={() => handleUpdateBalance(wallet, -100)}
                         disabled={loading}
                       >

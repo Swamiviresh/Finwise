@@ -1477,3 +1477,348 @@ input, textarea, select {
 .dark .mini-stat:hover {
   background: rgba(255,255,255,0.06);
 }
+
+/* ==========================================================================
+   FinWise AI — Task 7-a: CSS Utility Expansion (19 New Classes)
+   ========================================================================== */
+
+/* ── 57. Card Spotlight — Premium Flashlight Hover ────────────────────── */
+.card-spotlight {
+  position: relative;
+  overflow: hidden;
+}
+.card-spotlight::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  border-radius: inherit;
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(255, 255, 255, 0.06),
+    transparent 40%
+  );
+}
+:where(:not(.dark)) .card-spotlight::before {
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(0, 0, 0, 0.04),
+    transparent 40%
+  );
+}
+.card-spotlight:hover::before {
+  opacity: 1;
+}
+
+/* ── 58. Text Gradient Warm (Amber → Rose → Violet) ─────────────────── */
+.text-gradient-warm {
+  background: linear-gradient(135deg, #f59e0b, #f43f5e, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── 59. Text Gradient Cool (Emerald → Cyan → Violet) ────────────────── */
+.text-gradient-cool {
+  background: linear-gradient(135deg, #10b981, #06b6d4, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── 60. Hover Scale Subtle ──────────────────────────────────────────── */
+.hover-scale-subtle {
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hover-scale-subtle:hover {
+  transform: scale(1.01);
+}
+
+/* ── 61. Hover Scale Medium ──────────────────────────────────────────── */
+.hover-scale-medium {
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hover-scale-medium:hover {
+  transform: scale(1.03);
+}
+
+/* ── 62. Glass Card Interactive (glass + card-hover + scale) ────────── */
+.glass-card-interactive {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.glass-card-interactive:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.08);
+}
+
+/* ── 63. Border Gradient Emerald (2px, emerald → cyan) ──────────────── */
+.border-gradient-emerald {
+  position: relative;
+  border: none !important;
+  background-clip: padding-box;
+}
+.border-gradient-emerald::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(135deg, #10b981, #06b6d4);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── 64. Border Gradient Rose (2px, rose → amber) ────────────────────── */
+.border-gradient-rose {
+  position: relative;
+  border: none !important;
+  background-clip: padding-box;
+}
+.border-gradient-rose::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(135deg, #f43f5e, #f59e0b);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── 65. Shimmer Text ────────────────────────────────────────────────── */
+@keyframes shimmer-text-anim {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    var(--foreground) 0%,
+    #10b981 25%,
+    #06b6d4 50%,
+    #a78bfa 75%,
+    var(--foreground) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer-text-anim 4s linear infinite;
+}
+
+/* ── 66. Glass Input ─────────────────────────────────────────────────── */
+.glass-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+  transition: all 0.25s ease;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  outline: none;
+}
+:where(:not(.dark)) .glass-input {
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.glass-input:focus {
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow:
+    0 0 0 3px rgba(16, 185, 129, 0.15),
+    0 0 20px rgba(16, 185, 129, 0.08),
+    inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+.glass-input::placeholder {
+  color: var(--muted-foreground);
+  opacity: 0.7;
+}
+
+/* ── 67. Glass Divider ───────────────────────────────────────────────── */
+.glass-divider {
+  height: 1px;
+  border: none;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--glass-border) 30%,
+    var(--glass-border) 70%,
+    transparent
+  );
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.04);
+  margin: 1.5rem 0;
+}
+
+/* ── 68. Stat Number ─────────────────────────────────────────────────── */
+.stat-number {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' on, 'lnum' on;
+  display: inline-block;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--foreground);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.dark .stat-number {
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.08);
+}
+
+/* ── 69. Icon Glow Emerald ───────────────────────────────────────────── */
+.icon-glow-emerald {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+}
+.icon-glow-emerald:hover {
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.3), 0 0 32px rgba(16, 185, 129, 0.1);
+  filter: brightness(1.2);
+}
+
+/* ── 70. Icon Glow Rose ──────────────────────────────────────────────── */
+.icon-glow-rose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+}
+.icon-glow-rose:hover {
+  box-shadow: 0 0 16px rgba(244, 63, 94, 0.3), 0 0 32px rgba(244, 63, 94, 0.1);
+  filter: brightness(1.2);
+}
+
+/* ── 71. Section Header ──────────────────────────────────────────────── */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.section-header::before {
+  content: '';
+  width: 3px;
+  height: 24px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #10b981, #06b6d4);
+  flex-shrink: 0;
+}
+.section-header-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.section-header-subtitle {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin-top: 2px;
+}
+.dark .section-header-subtitle {
+  color: #a8b8cc;
+}
+
+/* ── 72. Tag Pill ────────────────────────────────────────────────────── */
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  color: var(--foreground);
+  white-space: nowrap;
+}
+
+/* ── 73. Empty State Card ────────────────────────────────────────────── */
+.empty-state-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  text-align: center;
+  padding: 3rem 2rem;
+}
+.empty-state-card-icon {
+  opacity: 0.2;
+  transform: scale(1.5);
+  margin-bottom: 1.5rem;
+}
+.empty-state-card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.empty-state-card-desc {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  max-width: 24rem;
+  margin: 0 auto;
+}
+.dark .empty-state-card-desc {
+  color: #a8b8cc;
+}
+
+/* ── 74. Progress Bar Premium ────────────────────────────────────────── */
+.progress-bar-premium {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+.progress-bar-premium-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #10b981, #06b6d4);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── 75. Tooltip Arrow ───────────────────────────────────────────────── */
+.tooltip-arrow {
+  position: relative;
+}
+.tooltip-arrow::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid var(--glass-border);
+  pointer-events: none;
+}

@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import {
   LayoutDashboard, Receipt, TrendingUp, PieChart, Target,
   BarChart3, MessageSquare, Settings, Shield, LogOut,
-  Menu, Sun, Moon, Zap, X, Bell, Search, ChevronRight, AlertTriangle, Plus, FileText, MoreHorizontal, Wallet, StickyNote, Lightbulb
+  Menu, Sun, Moon, Zap, X, Bell, Search, ChevronRight, AlertTriangle, Plus, FileText, MoreHorizontal, Wallet, StickyNote, Lightbulb, Tag
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -50,6 +50,7 @@ const NAV_ITEMS: { icon: typeof LayoutDashboard; label: string; view: ViewType }
   { icon: Target, label: 'Goals', view: 'goals' },
   { icon: FileText, label: 'Bills', view: 'bills' },
   { icon: Wallet, label: 'Wallets', view: 'wallets' },
+  { icon: Tag, label: 'Categories', view: 'categories' },
   { icon: BarChart3, label: 'Reports', view: 'reports' },
   { icon: Lightbulb, label: 'Spending Insights', view: 'insights' },
   { icon: StickyNote, label: 'Notes', view: 'notes' },
@@ -64,7 +65,7 @@ const BOTTOM_NAV = [
 const PAGE_TITLES: Record<ViewType, string> = {
   landing: 'Welcome', login: 'Sign In', register: 'Create Account',
   dashboard: 'Dashboard', expenses: 'Expenses', income: 'Income',
-  budgets: 'Budgets', goals: 'Goals', bills: 'Bills & Subscriptions', wallets: 'Wallets', reports: 'Reports', insights: 'Spending Insights', notes: 'Notes',
+  budgets: 'Budgets', goals: 'Goals', bills: 'Bills & Subscriptions', wallets: 'Wallets', categories: 'Categories', reports: 'Reports', insights: 'Spending Insights', notes: 'Notes',
   'ai-coach': 'AI Finance Coach', settings: 'Settings', security: 'Security Center',
 }
 

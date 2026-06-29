@@ -1,15 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
-import { useAppStore } from '@/store/use-app-store'
+import { useAppStore, type Tag } from '@/store/use-app-store'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Trash2, RotateCcw, Calendar, Tag, FileText, Scissors } from 'lucide-react'
 import SplitExpenseDialog from '@/components/shared/split-expense-dialog'
+import TagManager from '@/components/shared/tag-manager'
 
 interface TransactionDetailProps {
   type: 'expense' | 'income'
@@ -40,6 +41,8 @@ export default function TransactionDetail({ type, data, children }: TransactionD
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [splitOpen, setSplitOpen] = useState(false)
+  const [currentTags, setCurrentTags] = useState<Tag[]>([])
+  const [detailOpen, setDetailOpen] = useState(false)
 
   const isExpense = type === 'expense'
   const amountColor = isExpense ? 'text-rose-400' : 'text-emerald-400'
@@ -70,6 +73,16 @@ export default function TransactionDetail({ type, data, children }: TransactionD
     }
   }
 
+  // Load tags when popover opens
+  useEffect(() => {
+    if (!detailOpen || !user?.id) return
+    const param = isExpense ? `expenseId=${data.id}` : `incomeId=${data.id}`
+    fetch(`/api/tags?userId=${user.id}&${param}`)
+      .then((r) => r.json())
+      .then(setCurrentTags)
+      .catch(() => {})
+  }, [detailOpen, user?.id, data.id, isExpense])
+
   const formattedDate = (() => {
     try {
       return format(new Date(data.date), "MMMM d, yyyy 'at' h:mm a")
@@ -79,7 +92,7 @@ export default function TransactionDetail({ type, data, children }: TransactionD
   })()
 
   return (
-    <Popover>
+    <Popover open={detailOpen} onOpenChange={setDetailOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent
         side="bottom"
@@ -125,6 +138,43 @@ export default function TransactionDetail({ type, data, children }: TransactionD
               </Badge>
             </div>
           )}
+
+          {/* Tags Section */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Tag className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Tags</span>
+              </div>
+              <TagManager transactionId={data.id} transactionType={type}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  type="button"
+                  className="h-6 px-2 text-[10px] text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 gap-1"
+                >
+                  <Tag className="w-2.5 h-2.5" />
+                  Manage Tags
+                </Button>
+              </TagManager>
+            </div>
+            {currentTags.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {currentTags.map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium glass-subtle"
+                    style={{ color: tag.color }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: tag.color }} />
+                    {tag.name.length > 15 ? tag.name.slice(0, 15) + '…' : tag.name}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[10px] text-tertiary">No tags assigned</p>
+            )}
+          </div>
 
           {/* Description */}
           {data.description && (

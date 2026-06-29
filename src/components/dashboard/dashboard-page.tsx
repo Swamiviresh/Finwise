@@ -18,6 +18,7 @@ import NetWorthTracker from './net-worth-tracker'
 import SmartInsights from './smart-insights'
 import AchievementsPanel from './achievements-panel'
 import CurrencyWidget from './currency-widget'
+import FinancialOverview from './financial-overview'
 
 const CATEGORY_COLORS: Record<string, string> = {
   Food: '#34d399', Rent: '#22d3ee', Shopping: '#fbbf24', Healthcare: '#fb7185',
@@ -440,6 +441,9 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </AnimatedCard>
+
+        {/* ── Financial Overview Widget ── */}
+        <FinancialOverview />
 
         {/* ── 5. Charts Row ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

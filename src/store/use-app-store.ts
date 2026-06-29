@@ -13,6 +13,7 @@ export type ViewType =
   | 'ai-coach'
   | 'bills'
   | 'wallets'
+  | 'categories'
   | 'notes'
   | 'settings'
   | 'security'
@@ -90,6 +91,23 @@ export interface ChatMessage {
   createdAt: string
 }
 
+export interface Tag {
+  id: string
+  userId: string
+  name: string
+  color: string
+  createdAt: string
+}
+
+export interface TransactionTagData {
+  id: string
+  expenseId?: string
+  incomeId?: string
+  tagId: string
+  tag?: Tag
+  createdAt: string
+}
+
 export interface Note {
   id: string
   userId: string
@@ -98,6 +116,18 @@ export interface Note {
   category: string
   color: string
   isPinned: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Category {
+  id: string
+  userId: string
+  name: string
+  icon: string
+  color: string
+  type: 'expense' | 'income'
+  isDefault: boolean
   createdAt: string
   updatedAt: string
 }
@@ -134,6 +164,10 @@ interface AppState {
   clearChatMessages: () => void
   notes: Note[]
   setNotes: (notes: Note[]) => void
+  categories: Category[]
+  setCategories: (categories: Category[]) => void
+  tags: Tag[]
+  setTags: (tags: Tag[]) => void
 
   // Health score
   healthScore: number
@@ -185,6 +219,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   clearChatMessages: () => set({ chatMessages: [] }),
   notes: [],
   setNotes: (notes) => set({ notes }),
+  categories: [],
+  setCategories: (categories) => set({ categories }),
+  tags: [],
+  setTags: (tags) => set({ tags }),
 
   // Health score
   healthScore: 0,

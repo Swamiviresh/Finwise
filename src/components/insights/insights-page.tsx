@@ -166,7 +166,7 @@ function ConsistencyRing({ score }: { score: number }) {
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <motion.span
-            className="text-3xl font-bold number-tick"
+            className="text-3xl font-bold stat-number"
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.6 }}
@@ -441,19 +441,25 @@ export default function InsightsPage() {
         </Card>
       </motion.div>
 
+      <hr className="glass-divider" />
+
       {/* ── 2. Category Evolution + 3. Spending Velocity (side by side) ──── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Category Evolution */}
         <motion.div variants={item} className="lg:col-span-2">
           <Card className="glass card-depth-1 border-white/[0.06] h-full">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                  <Trophy className="w-4 h-4 text-violet-400" />
+              <div className="section-header">
+                <div>
+                  <div className="section-header-title flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                      <Trophy className="w-4 h-4 text-violet-400" />
+                    </div>
+                    Category Evolution
+                  </div>
+                  <p className="section-header-subtitle">Top 5 spending categories — 6 month trend</p>
                 </div>
-                Category Evolution
-              </CardTitle>
-              <p className="text-xs text-tertiary mt-1">Top 5 spending categories — 6 month trend</p>
+              </div>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-4">
@@ -510,15 +516,19 @@ export default function InsightsPage() {
 
         {/* Spending Velocity */}
         <motion.div variants={item}>
-          <Card className="glass card-depth-1 border-white/[0.06] h-full">
+          <Card className="glass-card-interactive card-depth-1 h-full">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <Zap className="w-4 h-4 text-amber-400" />
+              <div className="section-header">
+                <div>
+                  <div className="section-header-title flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                      <Zap className="w-4 h-4 text-amber-400" />
+                    </div>
+                    Spending Velocity
+                  </div>
+                  <p className="section-header-subtitle">Last 3 months vs previous 3</p>
                 </div>
-                Spending Velocity
-              </CardTitle>
-              <p className="text-xs text-tertiary mt-1">Last 3 months vs previous 3</p>
+              </div>
             </CardHeader>
             <CardContent className="pt-0 flex flex-col items-center justify-center flex-1 py-6">
               <div
@@ -542,7 +552,7 @@ export default function InsightsPage() {
               <div className="text-center">
                 <p
                   className={cn(
-                    'text-2xl font-bold number-tick flex items-center justify-center gap-1.5',
+                    'text-2xl font-bold stat-number flex items-center justify-center gap-1.5',
                     spendingVelocity.change > 5
                       ? 'text-rose-400'
                       : spendingVelocity.change < -5
@@ -568,11 +578,11 @@ export default function InsightsPage() {
               <div className="grid grid-cols-2 gap-4 mt-6 w-full">
                 <div className="text-center p-3 rounded-xl bg-white/[0.03]">
                   <p className="text-xs text-tertiary mb-1">Last 3 mo avg</p>
-                  <p className="text-sm font-semibold number-tick">{fmt(spendingVelocity.avgLast)}</p>
+                  <p className="text-sm font-semibold stat-number">{fmt(spendingVelocity.avgLast)}</p>
                 </div>
                 <div className="text-center p-3 rounded-xl bg-white/[0.03]">
                   <p className="text-xs text-tertiary mb-1">Previous 3 mo avg</p>
-                  <p className="text-sm font-semibold number-tick">{fmt(spendingVelocity.avgPrev)}</p>
+                  <p className="text-sm font-semibold stat-number">{fmt(spendingVelocity.avgPrev)}</p>
                 </div>
               </div>
             </CardContent>
@@ -580,19 +590,25 @@ export default function InsightsPage() {
         </motion.div>
       </div>
 
+      <hr className="glass-divider" />
+
       {/* ── 4. Top 5 Expenses + 5. MoM Changes (side by side) ─────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top 5 Expenses */}
         <motion.div variants={item}>
           <Card className="glass card-depth-1 border-white/[0.06] h-full">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center">
-                  <Flame className="w-4 h-4 text-rose-400" />
+              <div className="section-header">
+                <div>
+                  <div className="section-header-title flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center">
+                      <Flame className="w-4 h-4 text-rose-400" />
+                    </div>
+                    Top 5 Expenses of All Time
+                  </div>
+                  <p className="section-header-subtitle">Highest single transactions</p>
                 </div>
-                Top 5 Expenses of All Time
-              </CardTitle>
-              <p className="text-xs text-tertiary mt-1">Highest single transactions</p>
+              </div>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-2.5">
@@ -604,7 +620,7 @@ export default function InsightsPage() {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.4 + i * 0.06, duration: 0.3 }}
-                      className="flex items-center gap-3 p-3 rounded-xl hover-surface transition-colors group"
+                      className="flex items-center gap-3 p-3 rounded-xl hover-scale-subtle hover-surface transition-colors group"
                     >
                       <span className="text-xs font-bold text-tertiary w-5 text-center shrink-0">
                         {i + 1}
@@ -655,15 +671,19 @@ export default function InsightsPage() {
         <motion.div variants={item}>
           <Card className="glass card-depth-1 border-white/[0.06] h-full">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 text-cyan-400" />
+              <div className="section-header">
+                <div>
+                  <div className="section-header-title flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                      <TrendingUp className="w-4 h-4 text-cyan-400" />
+                    </div>
+                    Month-over-Month Changes
+                  </div>
+                  <p className="section-header-subtitle">
+                    Category changes this month vs last month
+                  </p>
                 </div>
-                Month-over-Month Changes
-              </CardTitle>
-              <p className="text-xs text-tertiary mt-1">
-                Category changes this month vs last month
-              </p>
+              </div>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="h-72">
@@ -752,19 +772,25 @@ export default function InsightsPage() {
         </motion.div>
       </div>
 
+      <hr className="glass-divider" />
+
       {/* ── 6. Spending Consistency Score ─────────────────────────────────── */}
       <motion.div variants={item}>
-        <Card className="glass card-depth-1 border-white/[0.06]">
+        <Card className="glass-card-interactive card-depth-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                <Activity className="w-4 h-4 text-emerald-400" />
+            <div className="section-header">
+              <div>
+                <div className="section-header-title flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                    <Activity className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  Spending Consistency Score
+                </div>
+                <p className="section-header-subtitle">
+                  How stable your monthly spending is — low variance = high consistency
+                </p>
               </div>
-              Spending Consistency Score
-            </CardTitle>
-            <p className="text-xs text-tertiary mt-1">
-              How stable your monthly spending is — low variance = high consistency
-            </p>
+            </div>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="flex flex-col sm:flex-row items-center gap-8 py-4">
@@ -782,7 +808,7 @@ export default function InsightsPage() {
                 <div className="grid grid-cols-3 gap-3">
                   <div className="p-3 rounded-xl bg-white/[0.03] text-center">
                     <p className="text-[10px] text-tertiary mb-0.5">Avg Monthly</p>
-                    <p className="text-sm font-semibold number-tick">
+                    <p className="text-sm font-semibold stat-number">
                       {fmt(
                         expenses.length > 0
                           ? (() => {
@@ -810,7 +836,7 @@ export default function InsightsPage() {
                   </div>
                   <div className="p-3 rounded-xl bg-white/[0.03] text-center">
                     <p className="text-[10px] text-tertiary mb-0.5">Highest Month</p>
-                    <p className="text-sm font-semibold number-tick">
+                    <p className="text-sm font-semibold stat-number">
                       {fmt(
                         (() => {
                           const now = new Date()
@@ -832,7 +858,7 @@ export default function InsightsPage() {
                   </div>
                   <div className="p-3 rounded-xl bg-white/[0.03] text-center">
                     <p className="text-[10px] text-tertiary mb-0.5">Lowest Month</p>
-                    <p className="text-sm font-semibold number-tick">
+                    <p className="text-sm font-semibold stat-number">
                       {fmt(
                         (() => {
                           const now = new Date()

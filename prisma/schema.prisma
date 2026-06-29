@@ -24,6 +24,8 @@ model User {
   wallets     Wallet[]
   chatMessages ChatMessage[]
   notes        Note[]
+  categories   Category[]
+  tags         Tag[]
 }
 
 model Expense {
@@ -39,6 +41,7 @@ model Expense {
   updatedAt   DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactionTags TransactionTag[]
 
   @@index([userId])
   @@index([category])
@@ -57,6 +60,7 @@ model Income {
   updatedAt   DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactionTags TransactionTag[]
 
   @@index([userId])
 }
@@ -137,4 +141,51 @@ model Note {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  color     String   @default("#10b981")
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactionTags TransactionTag[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model TransactionTag {
+  id         String    @id @default(cuid())
+  expenseId  String?
+  incomeId   String?
+  tagId      String
+  createdAt  DateTime  @default(now())
+
+  expense    Expense?  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  income     Income?   @relation(fields: [incomeId], references: [id], onDelete: Cascade)
+  tag        Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@index([expenseId])
+  @@index([incomeId])
+  @@index([tagId])
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  icon      String   @default("📋")
+  color     String   @default("#10b981")
+  type      String   @default("expense")
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
 }

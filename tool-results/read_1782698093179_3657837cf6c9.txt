@@ -1,0 +1,863 @@
+     1→     1→'use client'
+     2→     2→
+     3→     3→import { useMemo } from 'react'
+     4→     4→import { useAppStore } from '@/store/use-app-store'
+     5→     5→import { Badge } from '@/components/ui/badge'
+     6→     6→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+     7→     7→import {
+     8→     8→  AreaChart, Area, BarChart, Bar, Cell, XAxis, YAxis, Tooltip,
+     9→     9→  ResponsiveContainer, CartesianGrid,
+    10→    10→} from 'recharts'
+    11→    11→import { motion } from 'framer-motion'
+    12→    12→import {
+    13→    13→  TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
+    14→    14→  Activity, Zap, Trophy, Flame, DollarSign,
+    15→    15→} from 'lucide-react'
+    16→    16→import { cn } from '@/lib/utils'
+    17→    17→import { format } from 'date-fns'
+    18→    18→
+    19→    19→// ─── Constants ─────────────────────────────────────────────────────────────────
+    20→    20→
+    21→    21→const CATEGORY_COLORS: Record<string, string> = {
+    22→    22→  Food: '#34d399',
+    23→    23→  Rent: '#22d3ee',
+    24→    24→  Shopping: '#fbbf24',
+    25→    25→  Healthcare: '#fb7185',
+    26→    26→  Education: '#a78bfa',
+    27→    27→  Transportation: '#38bdf8',
+    28→    28→  Entertainment: '#f97316',
+    29→    29→  Utilities: '#2dd4bf',
+    30→    30→  Investments: '#4ade80',
+    31→    31→  Insurance: '#c084fc',
+    32→    32→  Subscriptions: '#f472b6',
+    33→    33→  Others: '#94a3b8',
+    34→    34→}
+    35→    35→
+    36→    36→const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    37→    37→
+    38→    38→function fmt(n: number) {
+    39→    39→  return new Intl.NumberFormat('en-US', {
+    40→    40→    style: 'currency',
+    41→    41→    currency: 'USD',
+    42→    42→    minimumFractionDigits: 0,
+    43→    43→    maximumFractionDigits: 0,
+    44→    44→  }).format(n)
+    45→    45→}
+    46→    46→
+    47→    47→// ─── Animation variants ───────────────────────────────────────────────────────
+    48→    48→
+    49→    49→const container = {
+    50→    50→  hidden: { opacity: 0 },
+    51→    51→  show: {
+    52→    52→    opacity: 1,
+    53→    53→    transition: { staggerChildren: 0.08 },
+    54→    54→  },
+    55→    55→}
+    56→    56→
+    57→    57→const item = {
+    58→    58→  hidden: { opacity: 0, y: 18 },
+    59→    59→  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } },
+    60→    60→}
+    61→    61→
+    62→    62→// ─── Custom Tooltip ───────────────────────────────────────────────────────────
+    63→    63→
+    64→    64→function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
+    65→    65→  if (!active || !payload?.length) return null
+    66→    66→  return (
+    67→    67→    <div className="glass rounded-lg border border-white/10 px-3 py-2 shadow-xl">
+    68→    68→      <p className="text-xs font-medium text-secondary mb-1">{label}</p>
+    69→    69→      {payload.map((p) => (
+    70→    70→        <div key={p.name} className="flex items-center gap-2 text-xs">
+    71→    71→          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: p.color }} />
+    72→    72→          <span className="text-tertiary">{p.name}</span>
+    73→    73→          <span className="font-semibold text-foreground ml-auto">{fmt(p.value)}</span>
+    74→    74→        </div>
+    75→    75→      ))}
+    76→    76→    </div>
+    77→    77→  )
+    78→    78→}
+    79→    79→
+    80→    80→// ─── Sparkline ────────────────────────────────────────────────────────────────
+    81→    81→
+    82→    82→function Sparkline({ data, color }: { data: number[]; color: string }) {
+    83→    83→  const max = Math.max(...data, 1)
+    84→    84→  const min = Math.min(...data, 0)
+    85→    85→  const range = max - min || 1
+    86→    86→  const w = 80
+    87→    87→  const h = 28
+    88→    88→  const points = data
+    89→    89→    .map((v, i) => {
+    90→    90→      const x = (i / (data.length - 1)) * w
+    91→    91→      const y = h - ((v - min) / range) * (h - 4) - 2
+    92→    92→      return `${x},${y}`
+    93→    93→    })
+    94→    94→    .join(' ')
+    95→    95→
+    96→    96→  return (
+    97→    97→    <svg viewBox={`0 0 ${w} ${h}`} className="w-20 h-7 shrink-0">
+    98→    98→      <defs>
+    99→    99→        <linearGradient id={`spark-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
+   100→   100→          <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+   101→   101→          <stop offset="100%" stopColor={color} stopOpacity={0} />
+   102→   102→        </linearGradient>
+   103→   103→      </defs>
+   104→   104→      <polygon
+   105→   105→        points={`0,${h} ${points} ${w},${h}`}
+   106→   106→        fill={`url(#spark-${color.replace('#', '')})`}
+   107→   107→      />
+   108→   108→      <polyline
+   109→   109→        points={points}
+   110→   110→        fill="none"
+   111→   111→        stroke={color}
+   112→   112→        strokeWidth={1.5}
+   113→   113→        strokeLinecap="round"
+   114→   114→        strokeLinejoin="round"
+   115→   115→      />
+   116→   116→    </svg>
+   117→   117→  )
+   118→   118→}
+   119→   119→
+   120→   120→// ─── Circular Progress Ring ───────────────────────────────────────────────────
+   121→   121→
+   122→   122→function ConsistencyRing({ score }: { score: number }) {
+   123→   123→  const radius = 52
+   124→   124→  const circumference = 2 * Math.PI * radius
+   125→   125→  const offset = circumference - (score / 100) * circumference
+   126→   126→
+   127→   127→  const color =
+   128→   128→    score >= 75 ? '#10b981' : score >= 50 ? '#fbbf24' : score >= 25 ? '#f97316' : '#f43f5e'
+   129→   129→
+   130→   130→  const label =
+   131→   131→    score >= 75
+   132→   132→      ? 'Very Consistent'
+   133→   133→      : score >= 50
+   134→   134→        ? 'Moderately Consistent'
+   135→   135→        : score >= 25
+   136→   136→          ? 'Somewhat Variable'
+   137→   137→          : 'Highly Variable'
+   138→   138→
+   139→   139→  return (
+   140→   140→    <div className="flex flex-col items-center gap-3">
+   141→   141→      <div className="relative">
+   142→   142→        <svg width={130} height={130} className="-rotate-90">
+   143→   143→          <circle
+   144→   144→            cx={65}
+   145→   145→            cy={65}
+   146→   146→            r={radius}
+   147→   147→            fill="none"
+   148→   148→            stroke="currentColor"
+   149→   149→            strokeWidth={8}
+   150→   150→            className="text-white/5"
+   151→   151→          />
+   152→   152→          <motion.circle
+   153→   153→            cx={65}
+   154→   154→            cy={65}
+   155→   155→            r={radius}
+   156→   156→            fill="none"
+   157→   157→            stroke={color}
+   158→   158→            strokeWidth={8}
+   159→   159→            strokeLinecap="round"
+   160→   160→            strokeDasharray={circumference}
+   161→   161→            initial={{ strokeDashoffset: circumference }}
+   162→   162→            animate={{ strokeDashoffset: offset }}
+   163→   163→            transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
+   164→   164→            style={{ filter: `drop-shadow(0 0 6px ${color}60)` }}
+   165→   165→          />
+   166→   166→        </svg>
+   167→   167→        <div className="absolute inset-0 flex flex-col items-center justify-center">
+   168→   168→          <motion.span
+   169→   169→            className="text-3xl font-bold number-tick"
+   170→   170→            initial={{ opacity: 0, scale: 0.5 }}
+   171→   171→            animate={{ opacity: 1, scale: 1 }}
+   172→   172→            transition={{ duration: 0.5, delay: 0.6 }}
+   173→   173→            style={{ color }}
+   174→   174→          >
+   175→   175→            {Math.round(score)}
+   176→   176→          </motion.span>
+   177→   177→          <span className="text-[10px] text-tertiary mt-0.5">/ 100</span>
+   178→   178→        </div>
+   179→   179→      </div>
+   180→   180→      <p className="text-sm font-medium" style={{ color }}>
+   181→   181→        {label}
+   182→   182→      </p>
+   183→   183→    </div>
+   184→   184→  )
+   185→   185→}
+   186→   186→
+   187→   187→// ─── Main Component ───────────────────────────────────────────────────────────
+   188→   188→
+   189→   189→export default function InsightsPage() {
+   190→   190→  const { expenses, incomes } = useAppStore()
+   191→   191→
+   192→   192→  // ─── 1. Spending Trend Chart (6 months) ────────────────────────────────────
+   193→   193→
+   194→   194→  const trendData = useMemo(() => {
+   195→   195→    const now = new Date()
+   196→   196→    const months: { key: string; label: string; expenses: number; income: number }[] = []
+   197→   197→
+   198→   198→    for (let i = 5; i >= 0; i--) {
+   199→   199→      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+   200→   200→      const yr = d.getFullYear()
+   201→   201→      const mo = d.getMonth()
+   202→   202→      const key = `${yr}-${mo}`
+   203→   203→      months.push({
+   204→   204→        key,
+   205→   205→        label: `${MONTH_SHORT[mo]} ${yr.toString().slice(2)}`,
+   206→   206→        expenses: 0,
+   207→   207→        income: 0,
+   208→   208→      })
+   209→   209→    }
+   210→   210→
+   211→   211→    for (const e of expenses) {
+   212→   212→      const d = new Date(e.date)
+   213→   213→      const k = `${d.getFullYear()}-${d.getMonth()}`
+   214→   214→      const m = months.find((x) => x.key === k)
+   215→   215→      if (m) m.expenses += e.amount
+   216→   216→    }
+   217→   217→    for (const inc of incomes) {
+   218→   218→      const d = new Date(inc.date)
+   219→   219→      const k = `${d.getFullYear()}-${d.getMonth()}`
+   220→   220→      const m = months.find((x) => x.key === k)
+   221→   221→      if (m) m.income += inc.amount
+   222→   222→    }
+   223→   223→
+   224→   224→    return months
+   225→   225→  }, [expenses, incomes])
+   226→   226→
+   227→   227→  // ─── 2. Category Evolution (top 5) ─────────────────────────────────────────
+   228→   228→
+   229→   229→  const categoryEvolution = useMemo(() => {
+   230→   230→    const now = new Date()
+   231→   231→    const monthKeys: string[] = []
+   232→   232→    const monthLabels: string[] = []
+   233→   233→
+   234→   234→    for (let i = 5; i >= 0; i--) {
+   235→   235→      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+   236→   236→      monthKeys.push(`${d.getFullYear()}-${d.getMonth()}`)
+   237→   237→      monthLabels.push(MONTH_SHORT[d.getMonth()])
+   238→   238→    }
+   239→   239→
+   240→   240→    // Sum by category
+   241→   241→    const catTotals: Record<string, number> = {}
+   242→   242→    for (const e of expenses) {
+   243→   243→      catTotals[e.category] = (catTotals[e.category] || 0) + e.amount
+   244→   244→    }
+   245→   245→
+   246→   246→    const sorted = Object.entries(catTotals).sort((a, b) => b[1] - a[1]).slice(0, 5)
+   247→   247→
+   248→   248→    return sorted.map(([cat, total]) => {
+   249→   249→      const monthly: number[] = monthKeys.map((k) => {
+   250→   250→        return expenses
+   251→   251→          .filter((e) => {
+   252→   252→            const d = new Date(e.date)
+   253→   253→            return `${d.getFullYear()}-${d.getMonth()}` === k && e.category === cat
+   254→   254→          })
+   255→   255→          .reduce((s, e) => s + e.amount, 0)
+   256→   256→      })
+   257→   257→      return { category: cat, total, monthly, color: CATEGORY_COLORS[cat] || '#94a3b8' }
+   258→   258→    })
+   259→   259→  }, [expenses])
+   260→   260→
+   261→   261→  // ─── 3. Spending Velocity ──────────────────────────────────────────────────
+   262→   262→
+   263→   263→  const spendingVelocity = useMemo(() => {
+   264→   264→    const now = new Date()
+   265→   265→    const last3: number[] = []
+   266→   266→    const prev3: number[] = []
+   267→   267→
+   268→   268→    for (let i = 0; i < 6; i++) {
+   269→   269→      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+   270→   270→      const yr = d.getFullYear()
+   271→   271→      const mo = d.getMonth()
+   272→   272→      const total = expenses
+   273→   273→        .filter((e) => {
+   274→   274→          const ed = new Date(e.date)
+   275→   275→          return ed.getFullYear() === yr && ed.getMonth() === mo
+   276→   276→        })
+   277→   277→        .reduce((s, e) => s + e.amount, 0)
+   278→   278→
+   279→   279→      if (i < 3) last3.push(total)
+   280→   280→      else prev3.push(total)
+   281→   281→    }
+   282→   282→
+   283→   283→    const avgLast = last3.reduce((a, b) => a + b, 0) / (last3.length || 1)
+   284→   284→    const avgPrev = prev3.reduce((a, b) => a + b, 0) / (prev3.length || 1)
+   285→   285→    const change = avgPrev > 0 ? ((avgLast - avgPrev) / avgPrev) * 100 : 0
+   286→   286→
+   287→   287→    return { avgLast, avgPrev, change }
+   288→   288→  }, [expenses])
+   289→   289→
+   290→   290→  // ─── 4. Top 5 Expenses of All Time ─────────────────────────────────────────
+   291→   291→
+   292→   292→  const topExpenses = useMemo(() => {
+   293→   293→    return [...expenses]
+   294→   294→      .sort((a, b) => b.amount - a.amount)
+   295→   295→      .slice(0, 5)
+   296→   296→  }, [expenses])
+   297→   297→
+   298→   298→  // ─── 5. Month-over-Month Changes ───────────────────────────────────────────
+   299→   299→
+   300→   300→  const momChanges = useMemo(() => {
+   301→   301→    const now = new Date()
+   302→   302→    const curMonth = now.getMonth()
+   303→   303→    const curYear = now.getFullYear()
+   304→   304→    const prevMonth = curMonth === 0 ? 11 : curMonth - 1
+   305→   305→    const prevYear = curMonth === 0 ? curYear - 1 : curYear
+   306→   306→
+   307→   307→    const curMap: Record<string, number> = {}
+   308→   308→    const prevMap: Record<string, number> = {}
+   309→   309→
+   310→   310→    for (const e of expenses) {
+   311→   311→      const d = new Date(e.date)
+   312→   312→      if (d.getFullYear() === curYear && d.getMonth() === curMonth) {
+   313→   313→        curMap[e.category] = (curMap[e.category] || 0) + e.amount
+   314→   314→      }
+   315→   315→      if (d.getFullYear() === prevYear && d.getMonth() === prevMonth) {
+   316→   316→        prevMap[e.category] = (prevMap[e.category] || 0) + e.amount
+   317→   317→      }
+   318→   318→    }
+   319→   319→
+   320→   320→    const allCats = new Set([...Object.keys(curMap), ...Object.keys(prevMap)])
+   321→   321→
+   322→   322→    return Array.from(allCats)
+   323→   323→      .map((cat) => {
+   324→   324→        const cur = curMap[cat] || 0
+   325→   325→        const prev = prevMap[cat] || 0
+   326→   326→        const diff = cur - prev
+   327→   327→        return {
+   328→   328→          category: cat,
+   329→   329→          current: cur,
+   330→   330→          previous: prev,
+   331→   331→          change: diff,
+   332→   332→          percentChange: prev > 0 ? (diff / prev) * 100 : cur > 0 ? 100 : 0,
+   333→   333→        }
+   334→   334→      })
+   335→   335→      .sort((a, b) => Math.abs(b.change) - Math.abs(a.change))
+   336→   336→  }, [expenses])
+   337→   337→
+   338→   338→  // ─── 6. Spending Consistency Score ─────────────────────────────────────────
+   339→   339→
+   340→   340→  const consistencyScore = useMemo(() => {
+   341→   341→    const now = new Date()
+   342→   342→    const monthTotals: number[] = []
+   343→   343→
+   344→   344→    for (let i = 5; i >= 0; i--) {
+   345→   345→      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+   346→   346→      const yr = d.getFullYear()
+   347→   347→      const mo = d.getMonth()
+   348→   348→      const total = expenses
+   349→   349→        .filter((e) => {
+   350→   350→          const ed = new Date(e.date)
+   351→   351→          return ed.getFullYear() === yr && ed.getMonth() === mo
+   352→   352→        })
+   353→   353→        .reduce((s, e) => s + e.amount, 0)
+   354→   354→      monthTotals.push(total)
+   355→   355→    }
+   356→   356→
+   357→   357→    if (monthTotals.length < 2) return 50
+   358→   358→
+   359→   359→    const mean = monthTotals.reduce((a, b) => a + b, 0) / monthTotals.length
+   360→   360→    const variance =
+   361→   361→      monthTotals.reduce((sum, v) => sum + (v - mean) ** 2, 0) / monthTotals.length
+   362→   362→    const stdDev = Math.sqrt(variance)
+   363→   363→
+   364→   364→    // Coefficient of variation → 0 = perfectly consistent, 1+ = very inconsistent
+   365→   365→    const cv = mean > 0 ? stdDev / mean : 1
+   366→   366→
+   367→   367→    // Map CV to 0-100 score: CV 0 → 100, CV 0.5+ → 0
+   368→   368→    const score = Math.max(0, Math.min(100, 100 - cv * 200))
+   369→   369→    return score
+   370→   370→  }, [expenses])
+   371→   371→
+   372→   372→  // ─── Render ────────────────────────────────────────────────────────────────
+   373→   373→
+   374→   374→  return (
+   375→   375→    <motion.div
+   376→   376→      className="space-y-6 max-w-7xl mx-auto"
+   377→   377→      variants={container}
+   378→   378→      initial="hidden"
+   379→   379→      animate="show"
+   380→   380→    >
+   381→   381→      {/* ── 1. Spending Trend Chart ─────────────────────────────────────────── */}
+   382→   382→      <motion.div variants={item}>
+   383→   383→        <Card className="glass card-depth-1 border-white/[0.06]">
+   384→   384→          <CardHeader className="pb-2">
+   385→   385→            <CardTitle className="text-base font-semibold flex items-center gap-2">
+   386→   386→              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+   387→   387→                <Activity className="w-4 h-4 text-emerald-400" />
+   388→   388→              </div>
+   389→   389→              Spending &amp; Income Trend
+   390→   390→            </CardTitle>
+   391→   391→            <p className="text-xs text-tertiary mt-1">Last 6 months overview</p>
+   392→   392→          </CardHeader>
+   393→   393→          <CardContent className="pt-0">
+   394→   394→            <div className="h-72">
+   395→   395→              <ResponsiveContainer width="100%" height="100%">
+   396→   396→                <AreaChart data={trendData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+   397→   397→                  <defs>
+   398→   398→                    <linearGradient id="gradExpenses" x1="0" y1="0" x2="0" y2="1">
+   399→   399→                      <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.35} />
+   400→   400→                      <stop offset="100%" stopColor="#f43f5e" stopOpacity={0} />
+   401→   401→                    </linearGradient>
+   402→   402→                    <linearGradient id="gradIncome" x1="0" y1="0" x2="0" y2="1">
+   403→   403→                      <stop offset="0%" stopColor="#10b981" stopOpacity={0.35} />
+   404→   404→                      <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+   405→   405→                    </linearGradient>
+   406→   406→                  </defs>
+   407→   407→                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+   408→   408→                  <XAxis
+   409→   409→                    dataKey="label"
+   410→   410→                    tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 11 }}
+   411→   411→                    axisLine={{ stroke: 'rgba(255,255,255,0.06)' }}
+   412→   412→                    tickLine={false}
+   413→   413→                  />
+   414→   414→                  <YAxis
+   415→   415→                    tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 11 }}
+   416→   416→                    axisLine={false}
+   417→   417→                    tickLine={false}
+   418→   418→                    tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
+   419→   419→                  />
+   420→   420→                  <Tooltip content={<ChartTooltip />} />
+   421→   421→                  <Area
+   422→   422→                    type="monotone"
+   423→   423→                    dataKey="expenses"
+   424→   424→                    name="Expenses"
+   425→   425→                    stroke="#f43f5e"
+   426→   426→                    strokeWidth={2}
+   427→   427→                    fill="url(#gradExpenses)"
+   428→   428→                  />
+   429→   429→                  <Area
+   430→   430→                    type="monotone"
+   431→   431→                    dataKey="income"
+   432→   432→                    name="Income"
+   433→   433→                    stroke="#10b981"
+   434→   434→                    strokeWidth={2}
+   435→   435→                    fill="url(#gradIncome)"
+   436→   436→                  />
+   437→   437→                </AreaChart>
+   438→   438→              </ResponsiveContainer>
+   439→   439→            </div>
+   440→   440→          </CardContent>
+   441→   441→        </Card>
+   442→   442→      </motion.div>
+   443→   443→
+   444→   444→      {/* ── 2. Category Evolution + 3. Spending Velocity (side by side) ──── */}
+   445→   445→      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+   446→   446→        {/* Category Evolution */}
+   447→   447→        <motion.div variants={item} className="lg:col-span-2">
+   448→   448→          <Card className="glass card-depth-1 border-white/[0.06] h-full">
+   449→   449→            <CardHeader className="pb-2">
+   450→   450→              <CardTitle className="text-base font-semibold flex items-center gap-2">
+   451→   451→                <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
+   452→   452→                  <Trophy className="w-4 h-4 text-violet-400" />
+   453→   453→                </div>
+   454→   454→                Category Evolution
+   455→   455→              </CardTitle>
+   456→   456→              <p className="text-xs text-tertiary mt-1">Top 5 spending categories — 6 month trend</p>
+   457→   457→            </CardHeader>
+   458→   458→            <CardContent className="pt-0">
+   459→   459→              <div className="space-y-4">
+   460→   460→                {categoryEvolution.map((cat) => {
+   461→   461→                  const isIncreasing =
+   462→   462→                    cat.monthly.length >= 2 &&
+   463→   463→                    cat.monthly[cat.monthly.length - 1] >= cat.monthly[cat.monthly.length - 2]
+   464→   464→                  return (
+   465→   465→                    <div
+   466→   466→                      key={cat.category}
+   467→   467→                      className="flex items-center gap-4 p-3 rounded-xl hover-glow-emerald transition-all duration-200 group"
+   468→   468→                    >
+   469→   469→                      <div
+   470→   470→                        className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold"
+   471→   471→                        style={{ background: `${cat.color}15`, color: cat.color }}
+   472→   472→                      >
+   473→   473→                        {cat.category.charAt(0)}
+   474→   474→                      </div>
+   475→   475→                      <div className="flex-1 min-w-0">
+   476→   476→                        <div className="flex items-center justify-between mb-1">
+   477→   477→                          <span className="text-sm font-medium truncate">{cat.category}</span>
+   478→   478→                          <span className="text-sm font-semibold number-tick">{fmt(cat.total)}</span>
+   479→   479→                        </div>
+   480→   480→                        <div className="flex items-center gap-2">
+   481→   481→                          <Sparkline data={cat.monthly} color={cat.color} />
+   482→   482→                          <span
+   483→   483→                            className={cn(
+   484→   484→                              'text-[11px] font-medium flex items-center gap-0.5',
+   485→   485→                              isIncreasing ? 'text-rose-400' : 'text-emerald-400'
+   486→   486→                            )}
+   487→   487→                          >
+   488→   488→                            {isIncreasing ? (
+   489→   489→                              <ArrowUpRight className="w-3 h-3" />
+   490→   490→                            ) : (
+   491→   491→                              <ArrowDownRight className="w-3 h-3" />
+   492→   492→                            )}
+   493→   493→                            {isIncreasing ? 'Up' : 'Down'} trend
+   494→   494→                          </span>
+   495→   495→                        </div>
+   496→   496→                      </div>
+   497→   497→                    </div>
+   498→   498→                  )
+   499→   499→                })}
+   500→   500→                {categoryEvolution.length === 0 && (
+   501→   501→                  <div className="flex flex-col items-center justify-center py-10 text-tertiary">
+   502→   502→                    <Flame className="w-8 h-8 mb-2 opacity-30" />
+   503→   503→                    <p className="text-sm">No expense data yet</p>
+   504→   504→                  </div>
+   505→   505→                )}
+   506→   506→              </div>
+   507→   507→            </CardContent>
+   508→   508→          </Card>
+   509→   509→        </motion.div>
+   510→   510→
+   511→   511→        {/* Spending Velocity */}
+   512→   512→        <motion.div variants={item}>
+   513→   513→          <Card className="glass card-depth-1 border-white/[0.06] h-full">
+   514→   514→            <CardHeader className="pb-2">
+   515→   515→              <CardTitle className="text-base font-semibold flex items-center gap-2">
+   516→   516→                <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+   517→   517→                  <Zap className="w-4 h-4 text-amber-400" />
+   518→   518→                </div>
+   519→   519→                Spending Velocity
+   520→   520→              </CardTitle>
+   521→   521→              <p className="text-xs text-tertiary mt-1">Last 3 months vs previous 3</p>
+   522→   522→            </CardHeader>
+   523→   523→            <CardContent className="pt-0 flex flex-col items-center justify-center flex-1 py-6">
+   524→   524→              <div
+   525→   525→                className={cn(
+   526→   526→                  'w-24 h-24 rounded-2xl flex items-center justify-center mb-4',
+   527→   527→                  spendingVelocity.change > 0
+   528→   528→                    ? 'bg-rose-500/10'
+   529→   529→                    : spendingVelocity.change < 0
+   530→   530→                      ? 'bg-emerald-500/10'
+   531→   531→                      : 'bg-white/5'
+   532→   532→                )}
+   533→   533→              >
+   534→   534→                {spendingVelocity.change > 5 ? (
+   535→   535→                  <TrendingUp className="w-10 h-10 text-rose-400" />
+   536→   536→                ) : spendingVelocity.change < -5 ? (
+   537→   537→                  <TrendingDown className="w-10 h-10 text-emerald-400" />
+   538→   538→                ) : (
+   539→   539→                  <DollarSign className="w-10 h-10 text-amber-400" />
+   540→   540→                )}
+   541→   541→              </div>
+   542→   542→              <div className="text-center">
+   543→   543→                <p
+   544→   544→                  className={cn(
+   545→   545→                    'text-2xl font-bold number-tick flex items-center justify-center gap-1.5',
+   546→   546→                    spendingVelocity.change > 5
+   547→   547→                      ? 'text-rose-400'
+   548→   548→                      : spendingVelocity.change < -5
+   549→   549→                        ? 'text-emerald-400'
+   550→   550→                        : 'text-amber-400'
+   551→   551→                  )}
+   552→   552→                >
+   553→   553→                  {spendingVelocity.change > 0 ? (
+   554→   554→                    <ArrowUpRight className="w-5 h-5" />
+   555→   555→                  ) : spendingVelocity.change < 0 ? (
+   556→   556→                    <ArrowDownRight className="w-5 h-5" />
+   557→   557→                  ) : null}
+   558→   558→                  {Math.abs(spendingVelocity.change).toFixed(1)}%
+   559→   559→                </p>
+   560→   560→                <p className="text-sm text-secondary mt-1">
+   561→   561→                  {spendingVelocity.change > 5
+   562→   562→                    ? 'Spending is accelerating'
+   563→   563→                    : spendingVelocity.change < -5
+   564→   564→                      ? 'Spending is decelerating'
+   565→   565→                      : 'Spending is stable'}
+   566→   566→                </p>
+   567→   567→              </div>
+   568→   568→              <div className="grid grid-cols-2 gap-4 mt-6 w-full">
+   569→   569→                <div className="text-center p-3 rounded-xl bg-white/[0.03]">
+   570→   570→                  <p className="text-xs text-tertiary mb-1">Last 3 mo avg</p>
+   571→   571→                  <p className="text-sm font-semibold number-tick">{fmt(spendingVelocity.avgLast)}</p>
+   572→   572→                </div>
+   573→   573→                <div className="text-center p-3 rounded-xl bg-white/[0.03]">
+   574→   574→                  <p className="text-xs text-tertiary mb-1">Previous 3 mo avg</p>
+   575→   575→                  <p className="text-sm font-semibold number-tick">{fmt(spendingVelocity.avgPrev)}</p>
+   576→   576→                </div>
+   577→   577→              </div>
+   578→   578→            </CardContent>
+   579→   579→          </Card>
+   580→   580→        </motion.div>
+   581→   581→      </div>
+   582→   582→
+   583→   583→      {/* ── 4. Top 5 Expenses + 5. MoM Changes (side by side) ─────────────── */}
+   584→   584→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   585→   585→        {/* Top 5 Expenses */}
+   586→   586→        <motion.div variants={item}>
+   587→   587→          <Card className="glass card-depth-1 border-white/[0.06] h-full">
+   588→   588→            <CardHeader className="pb-2">
+   589→   589→              <CardTitle className="text-base font-semibold flex items-center gap-2">
+   590→   590→                <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center">
+   591→   591→                  <Flame className="w-4 h-4 text-rose-400" />
+   592→   592→                </div>
+   593→   593→                Top 5 Expenses of All Time
+   594→   594→              </CardTitle>
+   595→   595→              <p className="text-xs text-tertiary mt-1">Highest single transactions</p>
+   596→   596→            </CardHeader>
+   597→   597→            <CardContent className="pt-0">
+   598→   598→              <div className="space-y-2.5">
+   599→   599→                {topExpenses.map((exp, i) => {
+   600→   600→                  const color = CATEGORY_COLORS[exp.category] || '#94a3b8'
+   601→   601→                  return (
+   602→   602→                    <motion.div
+   603→   603→                      key={exp.id}
+   604→   604→                      initial={{ opacity: 0, x: -10 }}
+   605→   605→                      animate={{ opacity: 1, x: 0 }}
+   606→   606→                      transition={{ delay: 0.4 + i * 0.06, duration: 0.3 }}
+   607→   607→                      className="flex items-center gap-3 p-3 rounded-xl hover-surface transition-colors group"
+   608→   608→                    >
+   609→   609→                      <span className="text-xs font-bold text-tertiary w-5 text-center shrink-0">
+   610→   610→                        {i + 1}
+   611→   611→                      </span>
+   612→   612→                      <div
+   613→   613→                        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+   614→   614→                        style={{ background: `${color}15` }}
+   615→   615→                      >
+   616→   616→                        <span className="text-xs font-bold" style={{ color }}>
+   617→   617→                          {exp.category.charAt(0)}
+   618→   618→                        </span>
+   619→   619→                      </div>
+   620→   620→                      <div className="flex-1 min-w-0">
+   621→   621→                        <p className="text-sm font-medium truncate group-hover:text-emerald-400 transition-colors">
+   622→   622→                          {exp.title}
+   623→   623→                        </p>
+   624→   624→                        <div className="flex items-center gap-2 mt-0.5">
+   625→   625→                          <Badge
+   626→   626→                            variant="outline"
+   627→   627→                            className="text-[10px] px-1.5 py-0 h-4 border-white/10 text-foreground/50 font-normal"
+   628→   628→                            style={{ borderColor: `${color}30`, color }}
+   629→   629→                          >
+   630→   630→                            {exp.category}
+   631→   631→                          </Badge>
+   632→   632→                          <span className="text-[10px] text-tertiary">
+   633→   633→                            {format(new Date(exp.date), 'MMM d, yyyy')}
+   634→   634→                          </span>
+   635→   635→                        </div>
+   636→   636→                      </div>
+   637→   637→                      <span className="text-sm font-semibold text-rose-400 number-tick shrink-0">
+   638→   638→                        -{fmt(exp.amount)}
+   639→   639→                      </span>
+   640→   640→                    </motion.div>
+   641→   641→                  )
+   642→   642→                })}
+   643→   643→                {topExpenses.length === 0 && (
+   644→   644→                  <div className="flex flex-col items-center justify-center py-10 text-tertiary">
+   645→   645→                    <Flame className="w-8 h-8 mb-2 opacity-30" />
+   646→   646→                    <p className="text-sm">No expense data yet</p>
+   647→   647→                  </div>
+   648→   648→                )}
+   649→   649→              </div>
+   650→   650→            </CardContent>
+   651→   651→          </Card>
+   652→   652→        </motion.div>
+   653→   653→
+   654→   654→        {/* Month-over-Month Changes */}
+   655→   655→        <motion.div variants={item}>
+   656→   656→          <Card className="glass card-depth-1 border-white/[0.06] h-full">
+   657→   657→            <CardHeader className="pb-2">
+   658→   658→              <CardTitle className="text-base font-semibold flex items-center gap-2">
+   659→   659→                <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+   660→   660→                  <TrendingUp className="w-4 h-4 text-cyan-400" />
+   661→   661→                </div>
+   662→   662→                Month-over-Month Changes
+   663→   663→              </CardTitle>
+   664→   664→              <p className="text-xs text-tertiary mt-1">
+   665→   665→                Category changes this month vs last month
+   666→   666→              </p>
+   667→   667→            </CardHeader>
+   668→   668→            <CardContent className="pt-0">
+   669→   669→              <div className="h-72">
+   670→   670→                <ResponsiveContainer width="100%" height="100%">
+   671→   671→                  <BarChart
+   672→   672→                    data={momChanges}
+   673→   673→                    layout="vertical"
+   674→   674→                    margin={{ top: 4, right: 16, left: 0, bottom: 4 }}
+   675→   675→                  >
+   676→   676→                    <CartesianGrid
+   677→   677→                      strokeDasharray="3 3"
+   678→   678→                      stroke="rgba(255,255,255,0.04)"
+   679→   679→                      horizontal={false}
+   680→   680→                    />
+   681→   681→                    <XAxis
+   682→   682→                      type="number"
+   683→   683→                      tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 11 }}
+   684→   684→                      axisLine={false}
+   685→   685→                      tickLine={false}
+   686→   686→                      tickFormatter={(v: number) => `$${(Math.abs(v) / 1000).toFixed(1)}k`}
+   687→   687→                    />
+   688→   688→                    <YAxis
+   689→   689→                      type="category"
+   690→   690→                      dataKey="category"
+   691→   691→                      tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11 }}
+   692→   692→                      axisLine={false}
+   693→   693→                      tickLine={false}
+   694→   694→                      width={90}
+   695→   695→                    />
+   696→   696→                    <Tooltip
+   697→   697→                      content={({ active, payload }) => {
+   698→   698→                        if (!active || !payload?.[0]) return null
+   699→   699→                        const d = payload[0].payload as (typeof momChanges)[number]
+   700→   700→                        return (
+   701→   701→                          <div className="glass rounded-lg border border-white/10 px-3 py-2 shadow-xl">
+   702→   702→                            <p className="text-xs font-medium text-secondary mb-1">
+   703→   703→                              {d.category}
+   704→   704→                            </p>
+   705→   705→                            <div className="text-xs space-y-0.5">
+   706→   706→                              <div className="flex justify-between gap-4">
+   707→   707→                                <span className="text-tertiary">This month</span>
+   708→   708→                                <span className="font-semibold">{fmt(d.current)}</span>
+   709→   709→                              </div>
+   710→   710→                              <div className="flex justify-between gap-4">
+   711→   711→                                <span className="text-tertiary">Last month</span>
+   712→   712→                                <span className="font-semibold">{fmt(d.previous)}</span>
+   713→   713→                              </div>
+   714→   714→                              <div
+   715→   715→                                className={cn(
+   716→   716→                                  'flex justify-between gap-4 pt-1 border-t border-white/5',
+   717→   717→                                  d.change > 0 ? 'text-rose-400' : 'text-emerald-400'
+   718→   718→                                )}
+   719→   719→                              >
+   720→   720→                                <span>Change</span>
+   721→   721→                                <span className="font-semibold">
+   722→   722→                                  {d.change > 0 ? '+' : ''}
+   723→   723→                                  {fmt(d.change)} ({d.percentChange > 0 ? '+' : ''}
+   724→   724→                                  {d.percentChange.toFixed(0)}%)
+   725→   725→                                </span>
+   726→   726→                              </div>
+   727→   727→                            </div>
+   728→   728→                          </div>
+   729→   729→                        )
+   730→   730→                      }}
+   731→   731→                    />
+   732→   732→                    <Bar dataKey="change" radius={[0, 4, 4, 0]} barSize={14}>
+   733→   733→                      {momChanges.map((entry, idx) => (
+   734→   734→                        <Cell
+   735→   735→                          key={idx}
+   736→   736→                          fill={entry.change >= 0 ? '#f43f5e' : '#10b981'}
+   737→   737→                          opacity={0.8}
+   738→   738→                        />
+   739→   739→                      ))}
+   740→   740→                    </Bar>
+   741→   741→                  </BarChart>
+   742→   742→                </ResponsiveContainer>
+   743→   743→              </div>
+   744→   744→              {momChanges.length === 0 && (
+   745→   745→                <div className="flex flex-col items-center justify-center py-10 text-tertiary">
+   746→   746→                  <TrendingUp className="w-8 h-8 mb-2 opacity-30" />
+   747→   747→                  <p className="text-sm">No comparative data yet</p>
+   748→   748→                </div>
+   749→   749→              )}
+   750→   750→            </CardContent>
+   751→   751→          </Card>
+   752→   752→        </motion.div>
+   753→   753→      </div>
+   754→   754→
+   755→   755→      {/* ── 6. Spending Consistency Score ─────────────────────────────────── */}
+   756→   756→      <motion.div variants={item}>
+   757→   757→        <Card className="glass card-depth-1 border-white/[0.06]">
+   758→   758→          <CardHeader className="pb-2">
+   759→   759→            <CardTitle className="text-base font-semibold flex items-center gap-2">
+   760→   760→              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+   761→   761→                <Activity className="w-4 h-4 text-emerald-400" />
+   762→   762→              </div>
+   763→   763→              Spending Consistency Score
+   764→   764→            </CardTitle>
+   765→   765→            <p className="text-xs text-tertiary mt-1">
+   766→   766→              How stable your monthly spending is — low variance = high consistency
+   767→   767→            </p>
+   768→   768→          </CardHeader>
+   769→   769→          <CardContent className="pt-0">
+   770→   770→            <div className="flex flex-col sm:flex-row items-center gap-8 py-4">
+   771→   771→              <ConsistencyRing score={consistencyScore} />
+   772→   772→              <div className="flex-1 space-y-3">
+   773→   773→                <p className="text-sm text-secondary leading-relaxed">
+   774→   774→                  {consistencyScore >= 75
+   775→   775→                    ? 'Your spending is very consistent month to month. You have strong financial discipline and predictable habits.'
+   776→   776→                    : consistencyScore >= 50
+   777→   777→                      ? 'Your spending shows moderate variation. Some months are higher than others, but overall patterns are reasonably stable.'
+   778→   778→                      : consistencyScore >= 25
+   779→   779→                        ? 'Your spending varies significantly between months. Consider reviewing your budget to identify what causes spikes.'
+   780→   780→                        : 'Your spending is highly unpredictable. Large swings between months may indicate irregular expenses or impulse spending.'}
+   781→   781→                </p>
+   782→   782→                <div className="grid grid-cols-3 gap-3">
+   783→   783→                  <div className="p-3 rounded-xl bg-white/[0.03] text-center">
+   784→   784→                    <p className="text-[10px] text-tertiary mb-0.5">Avg Monthly</p>
+   785→   785→                    <p className="text-sm font-semibold number-tick">
+   786→   786→                      {fmt(
+   787→   787→                        expenses.length > 0
+   788→   788→                          ? (() => {
+   789→   789→                              const now = new Date()
+   790→   790→                              let sum = 0
+   791→   791→                              let count = 0
+   792→   792→                              for (let i = 5; i >= 0; i--) {
+   793→   793→                                const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+   794→   794→                                const total = expenses
+   795→   795→                                  .filter((e) => {
+   796→   796→                                    const ed = new Date(e.date)
+   797→   797→                                    return ed.getFullYear() === d.getFullYear() && ed.getMonth() === d.getMonth()
+   798→   798→                                  })
+   799→   799→                                  .reduce((s, e) => s + e.amount, 0)
+   800→   800→                                if (total > 0) {
+   801→   801→                                  sum += total
+   802→   802→                                  count++
+   803→   803→                                }
+   804→   804→                              }
+   805→   805→                              return count > 0 ? sum / count : 0
+   806→   806→                            })()
+   807→   807→                          : 0
+   808→   808→                      )}
+   809→   809→                    </p>
+   810→   810→                  </div>
+   811→   811→                  <div className="p-3 rounded-xl bg-white/[0.03] text-center">
+   812→   812→                    <p className="text-[10px] text-tertiary mb-0.5">Highest Month</p>
+   813→   813→                    <p className="text-sm font-semibold number-tick">
+   814→   814→                      {fmt(
+   815→   815→                        (() => {
+   816→   816→                          const now = new Date()
+   817→   817→                          let maxVal = 0
+   818→   818→                          for (let i = 5; i >= 0; i--) {
+   819→   819→                            const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+   820→   820→                            const total = expenses
+   821→   821→                              .filter((e) => {
+   822→   822→                                const ed = new Date(e.date)
+   823→   823→                                return ed.getFullYear() === d.getFullYear() && ed.getMonth() === d.getMonth()
+   824→   824→                              })
+   825→   825→                              .reduce((s, e) => s + e.amount, 0)
+   826→   826→                            maxVal = Math.max(maxVal, total)
+   827→   827→                          }
+   828→   828→                          return maxVal
+   829→   829→                        })()
+   830→   830→                      )}
+   831→   831→                    </p>
+   832→   832→                  </div>
+   833→   833→                  <div className="p-3 rounded-xl bg-white/[0.03] text-center">
+   834→   834→                    <p className="text-[10px] text-tertiary mb-0.5">Lowest Month</p>
+   835→   835→                    <p className="text-sm font-semibold number-tick">
+   836→   836→                      {fmt(
+   837→   837→                        (() => {
+   838→   838→                          const now = new Date()
+   839→   839→                          let minVal = Infinity
+   840→   840→                          for (let i = 5; i >= 0; i--) {
+   841→   841→                            const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+   842→   842→                            const total = expenses
+   843→   843→                              .filter((e) => {
+   844→   844→                                const ed = new Date(e.date)
+   845→   845→                                return ed.getFullYear() === d.getFullYear() && ed.getMonth() === d.getMonth()
+   846→   846→                              })
+   847→   847→                              .reduce((s, e) => s + e.amount, 0)
+   848→   848→                            minVal = Math.min(minVal, total)
+   849→   849→                          }
+   850→   850→                          return minVal === Infinity ? 0 : minVal
+   851→   851→                        })()
+   852→   852→                      )}
+   853→   853→                    </p>
+   854→   854→                  </div>
+   855→   855→                </div>
+   856→   856→              </div>
+   857→   857→            </div>
+   858→   858→          </CardContent>
+   859→   859→        </Card>
+   860→   860→      </motion.div>
+   861→   861→    </motion.div>
+   862→   862→  )
+   863→   863→}

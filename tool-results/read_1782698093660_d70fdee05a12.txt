@@ -1,0 +1,681 @@
+     1→     1→'use client'
+     2→     2→
+     3→     3→import { useState, useEffect, useCallback } from 'react'
+     4→     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→     5→import { useAppStore, type Note } from '@/store/use-app-store'
+     6→     6→import { Button } from '@/components/ui/button'
+     7→     7→import { Input } from '@/components/ui/input'
+     8→     8→import { Textarea } from '@/components/ui/textarea'
+     9→     9→import { Badge } from '@/components/ui/badge'
+    10→    10→import { Switch } from '@/components/ui/switch'
+    11→    11→import {
+    12→    12→  Dialog,
+    13→    13→  DialogContent,
+    14→    14→  DialogHeader,
+    15→    15→  DialogTitle,
+    16→    16→  DialogDescription,
+    17→    17→  DialogFooter,
+    18→    18→} from '@/components/ui/dialog'
+    19→    19→import {
+    20→    20→  Select,
+    21→    21→  SelectContent,
+    22→    22→  SelectItem,
+    23→    23→  SelectTrigger,
+    24→    24→  SelectValue,
+    25→    25→} from '@/components/ui/select'
+    26→    26→import {
+    27→    27→  StickyNote, Plus, Search, Pin, PinOff, Edit3, Trash2, X,
+    28→    28→  BookOpen, Target, PieChart, Lightbulb, Sparkles, FileText
+    29→    29→} from 'lucide-react'
+    30→    30→import { toast } from 'sonner'
+    31→    31→import { format } from 'date-fns'
+    32→    32→import { cn } from '@/lib/utils'
+    33→    33→
+    34→    34→const PRESET_COLORS = [
+    35→    35→  { value: '#10b981', label: 'Emerald' },
+    36→    36→  { value: '#06b6d4', label: 'Cyan' },
+    37→    37→  { value: '#a78bfa', label: 'Violet' },
+    38→    38→  { value: '#fbbf24', label: 'Amber' },
+    39→    39→  { value: '#fb7185', label: 'Rose' },
+    40→    40→]
+    41→    41→
+    42→    42→const CATEGORIES = [
+    43→    43→  { value: 'general', label: 'General', icon: FileText },
+    44→    44→  { value: 'goal', label: 'Goal', icon: Target },
+    45→    45→  { value: 'budget', label: 'Budget', icon: PieChart },
+    46→    46→  { value: 'insight', label: 'Insight', icon: Lightbulb },
+    47→    47→  { value: 'idea', label: 'Idea', icon: Sparkles },
+    48→    48→] as const
+    49→    49→
+    50→    50→const CATEGORY_ICONS: Record<string, typeof FileText> = {
+    51→    51→  general: FileText,
+    52→    52→  goal: Target,
+    53→    53→  budget: PieChart,
+    54→    54→  insight: Lightbulb,
+    55→    55→  idea: Sparkles,
+    56→    56→}
+    57→    57→
+    58→    58→const CATEGORY_LABELS: Record<string, string> = {
+    59→    59→  general: 'General',
+    60→    60→  goal: 'Goal',
+    61→    61→  budget: 'Budget',
+    62→    62→  insight: 'Insight',
+    63→    63→  idea: 'Idea',
+    64→    64→}
+    65→    65→
+    66→    66→const containerVariants = {
+    67→    67→  hidden: { opacity: 0 },
+    68→    68→  visible: {
+    69→    69→    opacity: 1,
+    70→    70→    transition: { staggerChildren: 0.05 },
+    71→    71→  },
+    72→    72→}
+    73→    73→
+    74→    74→const itemVariants = {
+    75→    75→  hidden: { opacity: 0, y: 16, scale: 0.97 },
+    76→    76→  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.3, ease: 'easeOut' } },
+    77→    77→}
+    78→    78→
+    79→    79→interface NoteFormData {
+    80→    80→  title: string
+    81→    81→  content: string
+    82→    82→  category: string
+    83→    83→  color: string
+    84→    84→  isPinned: boolean
+    85→    85→}
+    86→    86→
+    87→    87→const defaultFormData: NoteFormData = {
+    88→    88→  title: '',
+    89→    89→  content: '',
+    90→    90→  category: 'general',
+    91→    91→  color: '#10b981',
+    92→    92→  isPinned: false,
+    93→    93→}
+    94→    94→
+    95→    95→export default function NotesPage() {
+    96→    96→  const { user, notes, setNotes } = useAppStore()
+    97→    97→  const [search, setSearch] = useState('')
+    98→    98→  const [addOpen, setAddOpen] = useState(false)
+    99→    99→  const [viewOpen, setViewOpen] = useState(false)
+   100→   100→  const [editOpen, setEditOpen] = useState(false)
+   101→   101→  const [formData, setFormData] = useState<NoteFormData>(defaultFormData)
+   102→   102→  const [selectedNote, setSelectedNote] = useState<Note | null>(null)
+   103→   103→  const [loading, setLoading] = useState(false)
+   104→   104→
+   105→   105→  const fetchNotes = useCallback(async () => {
+   106→   106→    if (!user?.id) return
+   107→   107→    try {
+   108→   108→      const res = await fetch(`/api/notes?userId=${user.id}`)
+   109→   109→      if (res.ok) {
+   110→   110→        const data = await res.json()
+   111→   111→        setNotes(data)
+   112→   112→      }
+   113→   113→    } catch {
+   114→   114→      toast.error('Failed to load notes')
+   115→   115→    }
+   116→   116→  }, [user?.id, setNotes])
+   117→   117→
+   118→   118→  useEffect(() => {
+   119→   119→    fetchNotes()
+   120→   120→  }, [fetchNotes])
+   121→   121→
+   122→   122→  const filteredNotes = notes.filter(n => {
+   123→   123→    if (!search.trim()) return true
+   124→   124→    const q = search.toLowerCase()
+   125→   125→    return n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q)
+   126→   126→  })
+   127→   127→
+   128→   128→  const pinnedNotes = filteredNotes.filter(n => n.isPinned)
+   129→   129→  const unpinnedNotes = filteredNotes.filter(n => !n.isPinned)
+   130→   130→
+   131→   131→  const handleCreate = async () => {
+   132→   132→    if (!formData.title.trim() || !formData.content.trim()) {
+   133→   133→      toast.error('Title and content are required')
+   134→   134→      return
+   135→   135→    }
+   136→   136→    if (!user?.id) return
+   137→   137→
+   138→   138→    setLoading(true)
+   139→   139→    try {
+   140→   140→      const res = await fetch('/api/notes', {
+   141→   141→        method: 'POST',
+   142→   142→        headers: { 'Content-Type': 'application/json' },
+   143→   143→        body: JSON.stringify({ userId: user.id, ...formData }),
+   144→   144→      })
+   145→   145→      if (res.ok) {
+   146→   146→        toast.success('Note created')
+   147→   147→        setAddOpen(false)
+   148→   148→        setFormData(defaultFormData)
+   149→   149→        fetchNotes()
+   150→   150→      } else {
+   151→   151→        toast.error('Failed to create note')
+   152→   152→      }
+   153→   153→    } catch {
+   154→   154→      toast.error('Failed to create note')
+   155→   155→    } finally {
+   156→   156→      setLoading(false)
+   157→   157→    }
+   158→   158→  }
+   159→   159→
+   160→   160→  const handleUpdate = async () => {
+   161→   161→    if (!selectedNote?.id) return
+   162→   162→    if (!formData.title.trim() || !formData.content.trim()) {
+   163→   163→      toast.error('Title and content are required')
+   164→   164→      return
+   165→   165→    }
+   166→   166→
+   167→   167→    setLoading(true)
+   168→   168→    try {
+   169→   169→      const res = await fetch('/api/notes', {
+   170→   170→        method: 'PUT',
+   171→   171→        headers: { 'Content-Type': 'application/json' },
+   172→   172→        body: JSON.stringify({ id: selectedNote.id, ...formData }),
+   173→   173→      })
+   174→   174→      if (res.ok) {
+   175→   175→        toast.success('Note updated')
+   176→   176→        setEditOpen(false)
+   177→   177→        setViewOpen(false)
+   178→   178→        setSelectedNote(null)
+   179→   179→        setFormData(defaultFormData)
+   180→   180→        fetchNotes()
+   181→   181→      } else {
+   182→   182→        toast.error('Failed to update note')
+   183→   183→      }
+   184→   184→    } catch {
+   185→   185→      toast.error('Failed to update note')
+   186→   186→    } finally {
+   187→   187→      setLoading(false)
+   188→   188→    }
+   189→   189→  }
+   190→   190→
+   191→   191→  const handleDelete = async (id: string) => {
+   192→   192→    try {
+   193→   193→      const res = await fetch(`/api/notes?id=${id}`, { method: 'DELETE' })
+   194→   194→      if (res.ok) {
+   195→   195→        toast.success('Note deleted')
+   196→   196→        setViewOpen(false)
+   197→   197→        setEditOpen(false)
+   198→   198→        setSelectedNote(null)
+   199→   199→        fetchNotes()
+   200→   200→      } else {
+   201→   201→        toast.error('Failed to delete note')
+   202→   202→      }
+   203→   203→    } catch {
+   204→   204→      toast.error('Failed to delete note')
+   205→   205→    }
+   206→   206→  }
+   207→   207→
+   208→   208→  const handleTogglePin = async (note: Note) => {
+   209→   209→    try {
+   210→   210→      const res = await fetch('/api/notes', {
+   211→   211→        method: 'PUT',
+   212→   212→        headers: { 'Content-Type': 'application/json' },
+   213→   213→        body: JSON.stringify({ id: note.id, isPinned: !note.isPinned }),
+   214→   214→      })
+   215→   215→      if (res.ok) {
+   216→   216→        toast.success(note.isPinned ? 'Note unpinned' : 'Note pinned')
+   217→   217→        fetchNotes()
+   218→   218→      }
+   219→   219→    } catch {
+   220→   220→      toast.error('Failed to update pin')
+   221→   221→    }
+   222→   222→  }
+   223→   223→
+   224→   224→  const openNoteView = (note: Note) => {
+   225→   225→    setSelectedNote(note)
+   226→   226→    setViewOpen(true)
+   227→   227→  }
+   228→   228→
+   229→   229→  const openNoteEdit = (note: Note) => {
+   230→   230→    setSelectedNote(note)
+   231→   231→    setFormData({
+   232→   232→      title: note.title,
+   233→   233→      content: note.content,
+   234→   234→      category: note.category,
+   235→   235→      color: note.color,
+   236→   236→      isPinned: note.isPinned,
+   237→   237→    })
+   238→   238→    setEditOpen(true)
+   239→   239→  }
+   240→   240→
+   241→   241→  return (
+   242→   242→    <div className="space-y-6">
+   243→   243→      {/* Header */}
+   244→   244→      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+   245→   245→        <div>
+   246→   246→          <h2 className="text-2xl font-bold flex items-center gap-2">
+   247→   247→            <StickyNote className="w-6 h-6 text-emerald-400" />
+   248→   248→            Financial Notes
+   249→   249→          </h2>
+   250→   250→          <p className="text-sm text-secondary mt-1">Capture ideas, insights, and financial observations</p>
+   251→   251→        </div>
+   252→   252→        <Button
+   253→   253→          onClick={() => { setFormData(defaultFormData); setAddOpen(true) }}
+   254→   254→          className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white shadow-lg shadow-emerald-500/20 hover-glow-emerald"
+   255→   255→        >
+   256→   256→          <Plus className="w-4 h-4 mr-2" />
+   257→   257→          Add Note
+   258→   258→        </Button>
+   259→   259→      </div>
+   260→   260→
+   261→   261→      {/* Search Bar */}
+   262→   262→      <div className="flex items-center glass rounded-xl px-4 py-2.5 gap-3">
+   263→   263→        <Search className="w-4 h-4 text-tertiary shrink-0" />
+   264→   264→        <input
+   265→   265→          type="text"
+   266→   266→          value={search}
+   267→   267→          onChange={(e) => setSearch(e.target.value)}
+   268→   268→          placeholder="Search notes by title or content..."
+   269→   269→          className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-tertiary"
+   270→   270→        />
+   271→   271→        {search && (
+   272→   272→          <button onClick={() => setSearch('')} className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10">
+   273→   273→            <X className="w-3.5 h-3.5 text-tertiary" />
+   274→   274→          </button>
+   275→   275→        )}
+   276→   276→      </div>
+   277→   277→
+   278→   278→      {/* Empty State */}
+   279→   279→      {notes.length === 0 && (
+   280→   280→        <motion.div
+   281→   281→          initial={{ opacity: 0, y: 20 }}
+   282→   282→          animate={{ opacity: 1, y: 0 }}
+   283→   283→          className="glass rounded-2xl p-12 text-center"
+   284→   284→        >
+   285→   285→          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
+   286→   286→            <BookOpen className="w-8 h-8 text-emerald-400" />
+   287→   287→          </div>
+   288→   288→          <h3 className="text-lg font-semibold mb-2">No notes yet</h3>
+   289→   289→          <p className="text-sm text-secondary max-w-md mx-auto mb-6">
+   290→   290→            Start capturing your financial thoughts, goals, and insights. Notes help you track your financial journey and make better decisions.
+   291→   291→          </p>
+   292→   292→          <Button
+   293→   293→            onClick={() => { setFormData(defaultFormData); setAddOpen(true) }}
+   294→   294→            className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white"
+   295→   295→          >
+   296→   296→            <Plus className="w-4 h-4 mr-2" />
+   297→   297→            Create Your First Note
+   298→   298→          </Button>
+   299→   299→        </motion.div>
+   300→   300→      )}
+   301→   301→
+   302→   302→      {/* Search Empty State */}
+   303→   303→      {notes.length > 0 && filteredNotes.length === 0 && (
+   304→   304→        <motion.div
+   305→   305→          initial={{ opacity: 0, y: 20 }}
+   306→   306→          animate={{ opacity: 1, y: 0 }}
+   307→   307→          className="glass rounded-2xl p-12 text-center"
+   308→   308→        >
+   309→   309→          <Search className="w-10 h-10 text-tertiary mx-auto mb-4" />
+   310→   310→          <h3 className="text-lg font-semibold mb-2">No matching notes</h3>
+   311→   311→          <p className="text-sm text-secondary">
+   312→   312→            Try a different search term
+   313→   313→          </p>
+   314→   314→        </motion.div>
+   315→   315→      )}
+   316→   316→
+   317→   317→      {/* Pinned Notes Section */}
+   318→   318→      <AnimatePresence>
+   319→   319→        {pinnedNotes.length > 0 && (
+   320→   320→          <motion.div
+   321→   321→            initial={{ opacity: 0, y: 10 }}
+   322→   322→            animate={{ opacity: 1, y: 0 }}
+   323→   323→            exit={{ opacity: 0, y: -10 }}
+   324→   324→          >
+   325→   325→            <div className="flex items-center gap-2 mb-3">
+   326→   326→              <Pin className="w-4 h-4 text-amber-400" />
+   327→   327→              <h3 className="text-sm font-semibold text-secondary uppercase tracking-wider">Pinned</h3>
+   328→   328→              <span className="text-xs text-tertiary">({pinnedNotes.length})</span>
+   329→   329→            </div>
+   330→   330→            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
+   331→   331→              {pinnedNotes.map((note, i) => {
+   332→   332→                const CatIcon = CATEGORY_ICONS[note.category] || FileText
+   333→   333→                return (
+   334→   334→                  <motion.button
+   335→   335→                    key={note.id}
+   336→   336→                    initial={{ opacity: 0, x: -16 }}
+   337→   337→                    animate={{ opacity: 1, x: 0 }}
+   338→   338→                    transition={{ delay: i * 0.05, duration: 0.25 }}
+   339→   339→                    onClick={() => openNoteView(note)}
+   340→   340→                    className="glass-subtle rounded-xl p-4 min-w-[240px] max-w-[280px] text-left shrink-0 group hover:card-depth-1 transition-all duration-300 border-l-[3px]"
+   341→   341→                    style={{ borderLeftColor: note.color }}
+   342→   342→                  >
+   343→   343→                    <div className="flex items-start justify-between gap-2 mb-2">
+   344→   344→                      <h4 className="font-semibold text-sm line-clamp-1">{note.title}</h4>
+   345→   345→                      <Pin className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+   346→   346→                    </div>
+   347→   347→                    <p className="text-xs text-secondary line-clamp-2 mb-3 leading-relaxed">{note.content}</p>
+   348→   348→                    <div className="flex items-center gap-2">
+   349→   349→                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-white/10 text-foreground/50 font-normal gap-1">
+   350→   350→                        <CatIcon className="w-2.5 h-2.5" />
+   351→   351→                        {CATEGORY_LABELS[note.category] || note.category}
+   352→   352→                      </Badge>
+   353→   353→                      <span className="text-[10px] text-tertiary ml-auto">{format(new Date(note.createdAt), 'MMM d')}</span>
+   354→   354→                    </div>
+   355→   355→                  </motion.button>
+   356→   356→                )
+   357→   357→              })}
+   358→   358→            </div>
+   359→   359→          </motion.div>
+   360→   360→        )}
+   361→   361→      </AnimatePresence>
+   362→   362→
+   363→   363→      {/* Notes Grid */}
+   364→   364→      {unpinnedNotes.length > 0 && (
+   365→   365→        <motion.div
+   366→   366→          variants={containerVariants}
+   367→   367→          initial="hidden"
+   368→   368→          animate="visible"
+   369→   369→          className="columns-1 lg:columns-2 gap-4 space-y-4"
+   370→   370→        >
+   371→   371→          {unpinnedNotes.map((note) => {
+   372→   372→            const CatIcon = CATEGORY_ICONS[note.category] || FileText
+   373→   373→            return (
+   374→   374→              <motion.div
+   375→   375→                key={note.id}
+   376→   376→                variants={itemVariants}
+   377→   377→                className="break-inside-avoid"
+   378→   378→              >
+   379→   379→                <button
+   380→   380→                  onClick={() => openNoteView(note)}
+   381→   381→                  className="w-full glass rounded-xl p-4 text-left group hover:card-depth-1 transition-all duration-300 border-t-[3px]"
+   382→   382→                  style={{ borderTopColor: note.color }}
+   383→   383→                >
+   384→   384→                  <div className="flex items-start justify-between gap-2 mb-2">
+   385→   385→                    <h4 className="font-semibold text-sm line-clamp-1 flex-1">{note.title}</h4>
+   386→   386→                    {note.isPinned && <Pin className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" />}
+   387→   387→                  </div>
+   388→   388→                  <p className="text-xs text-secondary line-clamp-2 mb-3 leading-relaxed whitespace-pre-line">{note.content}</p>
+   389→   389→                  <div className="flex items-center gap-2">
+   390→   390→                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-white/10 text-foreground/50 font-normal badge-glass gap-1">
+   391→   391→                      <CatIcon className="w-2.5 h-2.5" />
+   392→   392→                      {CATEGORY_LABELS[note.category] || note.category}
+   393→   393→                    </Badge>
+   394→   394→                    <span className="text-[10px] text-tertiary ml-auto">{format(new Date(note.createdAt), 'MMM d, yyyy')}</span>
+   395→   395→                  </div>
+   396→   396→                </button>
+   397→   397→              </motion.div>
+   398→   398→            )
+   399→   399→          })}
+   400→   400→        </motion.div>
+   401→   401→      )}
+   402→   402→
+   403→   403→      {/* Add Note Dialog */}
+   404→   404→      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+   405→   405→        <DialogContent className="glass border-white/10 sm:max-w-lg max-h-[90vh] overflow-y-auto">
+   406→   406→          <DialogHeader>
+   407→   407→            <DialogTitle className="flex items-center gap-2">
+   408→   408→              <Plus className="w-5 h-5 text-emerald-400" />
+   409→   409→              New Note
+   410→   410→            </DialogTitle>
+   411→   411→            <DialogDescription className="text-secondary">Capture a financial thought or insight</DialogDescription>
+   412→   412→          </DialogHeader>
+   413→   413→
+   414→   414→          <div className="space-y-4">
+   415→   415→            <div className="space-y-1.5">
+   416→   416→              <label className="text-xs font-medium text-secondary">Title</label>
+   417→   417→              <Input
+   418→   418→                value={formData.title}
+   419→   419→                onChange={(e) => setFormData(f => ({ ...f, title: e.target.value }))}
+   420→   420→                placeholder="Give your note a title..."
+   421→   421→                className="input-premium"
+   422→   422→              />
+   423→   423→            </div>
+   424→   424→
+   425→   425→            <div className="space-y-1.5">
+   426→   426→              <label className="text-xs font-medium text-secondary">Content</label>
+   427→   427→              <Textarea
+   428→   428→                value={formData.content}
+   429→   429→                onChange={(e) => setFormData(f => ({ ...f, content: e.target.value }))}
+   430→   430→                placeholder="Write your note..."
+   431→   431→                rows={4}
+   432→   432→                className="input-premium resize-none"
+   433→   433→              />
+   434→   434→            </div>
+   435→   435→
+   436→   436→            <div className="space-y-1.5">
+   437→   437→              <label className="text-xs font-medium text-secondary">Category</label>
+   438→   438→              <Select value={formData.category} onValueChange={(v) => setFormData(f => ({ ...f, category: v }))}>
+   439→   439→                <SelectTrigger className="input-premium">
+   440→   440→                  <SelectValue />
+   441→   441→                </SelectTrigger>
+   442→   442→                <SelectContent className="glass border-white/10">
+   443→   443→                  {CATEGORIES.map(cat => (
+   444→   444→                    <SelectItem key={cat.value} value={cat.value} className="gap-2">
+   445→   445→                      <cat.icon className="w-4 h-4" />
+   446→   446→                      {cat.label}
+   447→   447→                    </SelectItem>
+   448→   448→                  ))}
+   449→   449→                </SelectContent>
+   450→   450→              </Select>
+   451→   451→            </div>
+   452→   452→
+   453→   453→            <div className="space-y-1.5">
+   454→   454→              <label className="text-xs font-medium text-secondary">Accent Color</label>
+   455→   455→              <div className="flex gap-2">
+   456→   456→                {PRESET_COLORS.map(c => (
+   457→   457→                  <button
+   458→   458→                    key={c.value}
+   459→   459→                    onClick={() => setFormData(f => ({ ...f, color: c.value }))}
+   460→   460→                    className={cn(
+   461→   461→                      'w-8 h-8 rounded-full transition-all duration-200 flex items-center justify-center',
+   462→   462→                      formData.color === c.value
+   463→   463→                        ? 'ring-2 ring-offset-2 ring-offset-background ring-white/50 scale-110'
+   464→   464→                        : 'hover:scale-110 opacity-70 hover:opacity-100'
+   465→   465→                    )}
+   466→   466→                    style={{ background: c.value }}
+   467→   467→                    title={c.label}
+   468→   468→                  >
+   469→   469→                    {formData.color === c.value && (
+   470→   470→                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+   471→   471→                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+   472→   472→                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+   473→   473→                        </svg>
+   474→   474→                      </motion.div>
+   475→   475→                    )}
+   476→   476→                  </button>
+   477→   477→                ))}
+   478→   478→              </div>
+   479→   479→            </div>
+   480→   480→
+   481→   481→            <div className="flex items-center justify-between">
+   482→   482→              <div className="space-y-0.5">
+   483→   483→                <label className="text-xs font-medium text-secondary">Pin to top</label>
+   484→   484→                <p className="text-[10px] text-tertiary">Pinned notes always stay visible</p>
+   485→   485→              </div>
+   486→   486→              <Switch
+   487→   487→                checked={formData.isPinned}
+   488→   488→                onCheckedChange={(v) => setFormData(f => ({ ...f, isPinned: v }))}
+   489→   489→              />
+   490→   490→            </div>
+   491→   491→          </div>
+   492→   492→
+   493→   493→          <DialogFooter>
+   494→   494→            <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
+   495→   495→            <Button
+   496→   496→              onClick={handleCreate}
+   497→   497→              disabled={loading || !formData.title.trim() || !formData.content.trim()}
+   498→   498→              className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white"
+   499→   499→            >
+   500→   500→              {loading ? 'Creating...' : 'Create Note'}
+   501→   501→            </Button>
+   502→   502→          </DialogFooter>
+   503→   503→        </DialogContent>
+   504→   504→      </Dialog>
+   505→   505→
+   506→   506→      {/* View Note Dialog */}
+   507→   507→      <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+   508→   508→        <DialogContent className="glass border-white/10 sm:max-w-lg max-h-[90vh] overflow-y-auto">
+   509→   509→          {selectedNote && (
+   510→   510→            <>
+   511→   511→              <DialogHeader>
+   512→   512→                <div className="flex items-start justify-between gap-3">
+   513→   513→                  <div className="flex-1">
+   514→   514→                    <div className="flex items-center gap-2 mb-2">
+   515→   515→                      <div className="w-1 h-6 rounded-full" style={{ background: selectedNote.color }} />
+   516→   516→                      <Badge variant="outline" className="text-[10px] px-2 py-0.5 h-5 border-white/10 text-foreground/50 badge-glass gap-1">
+   517→   517→                        {(() => { const Icon = CATEGORY_ICONS[selectedNote.category] || FileText; return <Icon className="w-3 h-3" /> })()}
+   518→   518→                        {CATEGORY_LABELS[selectedNote.category] || selectedNote.category}
+   519→   519→                      </Badge>
+   520→   520→                      {selectedNote.isPinned && (
+   521→   521→                        <Badge variant="outline" className="text-[10px] px-2 py-0.5 h-5 border-amber-500/30 text-amber-400 badge-glass gap-1">
+   522→   522→                          <Pin className="w-2.5 h-2.5" />
+   523→   523→                          Pinned
+   524→   524→                        </Badge>
+   525→   525→                      )}
+   526→   526→                    </div>
+   527→   527→                    <DialogTitle className="text-xl">{selectedNote.title}</DialogTitle>
+   528→   528→                    <DialogDescription className="text-tertiary mt-1">
+   529→   529→                      {format(new Date(selectedNote.createdAt), 'EEEE, MMMM d, yyyy \'at\' h:mm a')}
+   530→   530→                      {' · '}
+   531→   531→                      Updated {format(new Date(selectedNote.updatedAt), 'MMM d, yyyy')}
+   532→   532→                    </DialogDescription>
+   533→   533→                  </div>
+   534→   534→                </div>
+   535→   535→              </DialogHeader>
+   536→   536→
+   537→   537→              <div className="glass-subtle rounded-xl p-4 mt-2">
+   538→   538→                <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{selectedNote.content}</p>
+   539→   539→              </div>
+   540→   540→
+   541→   541→              <DialogFooter className="flex-col sm:flex-row gap-2">
+   542→   542→                <Button
+   543→   543→                  variant="ghost"
+   544→   544→                  size="sm"
+   545→   545→                  onClick={() => handleTogglePin(selectedNote)}
+   546→   546→                  className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+   547→   547→                >
+   548→   548→                  {selectedNote.isPinned ? <PinOff className="w-4 h-4 mr-1.5" /> : <Pin className="w-4 h-4 mr-1.5" />}
+   549→   549→                  {selectedNote.isPinned ? 'Unpin' : 'Pin'}
+   550→   550→                </Button>
+   551→   551→                <div className="flex gap-2">
+   552→   552→                  <Button
+   553→   553→                    variant="ghost"
+   554→   554→                    size="sm"
+   555→   555→                    onClick={() => openNoteEdit(selectedNote)}
+   556→   556→                    className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+   557→   557→                  >
+   558→   558→                    <Edit3 className="w-4 h-4 mr-1.5" />
+   559→   559→                    Edit
+   560→   560→                  </Button>
+   561→   561→                  <Button
+   562→   562→                    variant="ghost"
+   563→   563→                    size="sm"
+   564→   564→                    onClick={() => handleDelete(selectedNote.id)}
+   565→   565→                    className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+   566→   566→                  >
+   567→   567→                    <Trash2 className="w-4 h-4 mr-1.5" />
+   568→   568→                    Delete
+   569→   569→                  </Button>
+   570→   570→                </div>
+   571→   571→              </DialogFooter>
+   572→   572→            </>
+   573→   573→          )}
+   574→   574→        </DialogContent>
+   575→   575→      </Dialog>
+   576→   576→
+   577→   577→      {/* Edit Note Dialog */}
+   578→   578→      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+   579→   579→        <DialogContent className="glass border-white/10 sm:max-w-lg max-h-[90vh] overflow-y-auto">
+   580→   580→          <DialogHeader>
+   581→   581→            <DialogTitle className="flex items-center gap-2">
+   582→   582→              <Edit3 className="w-5 h-5 text-emerald-400" />
+   583→   583→              Edit Note
+   584→   584→            </DialogTitle>
+   585→   585→            <DialogDescription className="text-secondary">Update your financial note</DialogDescription>
+   586→   586→          </DialogHeader>
+   587→   587→
+   588→   588→          <div className="space-y-4">
+   589→   589→            <div className="space-y-1.5">
+   590→   590→              <label className="text-xs font-medium text-secondary">Title</label>
+   591→   591→              <Input
+   592→   592→                value={formData.title}
+   593→   593→                onChange={(e) => setFormData(f => ({ ...f, title: e.target.value }))}
+   594→   594→                placeholder="Note title..."
+   595→   595→                className="input-premium"
+   596→   596→              />
+   597→   597→            </div>
+   598→   598→
+   599→   599→            <div className="space-y-1.5">
+   600→   600→              <label className="text-xs font-medium text-secondary">Content</label>
+   601→   601→              <Textarea
+   602→   602→                value={formData.content}
+   603→   603→                onChange={(e) => setFormData(f => ({ ...f, content: e.target.value }))}
+   604→   604→                placeholder="Note content..."
+   605→   605→                rows={4}
+   606→   606→                className="input-premium resize-none"
+   607→   607→              />
+   608→   608→            </div>
+   609→   609→
+   610→   610→            <div className="space-y-1.5">
+   611→   611→              <label className="text-xs font-medium text-secondary">Category</label>
+   612→   612→              <Select value={formData.category} onValueChange={(v) => setFormData(f => ({ ...f, category: v }))}>
+   613→   613→                <SelectTrigger className="input-premium">
+   614→   614→                  <SelectValue />
+   615→   615→                </SelectTrigger>
+   616→   616→                <SelectContent className="glass border-white/10">
+   617→   617→                  {CATEGORIES.map(cat => (
+   618→   618→                    <SelectItem key={cat.value} value={cat.value} className="gap-2">
+   619→   619→                      <cat.icon className="w-4 h-4" />
+   620→   620→                      {cat.label}
+   621→   621→                    </SelectItem>
+   622→   622→                  ))}
+   623→   623→                </SelectContent>
+   624→   624→              </Select>
+   625→   625→            </div>
+   626→   626→
+   627→   627→            <div className="space-y-1.5">
+   628→   628→              <label className="text-xs font-medium text-secondary">Accent Color</label>
+   629→   629→              <div className="flex gap-2">
+   630→   630→                {PRESET_COLORS.map(c => (
+   631→   631→                  <button
+   632→   632→                    key={c.value}
+   633→   633→                    onClick={() => setFormData(f => ({ ...f, color: c.value }))}
+   634→   634→                    className={cn(
+   635→   635→                      'w-8 h-8 rounded-full transition-all duration-200 flex items-center justify-center',
+   636→   636→                      formData.color === c.value
+   637→   637→                        ? 'ring-2 ring-offset-2 ring-offset-background ring-white/50 scale-110'
+   638→   638→                        : 'hover:scale-110 opacity-70 hover:opacity-100'
+   639→   639→                    )}
+   640→   640→                    style={{ background: c.value }}
+   641→   641→                    title={c.label}
+   642→   642→                  >
+   643→   643→                    {formData.color === c.value && (
+   644→   644→                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+   645→   645→                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+   646→   646→                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+   647→   647→                        </svg>
+   648→   648→                      </motion.div>
+   649→   649→                    )}
+   650→   650→                  </button>
+   651→   651→                ))}
+   652→   652→              </div>
+   653→   653→            </div>
+   654→   654→
+   655→   655→            <div className="flex items-center justify-between">
+   656→   656→              <div className="space-y-0.5">
+   657→   657→                <label className="text-xs font-medium text-secondary">Pin to top</label>
+   658→   658→                <p className="text-[10px] text-tertiary">Pinned notes always stay visible</p>
+   659→   659→              </div>
+   660→   660→              <Switch
+   661→   661→                checked={formData.isPinned}
+   662→   662→                onCheckedChange={(v) => setFormData(f => ({ ...f, isPinned: v }))}
+   663→   663→              />
+   664→   664→            </div>
+   665→   665→          </div>
+   666→   666→
+   667→   667→          <DialogFooter>
+   668→   668→            <Button variant="ghost" onClick={() => setEditOpen(false)}>Cancel</Button>
+   669→   669→            <Button
+   670→   670→              onClick={handleUpdate}
+   671→   671→              disabled={loading || !formData.title.trim() || !formData.content.trim()}
+   672→   672→              className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white"
+   673→   673→            >
+   674→   674→              {loading ? 'Saving...' : 'Save Changes'}
+   675→   675→            </Button>
+   676→   676→          </DialogFooter>
+   677→   677→        </DialogContent>
+   678→   678→      </Dialog>
+   679→   679→    </div>
+   680→   680→  )
+   681→   681→}

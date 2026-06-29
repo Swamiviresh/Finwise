@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import { Plus, Search, Utensils, Home, ShoppingBag, Heart, GraduationCap, Car, Film, Zap, TrendingUp, Shield, RotateCcw, MoreHorizontal, Settings2 } from 'lucide-react'
+import { Plus, Search, Utensils, Home, ShoppingBag, Heart, GraduationCap, Car, Film, Zap, TrendingUp, Shield, RotateCcw, MoreHorizontal, Settings2, Tag } from 'lucide-react'
 import TransactionDetail from '@/components/shared/transaction-detail'
 import CsvImportButton from '@/components/shared/csv-import-button'
 import RecurringManager from '@/components/shared/recurring-manager'
@@ -26,17 +26,24 @@ const CATEGORY_COLORS: Record<string, string> = { Food: '#10b981', Rent: '#06b6d
 function fmt(n: number) { return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n) }
 
 export default function ExpensesPage() {
-  const { user, expenses, setExpenses } = useAppStore()
+  const { user, expenses, setExpenses, tags, setTags } = useAppStore()
   const [filter, setFilter] = useState('All')
   const [search, setSearch] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [recurringDialogOpen, setRecurringDialogOpen] = useState(false)
   const [showRecurringOnly, setShowRecurringOnly] = useState(false)
+  const [tagFilter, setTagFilter] = useState('')
+  const [expenseTagsMap, setExpenseTagsMap] = useState<Record<string, Array<{ id: string; name: string; color: string }>>>({})
   const [form, setForm] = useState({ title: '', amount: '', category: 'Food', date: format(new Date(), 'yyyy-MM-dd'), description: '', isRecurring: false })
 
   useEffect(() => {
-    if (user?.id) fetch(`/api/expenses?userId=${user.id}`).then(r => r.json()).then(setExpenses).catch(console.error)
-  }, [user?.id, setExpenses])
+    if (!user?.id) return
+    Promise.all([
+      fetch(`/api/expenses?userId=${user.id}`).then(r => r.json()).then(setExpenses),
+      fetch(`/api/tags?userId=${user.id}`).then(r => r.json()).then(setTags),
+      fetch(`/api/tags?userId=${user.id}&expenseTagMap=true`).then(r => r.json()).then((m) => setExpenseTagsMap(m)).catch(() => {}),
+    ]).catch(console.error)
+  }, [user?.id, setExpenses, setTags])
 
   const recurringExpenses = useMemo(() => expenses.filter(e => e.isRecurring), [expenses])
   const uniqueRecurringCount = useMemo(() => {
@@ -49,9 +56,10 @@ export default function ExpensesPage() {
     let list = [...expenses]
     if (showRecurringOnly) list = list.filter(e => e.isRecurring)
     if (!showRecurringOnly && filter !== 'All') list = list.filter(e => e.category === filter)
+    if (tagFilter) list = list.filter(e => expenseTagsMap[e.id]?.some(t => t.id === tagFilter))
     if (search) list = list.filter(e => e.title.toLowerCase().includes(search.toLowerCase()))
     return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  }, [expenses, filter, search, showRecurringOnly])
+  }, [expenses, filter, search, showRecurringOnly, tagFilter, expenseTagsMap])
 
   const now = new Date()
   const monthExpenses = expenses.filter(e => isWithinInterval(new Date(e.date), { start: startOfMonth(now), end: endOfMonth(now) }))
@@ -154,6 +162,28 @@ export default function ExpensesPage() {
               {c}
             </button>
           ))}
+          {tags.length > 0 && (
+            <>
+              <div className="w-px h-5 bg-white/10 shrink-0" />
+              <Select value={tagFilter} onValueChange={(v) => { setTagFilter(v === '__all__' ? '' : v); setShowRecurringOnly(false) }}>
+                <SelectTrigger className="w-auto min-w-[120px] h-7 text-xs glass border-0">
+                  <Tag className="w-3 h-3 mr-1.5 text-emerald-400" />
+                  <SelectValue placeholder="Filter by tag" />
+                </SelectTrigger>
+                <SelectContent className="glass border-0">
+                  <SelectItem value="__all__" className="text-xs">All Tags</SelectItem>
+                  {tags.map(t => (
+                    <SelectItem key={t.id} value={t.id} className="text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: t.color }} />
+                        {t.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
+          )}
           {uniqueRecurringCount > 0 && (
             <>
               <div className="w-px h-5 bg-white/10 shrink-0" />
@@ -197,6 +227,15 @@ export default function ExpensesPage() {
                               {e.title}
                               {e.isRecurring && (
                                 <span className="badge-amber text-[9px] px-1 py-0">↻</span>
+                              )}
+                              {expenseTagsMap[e.id]?.slice(0, 2).map(t => (
+                                <span key={t.id} className="inline-flex items-center gap-0.5 ml-0.5">
+                                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: t.color }} title={t.name} />
+                                  <span className="text-[9px] text-foreground/40 max-w-[60px] truncate">{t.name.slice(0, 10)}</span>
+                                </span>
+                              ))}
+                              {(expenseTagsMap[e.id]?.length ?? 0) > 2 && (
+                                <span className="text-[9px] text-foreground/30">+{expenseTagsMap[e.id]!.length - 2}</span>
                               )}
                             </p>
                             <p className="text-xs text-muted-foreground">{format(new Date(e.date), 'MMM d, yyyy')}</p>
