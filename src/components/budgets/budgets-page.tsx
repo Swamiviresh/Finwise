@@ -87,7 +87,7 @@ export default function BudgetsPage() {
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-sm text-muted-foreground">Total Budget Utilization</p>
+              <p className="text-sm text-secondary">Total Budget Utilization</p>
               <p className="text-3xl font-bold mt-1" style={{ color: overallColor }}>{totalPct}%</p>
             </div>
             <div className="text-right">

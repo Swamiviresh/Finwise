@@ -11,9 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import { Plus, Search, Utensils, Home, ShoppingBag, Heart, GraduationCap, Car, Film, Zap, TrendingUp, Shield, RotateCcw, MoreHorizontal } from 'lucide-react'
+import { Plus, Search, Utensils, Home, ShoppingBag, Heart, GraduationCap, Car, Film, Zap, TrendingUp, Shield, RotateCcw, MoreHorizontal, Settings2 } from 'lucide-react'
 import TransactionDetail from '@/components/shared/transaction-detail'
 import CsvImportButton from '@/components/shared/csv-import-button'
+import RecurringManager from '@/components/shared/recurring-manager'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
@@ -29,18 +30,28 @@ export default function ExpensesPage() {
   const [filter, setFilter] = useState('All')
   const [search, setSearch] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [recurringDialogOpen, setRecurringDialogOpen] = useState(false)
+  const [showRecurringOnly, setShowRecurringOnly] = useState(false)
   const [form, setForm] = useState({ title: '', amount: '', category: 'Food', date: format(new Date(), 'yyyy-MM-dd'), description: '', isRecurring: false })
 
   useEffect(() => {
     if (user?.id) fetch(`/api/expenses?userId=${user.id}`).then(r => r.json()).then(setExpenses).catch(console.error)
   }, [user?.id, setExpenses])
 
+  const recurringExpenses = useMemo(() => expenses.filter(e => e.isRecurring), [expenses])
+  const uniqueRecurringCount = useMemo(() => {
+    const titles = new Set<string>()
+    recurringExpenses.forEach(e => titles.add(e.title.toLowerCase()))
+    return titles.size
+  }, [recurringExpenses])
+
   const filtered = useMemo(() => {
     let list = [...expenses]
-    if (filter !== 'All') list = list.filter(e => e.category === filter)
+    if (showRecurringOnly) list = list.filter(e => e.isRecurring)
+    if (!showRecurringOnly && filter !== 'All') list = list.filter(e => e.category === filter)
     if (search) list = list.filter(e => e.title.toLowerCase().includes(search.toLowerCase()))
     return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  }, [expenses, filter, search])
+  }, [expenses, filter, search, showRecurringOnly])
 
   const now = new Date()
   const monthExpenses = expenses.filter(e => isWithinInterval(new Date(e.date), { start: startOfMonth(now), end: endOfMonth(now) }))
@@ -129,15 +140,39 @@ export default function ExpensesPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search expenses..." className="glass pl-9" />
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <button
+            onClick={() => { setShowRecurringOnly(true); setFilter('All') }}
+            className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${showRecurringOnly ? 'bg-violet-500/20 text-violet-400' : 'glass text-foreground/60 hover:text-foreground'}`}
+          >
+            ↻ Recurring
+          </button>
+          <div className="w-px h-5 bg-white/10 shrink-0" />
           {['All', ...CATEGORIES].map(c => (
-            <button key={c} onClick={() => setFilter(c)}
-              className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${filter === c ? 'bg-emerald-500/20 text-emerald-400' : 'glass text-foreground/60 hover:text-foreground'}`}>
+            <button key={c} onClick={() => { setFilter(c); setShowRecurringOnly(false) }}
+              className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${!showRecurringOnly && filter === c ? 'bg-emerald-500/20 text-emerald-400' : 'glass text-foreground/60 hover:text-foreground'}`}>
               {c}
             </button>
           ))}
+          {uniqueRecurringCount > 0 && (
+            <>
+              <div className="w-px h-5 bg-white/10 shrink-0" />
+              <motion.button
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                onClick={() => setRecurringDialogOpen(true)}
+                className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 flex items-center gap-1.5"
+              >
+                <Settings2 className="w-3 h-3" />
+                Manage Recurring
+              </motion.button>
+            </>
+          )}
         </div>
       </div>
+
+      {/* Recurring Manager Dialog */}
+      <RecurringManager open={recurringDialogOpen} onOpenChange={setRecurringDialogOpen} />
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">

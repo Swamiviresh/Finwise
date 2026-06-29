@@ -61,7 +61,11 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
 }
 
-export default function SmartInsights() {
+interface SmartInsightsProps {
+  compact?: boolean
+}
+
+export default function SmartInsights({ compact = false }: SmartInsightsProps) {
   const { expenses, incomes, budgets, goals } = useAppStore()
 
   const insights = useMemo<Insight[]>(() => {
@@ -228,7 +232,7 @@ export default function SmartInsights() {
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+      className={compact ? "grid grid-cols-1 gap-3" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"}
     >
       {insights.map((insight, idx) => {
         const style = statusStyles[insight.status]

@@ -215,6 +215,7 @@ export default function QuickExpenseFab() {
         whileTap={{ scale: 0.93 }}
         onClick={() => setExpanded(!expanded)}
         className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 text-white shadow-lg shadow-emerald-500/25 flex items-center justify-center hover:shadow-emerald-500/40 transition-shadow"
+        aria-label="Quick add expense"
       >
         <motion.div
           animate={{ rotate: expanded ? 45 : 0 }}

@@ -79,7 +79,7 @@ export default function IncomePage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Income</h2>
-          <p className="text-sm text-muted-foreground">Track your earnings and revenue sources</p>
+          <p className="text-sm text-secondary">Track your earnings and revenue sources</p>
         </div>
         <div className="flex items-center gap-2">
           <CsvImportButton defaultType="income" />

@@ -112,7 +112,7 @@ export default function BillsPage() {
             <Receipt className="w-8 h-8 text-muted-foreground/40" />
           </div>
           <h3 className="text-lg font-semibold mb-2">No Recurring Bills</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-secondary">
             Mark expenses as recurring to track your bills and subscriptions here.
           </p>
         </motion.div>
@@ -187,7 +187,7 @@ export default function BillsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-sm text-secondary mb-4">
                 These entertainment and subscription expenses could potentially be canceled to save money.
               </p>
               <div className="flex items-center justify-between p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">

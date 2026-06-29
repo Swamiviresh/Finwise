@@ -22,6 +22,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from '@/components/ui/alert-dialog'
+import CurrencyConverter from '@/components/shared/currency-converter'
 
 const SECTIONS = [
   { id: 'profile', label: 'Profile', icon: User },
@@ -304,6 +305,12 @@ export default function SettingsPage() {
                           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                         </div>
                       </div>
+                    </div>
+
+                    {/* Currency Converter */}
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-secondary">Quick Convert:</span>
+                      <CurrencyConverter currentCurrency={currency} />
                     </div>
 
                     <Button onClick={handleSave} className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white border-0">

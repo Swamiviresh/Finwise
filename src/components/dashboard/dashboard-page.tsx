@@ -17,6 +17,7 @@ import SpendingCalendar from './spending-calendar'
 import NetWorthTracker from './net-worth-tracker'
 import SmartInsights from './smart-insights'
 import AchievementsPanel from './achievements-panel'
+import CurrencyWidget from './currency-widget'
 
 const CATEGORY_COLORS: Record<string, string> = {
   Food: '#34d399', Rent: '#22d3ee', Shopping: '#fbbf24', Healthcare: '#fb7185',
@@ -260,9 +261,6 @@ export default function DashboardPage() {
                   <span className="gradient-text">{user?.name?.split(' ')[0] || 'there'}</span>
                 </h2>
                 <p className="text-sm text-secondary mt-0.5">{greetingSubtext}</p>
-                <p className="text-xs text-tertiary mt-1">
-                  {format(now, 'EEEE, MMMM d, yyyy')}
-                </p>
               </div>
             </div>
             <div className="flex flex-col items-end gap-1 shrink-0">
@@ -775,7 +773,7 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center py-4">
-              <HealthScoreRing score={healthScore} size={140} strokeWidth={10} />
+              <HealthScoreRing score={healthScore} size={120} strokeWidth={8} />
               <div className="mt-4 text-center">
                 <p className="text-sm font-semibold text-foreground">
                   {healthScore >= 75 ? 'Excellent' : healthScore >= 60 ? 'Good' : healthScore >= 40 ? 'Fair' : 'Needs Improvement'}
@@ -801,7 +799,7 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <SmartInsights />
+              <SmartInsights compact />
             </CardContent>
           </Card>
         </motion.div>
@@ -866,6 +864,14 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+        </motion.div>
+
+        {/* Currency Widget */}
+        <motion.div variants={itemVariants}>
+          <CurrencyWidget
+            currentCurrency={user?.currency || 'USD'}
+            balance={netSavings}
+          />
         </motion.div>
       </div>
     </motion.div>
