@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useAppStore } from '@/store/use-app-store'
+import { useAppStore, type ViewType } from '@/store/use-app-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -49,14 +49,7 @@ export default function RegisterPage() {
         return
       }
 
-      // Step 2: Seed demo data for the new user
-      await fetch('/api/seed', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: regData.id, name, email }),
-      })
-
-      // Step 3: Log in with the new credentials
+      // Step 2: Log in with the new credentials
       const loginRes = await fetch('/api/auth', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -70,7 +63,8 @@ export default function RegisterPage() {
       }
 
       setUser(loginData)
-      setView('dashboard')
+      // Go to onboarding which now includes statement import step
+      setView('onboarding' as ViewType)
     } catch {
       setError('Something went wrong')
     } finally {

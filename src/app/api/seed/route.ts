@@ -25,12 +25,6 @@ function randomBetween(min: number, max: number) {
   return Math.round((Math.random() * (max - min) + min) * 100) / 100
 }
 
-function randomDate(monthsBack: number): string {
-  const now = new Date()
-  const past = new Date(now.getTime() - Math.random() * monthsBack * 30 * 24 * 60 * 60 * 1000)
-  return past.toISOString()
-}
-
 function randomDateInMonth(monthOffset: number): string {
   const now = new Date()
   const target = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1)
@@ -40,7 +34,6 @@ function randomDateInMonth(monthOffset: number): string {
 }
 
 async function seedDataForUser(userId: string) {
-  // Create expenses (6 months of data)
   const expenses = []
   for (let month = 0; month < 6; month++) {
     const numExpenses = Math.floor(Math.random() * 8) + 10
@@ -72,10 +65,8 @@ async function seedDataForUser(userId: string) {
 
   await db.expense.createMany({ data: expenses })
 
-  // Create incomes (6 months)
   const incomes = []
   for (let month = 0; month < 6; month++) {
-    // Salary (always)
     incomes.push({
       id: randomUUID(),
       userId,
@@ -85,7 +76,6 @@ async function seedDataForUser(userId: string) {
       date: randomDateInMonth(month),
       isRecurring: true,
     })
-    // Additional income (50% chance)
     if (Math.random() > 0.5) {
       const source = INCOME_SOURCES[Math.floor(Math.random() * (INCOME_SOURCES.length - 1)) + 1]
       incomes.push({
@@ -102,7 +92,6 @@ async function seedDataForUser(userId: string) {
 
   await db.income.createMany({ data: incomes })
 
-  // Create budgets
   const budgetCategories = ['Food', 'Shopping', 'Entertainment', 'Transportation', 'Utilities', 'Subscriptions', 'Healthcare']
   const budgets = budgetCategories.map((category) => {
     const limit = category === 'Food' ? 800 :
@@ -127,7 +116,6 @@ async function seedDataForUser(userId: string) {
 
   await db.budget.createMany({ data: budgets })
 
-  // Create goals
   const goalsData = [
     { title: 'Emergency Fund', targetAmount: 15000, currentAmount: 8750, icon: '🛡️', color: '#10b981', deadline: '2025-12-31' },
     { title: 'New MacBook Pro', targetAmount: 2499, currentAmount: 1650, icon: '💻', color: '#06b6d4', deadline: '2025-09-01' },
@@ -159,16 +147,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, stats })
     }
 
-    // Legacy behavior: no userId provided — create demo@finwise.ai
-    const existingUser = await db.user.findFirst()
-    if (existingUser) {
-      // Clear existing data for fresh seed
-      await db.chatMessage.deleteMany()
-      await db.expense.deleteMany()
-      await db.income.deleteMany()
-      await db.goal.deleteMany()
-      await db.budget.deleteMany()
-      await db.user.deleteMany()
+    // Legacy/demo mode: create or reset demo@finwise.ai only
+    const existingDemo = await db.user.findUnique({ where: { email: 'demo@finwise.ai' } })
+
+    // Only clear demo user's data, NOT other users' data
+    if (existingDemo) {
+      await db.chatMessage.deleteMany({ where: { userId: existingDemo.id } })
+      await db.expense.deleteMany({ where: { userId: existingDemo.id } })
+      await db.income.deleteMany({ where: { userId: existingDemo.id } })
+      await db.goal.deleteMany({ where: { userId: existingDemo.id } })
+      await db.budget.deleteMany({ where: { userId: existingDemo.id } })
+      await db.user.delete({ where: { id: existingDemo.id } })
     }
 
     // Create demo user

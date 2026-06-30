@@ -1,0 +1,442 @@
+     1→'use client'
+     2→
+     3→import { motion, useInView } from 'framer-motion'
+     4→import { useRef, useState, useEffect } from 'react'
+     5→import { useAppStore } from '@/store/use-app-store'
+     6→import { Button } from '@/components/ui/button'
+     7→import { Card, CardContent } from '@/components/ui/card'
+     8→import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+     9→import {
+    10→  Shield, Brain, Target, TrendingUp, Lock, BarChart3,
+    11→  ArrowRight, Check, Star, Zap, Eye, Sparkles, ChevronRight, Wallet, PieChart, Bot, Globe
+    12→} from 'lucide-react'
+    13→
+    14→const NAV_ITEMS = ['Features', 'Security', 'Pricing']
+    15→
+    16→const FEATURES = [
+    17→  { icon: BarChart3, title: 'Smart Analytics', desc: 'Visualize your spending patterns with AI-powered insights. Understand exactly where your money goes every month.', color: '#10b981' },
+    18→  { icon: Brain, title: 'AI Finance Coach', desc: 'Ask natural language questions about your finances. Get personalized advice based on your actual spending data.', color: '#06b6d4' },
+    19→  { icon: Target, title: 'Budget Planner', desc: 'Create intelligent budgets with real-time tracking. Get warned before you overspend on any category.', color: '#f59e0b' },
+    20→  { icon: TrendingUp, title: 'Goal Tracker', desc: 'Set savings goals and watch your progress. Get estimated completion dates and smart savings suggestions.', color: '#8b5cf6' },
+    21→  { icon: Lock, title: 'Secure & Private', desc: 'Bank-level encryption with zero data retention. Your documents are processed and immediately deleted.', color: '#10b981' },
+    22→  { icon: Sparkles, title: 'Smart Reports', desc: 'Generate detailed weekly, monthly, and annual reports. Export as PDF or CSV for your records.', color: '#06b6d4' },
+    23→]
+    24→
+    25→const SECURITY_FEATURES = [
+    26→  { icon: Shield, title: 'End-to-End Encryption', desc: 'All your financial data is encrypted in transit and at rest using AES-256 encryption.' },
+    27→  { icon: Eye, title: 'Zero Data Retention', desc: 'Uploaded documents are permanently deleted after processing. No copies, no backups.' },
+    28→  { icon: Lock, title: 'No Bank Access Needed', desc: 'We never ask for your banking credentials. Upload statements manually for complete control.' },
+    29→  { icon: Brain, title: 'AI Privacy Guarantees', desc: 'AI only sees anonymized summaries. Raw data never reaches any model. Not used for training.' },
+    30→]
+    31→
+    32→const TESTIMONIALS = [
+    33→  { name: 'Sarah Chen', role: 'Software Engineer', text: 'FinWise AI helped me identify $200/month in unused subscriptions I didn\'t know I had. The AI coach is incredibly insightful.', rating: 5 },
+    34→  { name: 'Marcus Johnson', role: 'Freelance Designer', text: 'As a freelancer, tracking finances was chaotic. FinWise gave me clarity and helped me build a 6-month emergency fund.', rating: 5 },
+    35→  { name: 'Priya Sharma', role: 'Graduate Student', text: 'The budget planner and goal tracker kept me on track during my studies. I actually saved money while in college!', rating: 5 },
+    36→]
+    37→
+    38→const PRICING = [
+    39→  {
+    40→    name: 'Free', price: '$0', period: 'forever',
+    41→    features: ['Track up to 50 transactions/month', 'Basic analytics', '2 budget categories', '1 savings goal', 'Weekly reports'],
+    42→    cta: 'Get Started', highlighted: false
+    43→  },
+    44→  {
+    45→    name: 'Pro', price: '$9.99', period: '/month',
+    46→    features: ['Unlimited transactions', 'AI Finance Coach', 'Unlimited budgets & goals', 'All report types', 'Smart categorization', 'Export to PDF/CSV', 'Priority support'],
+    47→    cta: 'Start Free Trial', highlighted: true
+    48→  },
+    49→  {
+    50→    name: 'Enterprise', price: '$29.99', period: '/month',
+    51→    features: ['Everything in Pro', 'Family accounts (up to 5)', 'Advanced forecasting', 'API access', 'Custom categories', 'Dedicated support', 'Compliance reports'],
+    52→    cta: 'Contact Sales', highlighted: false
+    53→  },
+    54→]
+    55→
+    56→const FAQS = [
+    57→  { q: 'Is my financial data secure?', a: 'Absolutely. We use AES-256 encryption, never store your banking credentials, and all uploaded documents are permanently deleted after processing. Your data is never used for AI model training.' },
+    58→  { q: 'Do I need to connect my bank account?', a: 'No. FinWise AI works with manually uploaded statements (CSV, PDF, Excel). You have complete control over what data you share and when.' },
+    59→  { q: 'How does the AI Finance Coach work?', a: 'The AI coach analyzes your anonymized financial summaries — never raw data. It provides personalized insights, spending recommendations, and answers your finance questions in natural language.' },
+    60→  { q: 'Can I delete all my data?', a: 'Yes. You can export all your data, delete chat history, remove uploaded documents, and permanently delete your account at any time from Settings.' },
+    61→  { q: 'What makes FinWise different from other budgeting apps?', a: 'Unlike most apps that just record expenses, FinWise AI provides intelligent insights, explains your spending habits, forecasts future expenses, and helps you actively improve your financial health.' },
+    62→]
+    63→
+    64→function FadeInWhenVisible({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
+    65→  const ref = useRef(null)
+    66→  const isInView = useInView(ref, { once: true, margin: '-50px' })
+    67→  return (
+    68→    <motion.div ref={ref} initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay, ease: 'easeOut' }} className={className}>
+    69→      {children}
+    70→    </motion.div>
+    71→  )
+    72→}
+    73→
+    74→function FloatingParticles() {
+    75→  const [mounted, setMounted] = useState(false)
+    76→  useEffect(() => { setMounted(true) }, [])
+    77→  const particles = mounted ? Array.from({ length: 25 }, (_, i) => ({
+    78→    id: i,
+    79→    x: Math.random() * 100,
+    80→    y: Math.random() * 100,
+    81→    size: Math.random() * 3 + 1.5,
+    82→    duration: Math.random() * 20 + 15,
+    83→    delay: Math.random() * 10,
+    84→    opacity: Math.random() * 0.25 + 0.05,
+    85→    color: ['#34d399', '#22d3ee', '#a78bfa', '#fbbf24'][Math.floor(Math.random() * 4)],
+    86→  })) : []
+    87→  return (
+    88→    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    89→      {particles.map(p => (
+    90→        <motion.div key={p.id} className="absolute rounded-full"
+    91→          style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size, opacity: p.opacity, background: p.color }}
+    92→          animate={{ y: [0, -40, 0], x: [0, 20, 0], opacity: [p.opacity, p.opacity * 2.5, p.opacity] }}
+    93→          transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
+    94→        />
+    95→      ))}
+    96→    </div>
+    97→  )
+    98→}
+    99→
+   100→function AnimatedCounter({ target, prefix = '', suffix = '', duration = 2 }: { target: number; prefix?: string; suffix?: string; duration?: number }) {
+   101→  const [count, setCount] = useState(0)
+   102→  const ref = useRef(null)
+   103→  const inView = useInView(ref, { once: true, margin: '-50px' })
+   104→
+   105→  useEffect(() => {
+   106→    if (!inView) return
+   107→    let start = 0
+   108→    const end = target
+   109→    const step = end / (duration * 60)
+   110→    const timer = setInterval(() => {
+   111→      start += step
+   112→      if (start >= end) { setCount(end); clearInterval(timer) }
+   113→      else setCount(Math.floor(start))
+   114→    }, 1000 / 60)
+   115→    return () => clearInterval(timer)
+   116→  }, [inView, target, duration])
+   117→
+   118→  return <span ref={ref}>{prefix}{count.toLocaleString()}{suffix}</span>
+   119→}
+   120→
+   121→export default function LandingPage() {
+   122→  const setView = useAppStore(s => s.setView)
+   123→
+   124→  return (
+   125→    <div className="dark min-h-screen mesh-bg-enhanced text-foreground overflow-x-hidden">
+   126→      {/* Navbar */}
+   127→      <nav className="fixed top-0 left-0 right-0 z-50 glass-strong" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+   128→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+   129→          <div className="flex items-center gap-2.5">
+   130→            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+   131→              <Zap className="w-5 h-5 text-white" />
+   132→            </div>
+   133→            <span className="text-xl font-bold">FinWise <span className="gradient-text">AI</span></span>
+   134→          </div>
+   135→          <div className="hidden md:flex items-center gap-8">
+   136→            {NAV_ITEMS.map(item => (
+   137→              <a key={item} href={`#${item.toLowerCase()}`} className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">{item}</a>
+   138→            ))}
+   139→          </div>
+   140→          <div className="flex items-center gap-3">
+   141→            <Button variant="ghost" size="sm" onClick={() => setView('login')} className="text-muted-foreground hover:text-foreground hover:bg-white/5">Sign In</Button>
+   142→            <Button size="sm" onClick={() => setView('register')} className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white border-0 shadow-lg shadow-emerald-500/20">
+   143→              Get Started <ArrowRight className="w-4 h-4 ml-1" />
+   144→            </Button>
+   145→          </div>
+   146→        </div>
+   147→      </nav>
+   148→
+   149→      {/* Hero */}
+   150→      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+   151→        <div className="absolute top-20 left-1/4 w-96 h-96 bg-emerald-500/12 rounded-full filter blur-[120px] pointer-events-none orb-animated" />
+   152→        <div className="absolute top-40 right-1/4 w-72 h-72 bg-cyan-500/10 rounded-full filter blur-[100px] pointer-events-none orb-animated" style={{ animationDelay: '-7s' }} />
+   153→        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-500/6 rounded-full filter blur-[150px] pointer-events-none" />
+   154→        <FloatingParticles />
+   155→        <div className="max-w-7xl mx-auto text-center relative">
+   156→          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
+   157→            <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-sm text-foreground/70 mb-6 border border-emerald-500/15">
+   158→              <Star className="w-4 h-4 text-emerald-400 fill-emerald-400" /> Trusted by 10,000+ users worldwide
+   159→            </div>
+   160→          </motion.div>
+   161→          <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }} className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight">
+   162→            Your <span className="gradient-text text-glow-emerald">AI-Powered</span><br />Finance Coach
+   163→          </motion.h1>
+   164→          <motion.p initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.2 }} className="text-lg sm:text-xl text-foreground/70 max-w-2xl mx-auto mb-10 leading-relaxed">
+   165→            Understand, analyze, and improve your finances with intelligent AI insights. Maximum privacy, zero compromise.
+   166→          </motion.p>
+   167→          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.3 }} className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+   168→            <Button size="lg" onClick={() => setView('register')} className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white border-0 text-base px-8 py-6 rounded-xl shadow-xl shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-shadow">
+   169→              Start Free <ArrowRight className="w-5 h-5 ml-2" />
+   170→            </Button>
+   171→            <Button size="lg" variant="outline" className="glass rounded-xl text-base px-8 py-6 hover:bg-white/5 border-white/10 text-foreground">
+   172→              Watch Demo
+   173→            </Button>
+   174→          </motion.div>
+   175→
+   176→          {/* Dashboard Preview */}
+   177→          <motion.div initial={{ opacity: 0, y: 40, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.8, delay: 0.5 }} className="relative max-w-5xl mx-auto">
+   178→            <div className="glass rounded-2xl p-1 glow-emerald">
+   179→              <div className="bg-background/80 rounded-xl p-6 md:p-8">
+   180→                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+   181→                  {[
+   182→                    { label: 'Total Income', value: '$8,450', change: '+12.5%', up: true },
+   183→                    { label: 'Expenses', value: '$3,280', change: '-8.2%', up: false },
+   184→                    { label: 'Savings', value: '$5,170', change: '+23.1%', up: true },
+   185→                    { label: 'Health Score', value: '87/100', change: '+5', up: true },
+   186→                  ].map((item, i) => (
+   187→                    <motion.div key={item.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 + i * 0.1 }} className="glass rounded-xl p-4 text-left">
+   188→                      <p className="text-xs text-muted-foreground mb-1">{item.label}</p>
+   189→                      <p className="text-xl md:text-2xl font-bold">{item.value}</p>
+   190→                      <p className={`text-xs mt-1 ${item.up ? 'text-emerald-400' : 'text-rose-400'}`}>{item.change}</p>
+   191→                    </motion.div>
+   192→                  ))}
+   193→                </div>
+   194→                <div className="h-40 md:h-56 glass rounded-xl flex items-end justify-around p-4 gap-2">
+   195→                  {[65, 45, 80, 55, 70, 40, 90, 60, 75, 50, 85, 65].map((h, i) => (
+   196→                    <motion.div key={i} initial={{ height: 0 }} animate={{ height: `${h}%` }} transition={{ delay: 1 + i * 0.05, duration: 0.5 }} className="flex-1 bg-gradient-to-t from-emerald-500/40 to-cyan-500/40 rounded-t-md min-w-[8px]" />
+   197→                  ))}
+   198→                </div>
+   199→              </div>
+   200→            </div>
+   201→          </motion.div>
+   202→        </div>
+   203→      </section>
+   204→
+   205→      {/* Features */}
+   206→      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8">
+   207→        <div className="max-w-7xl mx-auto">
+   208→          <FadeInWhenVisible className="text-center mb-16">
+   209→            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Everything you need to master your <span className="gradient-text">finances</span></h2>
+   210→            <p className="text-muted-foreground max-w-2xl mx-auto">Powerful tools that work together to give you complete visibility and control over your money.</p>
+   211→          </FadeInWhenVisible>
+   212→          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 stagger-children">
+   213→            {FEATURES.map((f, i) => (
+   214→              <FadeInWhenVisible key={f.title} delay={i * 0.1}>
+   215→                <Card className="glass card-hover border-0 h-full">
+   216→                  <CardContent className="p-6">
+   217→                    <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ background: `${f.color}15` }}>
+   218→                      <f.icon className="w-6 h-6" style={{ color: f.color }} />
+   219→                    </div>
+   220→                    <h3 className="text-lg font-semibold mb-2">{f.title}</h3>
+   221→                    <p className="text-sm text-foreground/70 leading-relaxed">{f.desc}</p>
+   222→                  </CardContent>
+   223→                </Card>
+   224→              </FadeInWhenVisible>
+   225→            ))}
+   226→          </div>
+   227→        </div>
+   228→      </section>
+   229→
+   230→      {/* How It Works */}
+   231→      <section className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+   232→        <div className="absolute inset-0 grid-pattern opacity-30 pointer-events-none" />
+   233→        <div className="max-w-7xl mx-auto relative">
+   234→          <FadeInWhenVisible className="text-center mb-16">
+   235→            <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-sm text-cyan-400 mb-4">
+   236→              <Zap className="w-4 h-4" /> Simple Workflow
+   237→            </div>
+   238→            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Get started in <span className="gradient-text">3 simple steps</span></h2>
+   239→          </FadeInWhenVisible>
+   240→          <div className="grid md:grid-cols-3 gap-8 relative">
+   241→            <div className="hidden md:block absolute top-16 left-1/6 right-1/6 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
+   242→            {[
+   243→              { step: '01', icon: Wallet, title: 'Upload Your Data', desc: 'Import your bank statements (CSV, PDF, Excel) or manually add transactions. No bank credentials needed — you stay in full control.', color: '#10b981' },
+   244→              { step: '02', icon: Brain, title: 'AI Analyzes Everything', desc: 'Our AI automatically categorizes transactions, identifies patterns, detects subscriptions, and generates a personalized financial health score.', color: '#06b6d4' },
+   245→              { step: '03', icon: Target, title: 'Get Actionable Insights', desc: 'Receive smart recommendations to save more, reduce unnecessary spending, and reach your financial goals faster.', color: '#f59e0b' },
+   246→            ].map((item, i) => (
+   247→              <FadeInWhenVisible key={item.step} delay={i * 0.15}>
+   248→                <div className="text-center relative">
+   249→                  <motion.div className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center relative" style={{ background: `${item.color}15` }}
+   250→                    whileHover={{ scale: 1.05, rotate: 2 }} transition={{ type: 'spring', stiffness: 300 }}>
+   251→                    <item.icon className="w-7 h-7" style={{ color: item.color }} />
+   252→                    <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-[10px] font-bold text-white shadow-lg">{item.step}</span>
+   253→                  </motion.div>
+   254→                  <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
+   255→                  <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">{item.desc}</p>
+   256→                </div>
+   257→              </FadeInWhenVisible>
+   258→            ))}
+   259→          </div>
+   260→        </div>
+   261→      </section>
+   262→
+   263→      {/* Stats Bar */}
+   264→      <section className="py-16 border-y border-white/5">
+   265→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   266→          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+   267→            {[
+   268→              { value: 10000, label: 'Active Users', icon: Globe, prefix: '', suffix: '+' },
+   269→              { value: 2500000, label: 'Money Tracked', icon: TrendingUp, prefix: '$', suffix: '+' },
+   270→              { value: 50000, label: 'AI Insights', icon: Bot, prefix: '', suffix: '+' },
+   271→              { value: 99, label: 'Uptime', icon: Shield, prefix: '', suffix: '.9%' },
+   272→            ].map((stat, i) => (
+   273→              <FadeInWhenVisible key={stat.label} delay={i * 0.1} className="text-center">
+   274→                <stat.icon className="w-5 h-5 text-emerald-400 mx-auto mb-3" />
+   275→                <p className="text-3xl md:text-4xl font-bold gradient-text">
+   276→                  <AnimatedCounter target={stat.value} prefix={stat.prefix} suffix={stat.suffix} />
+   277→                </p>
+   278→                <p className="text-sm text-foreground/60 mt-2">{stat.label}</p>
+   279→              </FadeInWhenVisible>
+   280→            ))}
+   281→          </div>
+   282→        </div>
+   283→      </section>
+   284→
+   285→      {/* Security */}
+   286→      <section id="security" className="py-20 px-4 sm:px-6 lg:px-8">
+   287→        <div className="max-w-7xl mx-auto">
+   288→          <FadeInWhenVisible className="text-center mb-16">
+   289→            <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-sm text-emerald-400 mb-4">
+   290→              <Shield className="w-4 h-4" /> Security First
+   291→            </div>
+   292→            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Bank-Level <span className="gradient-text">Security</span></h2>
+   293→            <p className="text-muted-foreground max-w-2xl mx-auto">Your financial data deserves the highest level of protection. Here&apos;s how we keep it safe.</p>
+   294→          </FadeInWhenVisible>
+   295→          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+   296→            {SECURITY_FEATURES.map((f, i) => (
+   297→              <FadeInWhenVisible key={f.title} delay={i * 0.1}>
+   298→                <Card className="glass card-hover border-0 h-full text-center">
+   299→                  <CardContent className="p-6">
+   300→                    <div className="w-14 h-14 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
+   301→                      <f.icon className="w-7 h-7 text-emerald-400" />
+   302→                    </div>
+   303→                    <h3 className="text-base font-semibold mb-2">{f.title}</h3>
+   304→                    <p className="text-sm text-foreground/70 leading-relaxed">{f.desc}</p>
+   305→                  </CardContent>
+   306→                </Card>
+   307→              </FadeInWhenVisible>
+   308→            ))}
+   309→          </div>
+   310→        </div>
+   311→      </section>
+   312→
+   313→      {/* Testimonials */}
+   314→      <section className="py-20 px-4 sm:px-6 lg:px-8">
+   315→        <div className="max-w-7xl mx-auto">
+   316→          <FadeInWhenVisible className="text-center mb-16">
+   317→            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Loved by <span className="gradient-text">thousands</span></h2>
+   318→            <p className="text-foreground/50 max-w-3xl mx-auto">See what our users have to say about their experience.</p>
+   319→          </FadeInWhenVisible>
+   320→          <div className="grid md:grid-cols-3 gap-6">
+   321→            {TESTIMONIALS.map((t, i) => (
+   322→              <FadeInWhenVisible key={t.name} delay={i * 0.1}>
+   323→                <Card className="glass card-float border-0 h-full relative overflow-hidden group">
+   324→                  <div className="absolute top-4 right-4 text-6xl text-white/5 font-serif leading-none select-none group-hover:text-emerald-400/10 transition-colors">&ldquo;</div>
+   325→                  <CardContent className="p-6 pt-7 relative">
+   326→                    <div className="flex gap-1 mb-4">
+   327→                      {Array.from({ length: t.rating }).map((_, j) => <Star key={j} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
+   328→                    </div>
+   329→                    <p className="text-sm text-foreground/70 leading-relaxed mb-6">{t.text}</p>
+   330→                    <div className="flex items-center gap-3">
+   331→                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-white font-semibold text-sm shadow-lg shadow-emerald-500/15">
+   332→                        {t.name.split(' ').map(n => n[0]).join('')}
+   333→                      </div>
+   334→                      <div>
+   335→                        <p className="text-sm font-semibold text-foreground">{t.name}</p>
+   336→                        <p className="text-xs text-foreground/50">{t.role}</p>
+   337→                      </div>
+   338→                    </div>
+   339→                  </CardContent>
+   340→                </Card>
+   341→              </FadeInWhenVisible>
+   342→            ))}
+   343→          </div>
+   344→        </div>
+   345→      </section>
+   346→
+   347→      {/* Pricing */}
+   348→      <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8">
+   349→        <div className="max-w-7xl mx-auto">
+   350→          <FadeInWhenVisible className="text-center mb-16">
+   351→            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Simple, transparent <span className="gradient-text">pricing</span></h2>
+   352→            <p className="text-muted-foreground">Start free and upgrade as you grow. No hidden fees.</p>
+   353→          </FadeInWhenVisible>
+   354→          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+   355→            {PRICING.map((plan, i) => (
+   356→              <FadeInWhenVisible key={plan.name} delay={i * 0.1}>
+   357→                <Card className={`card-float border-0 h-full relative overflow-hidden ${plan.highlighted ? 'glass shimmer-border' : 'glass'}`}>
+   358→                  {plan.highlighted && (
+   359→                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-xs font-semibold px-4 py-1 rounded-full shadow-lg shadow-emerald-500/20">Most Popular</div>
+   360→                  )}
+   361→                  <CardContent className="p-6 pt-8">
+   362→                    <h3 className="text-lg font-semibold mb-2">{plan.name}</h3>
+   363→                    <div className="mb-6">
+   364→                      <span className="text-4xl font-bold">{plan.price}</span>
+   365→                      <span className="text-muted-foreground text-sm">{plan.period}</span>
+   366→                    </div>
+   367→                    <ul className="space-y-3 mb-8">
+   368→                      {plan.features.map(f => (
+   369→                        <li key={f} className="flex items-start gap-2 text-sm">
+   370→                          <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+   371→                          <span className="text-muted-foreground">{f}</span>
+   372→                        </li>
+   373→                      ))}
+   374→                    </ul>
+   375→                    <Button className={`w-full rounded-xl ${plan.highlighted ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0' : 'glass'}`} onClick={() => setView('register')}>
+   376→                      {plan.cta} <ChevronRight className="w-4 h-4 ml-1" />
+   377→                    </Button>
+   378→                  </CardContent>
+   379→                </Card>
+   380→              </FadeInWhenVisible>
+   381→            ))}
+   382→          </div>
+   383→        </div>
+   384→      </section>
+   385→
+   386→      {/* FAQ */}
+   387→      <section className="py-20 px-4 sm:px-6 lg:px-8">
+   388→        <div className="max-w-3xl mx-auto">
+   389→          <FadeInWhenVisible className="text-center mb-12">
+   390→            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Frequently asked <span className="gradient-text">questions</span></h2>
+   391→          </FadeInWhenVisible>
+   392→          <FadeInWhenVisible>
+   393→            <Card className="glass border-0">
+   394→              <CardContent className="p-2">
+   395→                <Accordion type="single" collapsible className="w-full">
+   396→                  {FAQS.map((faq, i) => (
+   397→                    <AccordionItem key={i} value={`faq-${i}`} className="border-b border-border/50 px-4 last:border-0">
+   398→                      <AccordionTrigger className="text-sm font-medium text-left hover:no-underline py-4">{faq.q}</AccordionTrigger>
+   399→                      <AccordionContent className="text-sm text-muted-foreground leading-relaxed pb-4">{faq.a}</AccordionContent>
+   400→                    </AccordionItem>
+   401→                  ))}
+   402→                </Accordion>
+   403→              </CardContent>
+   404→            </Card>
+   405→          </FadeInWhenVisible>
+   406→        </div>
+   407→      </section>
+   408→
+   409→      {/* CTA */}
+   410→      <section className="py-20 px-4 sm:px-6 lg:px-8">
+   411→        <FadeInWhenVisible>
+   412→          <div className="max-w-4xl mx-auto text-center glass rounded-3xl p-10 md:p-16 relative overflow-hidden">
+   413→            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-emerald-500/20 rounded-full filter blur-[100px] pointer-events-none" />
+   414→            <h2 className="text-3xl sm:text-4xl font-bold mb-4 relative">Ready to take control of your <span className="gradient-text">finances</span>?</h2>
+   415→            <p className="text-muted-foreground mb-8 relative">Join thousands of users who are already making smarter financial decisions.</p>
+   416→            <Button size="lg" onClick={() => setView('register')} className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0 text-base px-8 py-6 rounded-xl relative">
+   417→              Get Started for Free <ArrowRight className="w-5 h-5 ml-2" />
+   418→            </Button>
+   419→          </div>
+   420→        </FadeInWhenVisible>
+   421→      </section>
+   422→
+   423→      {/* Footer */}
+   424→      <footer className="border-t border-border/30 py-12 px-4 sm:px-6 lg:px-8">
+   425→        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+   426→          <div className="flex items-center gap-2">
+   427→            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center">
+   428→              <Zap className="w-4 h-4 text-white" />
+   429→            </div>
+   430→            <span className="text-sm font-semibold">FinWise AI</span>
+   431→          </div>
+   432→          <div className="flex gap-6 text-sm text-muted-foreground">
+   433→            <span className="hover:text-foreground cursor-pointer transition-colors">Privacy</span>
+   434→            <span className="hover:text-foreground cursor-pointer transition-colors">Terms</span>
+   435→            <span className="hover:text-foreground cursor-pointer transition-colors">Contact</span>
+   436→          </div>
+   437→          <p className="text-xs text-muted-foreground">&copy; 2025 FinWise AI. All rights reserved.</p>
+   438→        </div>
+   439→      </footer>
+   440→    </div>
+   441→  )
+   442→}

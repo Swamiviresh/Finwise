@@ -4,6 +4,7 @@ export type ViewType =
   | 'landing'
   | 'login'
   | 'register'
+  | 'onboarding'
   | 'dashboard'
   | 'expenses'
   | 'income'
@@ -233,7 +234,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setLoading: (loading) => set({ isLoading: loading }),
 
   // Onboarding (persisted to localStorage)
-  hasCompletedOnboarding: typeof window !== 'undefined' ? localStorage.getItem('finwise_onboarding_done') === 'true' : false,
+  hasCompletedOnboarding: false,
   setHasCompletedOnboarding: (v) => {
     if (typeof window !== 'undefined') localStorage.setItem('finwise_onboarding_done', String(v))
     set({ hasCompletedOnboarding: v })

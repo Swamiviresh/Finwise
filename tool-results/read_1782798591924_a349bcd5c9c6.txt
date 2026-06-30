@@ -1,0 +1,636 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect, useCallback } from 'react'
+     4→import { useAppStore } from '@/store/use-app-store'
+     5→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+     6→import { Button } from '@/components/ui/button'
+     7→import { Input } from '@/components/ui/input'
+     8→import { Label } from '@/components/ui/label'
+     9→import { Switch } from '@/components/ui/switch'
+    10→import { Separator } from '@/components/ui/separator'
+    11→import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+    12→import { Badge } from '@/components/ui/badge'
+    13→import { useTheme } from 'next-themes'
+    14→import {
+    15→  Sun, Moon, Monitor, Download, Trash2, RefreshCw, Shield, Smartphone,
+    16→  Laptop, Globe, User, Palette, Lock, Database, AlertTriangle, Check,
+    17→  X, ChevronDown, Bell, Target, Sparkles, BarChart3, Info, ExternalLink
+    18→} from 'lucide-react'
+    19→import { motion, AnimatePresence } from 'framer-motion'
+    20→import { toast } from 'sonner'
+    21→import {
+    22→  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    23→  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
+    24→} from '@/components/ui/alert-dialog'
+    25→import CurrencyConverter from '@/components/shared/currency-converter'
+    26→
+    27→const SECTIONS = [
+    28→  { id: 'profile', label: 'Profile', icon: User },
+    29→  { id: 'appearance', label: 'Appearance', icon: Palette },
+    30→  { id: 'notifications', label: 'Notifications', icon: Bell },
+    31→  { id: 'privacy', label: 'Data & Privacy', icon: Lock },
+    32→  { id: 'devices', label: 'Devices', icon: Database },
+    33→  { id: 'about', label: 'About', icon: Info },
+    34→]
+    35→
+    36→const MOCK_DEVICES = [
+    37→  { name: 'MacBook Pro', icon: Laptop, lastActive: 'Active now', current: true },
+    38→  { name: 'iPhone 15', icon: Smartphone, lastActive: '2 hours ago', current: false },
+    39→  { name: 'Windows PC', icon: Globe, lastActive: '3 days ago', current: false },
+    40→]
+    41→
+    42→const CURRENCIES = [
+    43→  { code: 'USD', symbol: '$', label: 'US Dollar' },
+    44→  { code: 'EUR', symbol: '€', label: 'Euro' },
+    45→  { code: 'GBP', symbol: '£', label: 'British Pound' },
+    46→  { code: 'INR', symbol: '₹', label: 'Indian Rupee' },
+    47→  { code: 'JPY', symbol: '¥', label: 'Japanese Yen' },
+    48→]
+    49→
+    50→type NotificationPref = {
+    51→  budgetAlerts: boolean
+    52→  goalMilestones: boolean
+    53→  weeklySummary: boolean
+    54→  aiInsights: boolean
+    55→}
+    56→
+    57→const NOTIFICATION_DEFAULTS: NotificationPref = {
+    58→  budgetAlerts: true,
+    59→  goalMilestones: true,
+    60→  weeklySummary: false,
+    61→  aiInsights: true,
+    62→}
+    63→
+    64→function useNotificationPrefs() {
+    65→  const [prefs, setPrefs] = useState<NotificationPref>(() => {
+    66→    if (typeof window === 'undefined') return NOTIFICATION_DEFAULTS
+    67→    try {
+    68→      const stored = localStorage.getItem('finwise_notification_prefs')
+    69→      return stored ? JSON.parse(stored) : NOTIFICATION_DEFAULTS
+    70→    } catch { return NOTIFICATION_DEFAULTS }
+    71→  })
+    72→
+    73→  const updatePref = useCallback((key: keyof NotificationPref, value: boolean) => {
+    74→    setPrefs(prev => {
+    75→      const next = { ...prev, [key]: value }
+    76→      try { localStorage.setItem('finwise_notification_prefs', JSON.stringify(next)) } catch { /* ignore */ }
+    77→      return next
+    78→    })
+    79→  }, [])
+    80→
+    81→  return { prefs, updatePref }
+    82→}
+    83→
+    84→export default function SettingsPage() {
+    85→  const { user, setUser } = useAppStore()
+    86→  const { theme, setTheme } = useTheme()
+    87→  const [activeSection, setActiveSection] = useState('profile')
+    88→  const [name, setName] = useState(user?.name || '')
+    89→  const [email, setEmail] = useState(user?.email || '')
+    90→  const [isEditingName, setIsEditingName] = useState(false)
+    91→  const [editNameValue, setEditNameValue] = useState(user?.name || '')
+    92→  const [currency, setCurrency] = useState(user?.currency || 'USD')
+    93→  const [compactMode, setCompactMode] = useState(false)
+    94→  const [deleteConfirmStep, setDeleteConfirmStep] = useState(0)
+    95→  const [mounted, setMounted] = useState(false)
+    96→  const { prefs, updatePref } = useNotificationPrefs()
+    97→
+    98→  useEffect(() => {
+    99→    setMounted(true)
+   100→    try {
+   101→      const stored = localStorage.getItem('finwise_compact_mode')
+   102→      if (stored === 'true') {
+   103→        setCompactMode(true)
+   104→        document.body.classList.add('compact-mode')
+   105→      }
+   106→    } catch { /* ignore */ }
+   107→  }, [])
+   108→
+   109→  useEffect(() => {
+   110→    setName(user?.name || '')
+   111→    setEmail(user?.email || '')
+   112→    setEditNameValue(user?.name || '')
+   113→    setCurrency(user?.currency || 'USD')
+   114→  }, [user])
+   115→
+   116→  const handleSaveName = () => {
+   117→    if (!editNameValue.trim()) return
+   118→    if (user) setUser({ ...user, name: editNameValue.trim() })
+   119→    setName(editNameValue.trim())
+   120→    setIsEditingName(false)
+   121→    toast.success('Name updated')
+   122→  }
+   123→
+   124→  const handleCancelName = () => {
+   125→    setEditNameValue(name)
+   126→    setIsEditingName(false)
+   127→  }
+   128→
+   129→  const handleCurrencyChange = (code: string) => {
+   130→    setCurrency(code)
+   131→    if (user) setUser({ ...user, currency: code })
+   132→    toast.success(`Currency changed to ${code}`)
+   133→  }
+   134→
+   135→  const toggleCompactMode = () => {
+   136→    const next = !compactMode
+   137→    setCompactMode(next)
+   138→    try { localStorage.setItem('finwise_compact_mode', String(next)) } catch { /* ignore */ }
+   139→    if (next) {
+   140→      document.body.classList.add('compact-mode')
+   141→    } else {
+   142→      document.body.classList.remove('compact-mode')
+   143→    }
+   144→    toast.success(next ? 'Compact mode enabled' : 'Compact mode disabled')
+   145→  }
+   146→
+   147→  const handleSave = () => {
+   148→    if (user) setUser({ ...user, name, email })
+   149→    toast.success('Profile updated')
+   150→  }
+   151→
+   152→  const handleClearChat = async () => {
+   153→    if (!user?.id) return
+   154→    await fetch(`/api/ai-chat?userId=${user.id}`, { method: 'DELETE' })
+   155→    toast.success('Chat history cleared')
+   156→  }
+   157→
+   158→  const handleReseed = async () => {
+   159→    if (!user?.id) return
+   160→    await fetch('/api/seed', { method: 'POST' })
+   161→    toast.success('Demo data refreshed')
+   162→  }
+   163→
+   164→  const handleExportData = async () => {
+   165→    try {
+   166→      toast.info('Preparing data export...')
+   167→      const res = await fetch('/api/export')
+   168→      if (!res.ok) throw new Error('Export failed')
+   169→      const blob = await res.blob()
+   170→      const url = URL.createObjectURL(blob)
+   171→      const a = document.createElement('a')
+   172→      a.href = url
+   173→      a.download = `finwise-export-${new Date().toISOString().split('T')[0]}.json`
+   174→      document.body.appendChild(a)
+   175→      a.click()
+   176→      document.body.removeChild(a)
+   177→      URL.revokeObjectURL(url)
+   178→      toast.success('Data exported successfully')
+   179→    } catch {
+   180→      toast.error('Export failed. Please try again.')
+   181→    }
+   182→  }
+   183→
+   184→  const handleClearAllData = async () => {
+   185→    try {
+   186→      toast.info('Clearing all data...')
+   187→      if (user?.id) {
+   188→        await Promise.allSettled([
+   189→          fetch(`/api/ai-chat?userId=${user.id}`, { method: 'DELETE' }),
+   190→        ])
+   191→      }
+   192→      toast.success('All data cleared successfully')
+   193→    } catch {
+   194→      toast.error('Failed to clear data')
+   195→    }
+   196→  }
+   197→
+   198→  const handleDeleteAccount = () => {
+   199→    setUser(null)
+   200→    toast.success('Account deleted')
+   201→  }
+   202→
+   203→  const initials = user?.name?.split(' ').map(n => n[0]).join('') || 'U'
+   204→
+   205→  const NOTIFICATION_ITEMS: { key: keyof NotificationPref; label: string; desc: string; icon: typeof Bell }[] = [
+   206→    { key: 'budgetMilestones', label: 'Budget Alerts', desc: 'Get notified when spending approaches budget limits', icon: AlertTriangle },
+   207→    { key: 'goalMilestones', label: 'Goal Milestones', desc: 'Celebrate when you hit savings goal checkpoints', icon: Target },
+   208→    { key: 'weeklySummary', label: 'Weekly Summary', desc: 'Receive a weekly digest of your financial activity', icon: BarChart3 },
+   209→    { key: 'aiInsights', label: 'AI Insights', desc: 'Get smart spending tips and anomaly detection alerts', icon: Sparkles },
+   210→  ]
+   211→
+   212→  if (!mounted) return null
+   213→
+   214→  return (
+   215→    <div className="space-y-6">
+   216→      <div>
+   217→        <h2 className="text-2xl font-bold">Settings</h2>
+   218→        <p className="text-sm text-muted-foreground">Manage your account preferences</p>
+   219→      </div>
+   220→
+   221→      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+   222→        {/* Nav */}
+   223→        <nav className="lg:col-span-1">
+   224→          <Card className="glass border-0">
+   225→            <CardContent className="p-2">
+   226→              {SECTIONS.map(s => (
+   227→                <button key={s.id} onClick={() => setActiveSection(s.id)}
+   228→                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${activeSection === s.id ? 'bg-emerald-500/10 text-emerald-400 font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
+   229→                  <s.icon className="w-4 h-4" />
+   230→                  {s.label}
+   231→                </button>
+   232→              ))}
+   233→            </CardContent>
+   234→          </Card>
+   235→        </nav>
+   236→
+   237→        {/* Content */}
+   238→        <div className="lg:col-span-3">
+   239→          <AnimatePresence mode="wait">
+   240→            {activeSection === 'profile' && (
+   241→              <motion.div key="profile" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="space-y-4">
+   242→                {/* Profile Card */}
+   243→                <Card className="glass border-0 glass-card-hover">
+   244→                  <CardHeader><CardTitle className="text-base">Profile Information</CardTitle></CardHeader>
+   245→                  <CardContent className="space-y-6">
+   246→                    {/* Avatar + Name + Email */}
+   247→                    <div className="flex items-center gap-4">
+   248→                      <Avatar className="w-16 h-16 ring-2 ring-emerald-500/30 ring-offset-2 ring-offset-background">
+   249→                        <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-cyan-500 text-white text-xl font-semibold">
+   250→                          {initials}
+   251→                        </AvatarFallback>
+   252→                      </Avatar>
+   253→                      <div className="flex-1">
+   254→                        {isEditingName ? (
+   255→                          <div className="flex items-center gap-2">
+   256→                            <Input
+   257→                              value={editNameValue}
+   258→                              onChange={e => setEditNameValue(e.target.value)}
+   259→                              className="glass h-8 w-48"
+   260→                              autoFocus
+   261→                              onKeyDown={e => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') handleCancelName() }}
+   262→                            />
+   263→                            <Button size="sm" variant="ghost" onClick={handleSaveName} className="h-8 w-8 p-0 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10">
+   264→                              <Check className="w-4 h-4" />
+   265→                            </Button>
+   266→                            <Button size="sm" variant="ghost" onClick={handleCancelName} className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-white/5">
+   267→                              <X className="w-4 h-4" />
+   268→                            </Button>
+   269→                          </div>
+   270→                        ) : (
+   271→                          <button
+   272→                            onClick={() => { setEditNameValue(name); setIsEditingName(true) }}
+   273→                            className="flex items-center gap-1.5 group"
+   274→                          >
+   275→                            <p className="font-semibold group-hover:text-emerald-400 transition-colors">{user?.name || 'User'}</p>
+   276→                            <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">Edit</span>
+   277→                          </button>
+   278→                        )}
+   279→                        <p className="text-sm text-secondary">{user?.email}</p>
+   280→                      </div>
+   281→                    </div>
+   282→
+   283→                    <Separator className="bg-border/30" />
+   284→
+   285→                    {/* Email + Currency */}
+   286→                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   287→                      <div className="space-y-2">
+   288→                        <Label>Email</Label>
+   289→                        <Input value={email} onChange={e => setEmail(e.target.value)} className="glass" />
+   290→                      </div>
+   291→                      <div className="space-y-2">
+   292→                        <Label>Currency</Label>
+   293→                        <div className="relative">
+   294→                          <select
+   295→                            value={currency}
+   296→                            onChange={e => handleCurrencyChange(e.target.value)}
+   297→                            className="w-full h-10 rounded-md glass appearance-none pl-3 pr-10 text-sm bg-transparent border-none outline-none cursor-pointer"
+   298→                          >
+   299→                            {CURRENCIES.map(c => (
+   300→                              <option key={c.code} value={c.code} className="bg-background text-foreground">
+   301→                                {c.symbol} {c.code} — {c.label}
+   302→                              </option>
+   303→                            ))}
+   304→                          </select>
+   305→                          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+   306→                        </div>
+   307→                      </div>
+   308→                    </div>
+   309→
+   310→                    {/* Currency Converter */}
+   311→                    <div className="flex items-center gap-3">
+   312→                      <span className="text-sm text-secondary">Quick Convert:</span>
+   313→                      <CurrencyConverter currentCurrency={currency} />
+   314→                    </div>
+   315→
+   316→                    <Button onClick={handleSave} className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white border-0">
+   317→                      Save Changes
+   318→                    </Button>
+   319→                  </CardContent>
+   320→                </Card>
+   321→              </motion.div>
+   322→            )}
+   323→
+   324→            {activeSection === 'appearance' && (
+   325→              <motion.div key="appearance" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="space-y-4">
+   326→                <Card className="glass border-0 glass-card-hover">
+   327→                  <CardHeader><CardTitle className="text-base">Theme</CardTitle></CardHeader>
+   328→                  <CardContent>
+   329→                    <div className="grid grid-cols-3 gap-3">
+   330→                      {[
+   331→                        { value: 'light', label: 'Light', icon: Sun },
+   332→                        { value: 'dark', label: 'Dark', icon: Moon },
+   333→                        { value: 'system', label: 'System', icon: Monitor },
+   334→                      ].map(t => (
+   335→                        <motion.button
+   336→                          key={t.value}
+   337→                          whileTap={{ scale: 0.97 }}
+   338→                          onClick={() => setTheme(t.value)}
+   339→                          className={`p-4 rounded-xl glass flex flex-col items-center gap-2 transition-all ${theme === t.value ? 'ring-1 ring-emerald-500 bg-emerald-500/10' : 'hover:bg-white/5'}`}>
+   340→                          <t.icon className={`w-6 h-6 ${theme === t.value ? 'text-emerald-400' : 'text-muted-foreground'}`} />
+   341→                          <span className="text-sm font-medium">{t.label}</span>
+   342→                        </motion.button>
+   343→                      ))}
+   344→                    </div>
+   345→                    {/* Animated transition indicator */}
+   346→                    <motion.div
+   347→                      key={theme}
+   348→                      initial={{ opacity: 0, scale: 0.8 }}
+   349→                      animate={{ opacity: 1, scale: 1 }}
+   350→                      className="mt-4 flex items-center gap-2 text-xs text-muted-foreground"
+   351→                    >
+   352→                      <motion.div
+   353→                        initial={{ width: 0 }}
+   354→                        animate={{ width: '100%' }}
+   355→                        transition={{ duration: 0.4, ease: 'easeOut' }}
+   356→                        className="h-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500"
+   357→                      />
+   358→                      <span className="shrink-0">Theme applied: <span className="text-emerald-400 capitalize">{theme}</span></span>
+   359→                    </motion.div>
+   360→                  </CardContent>
+   361→                </Card>
+   362→
+   363→                <Card className="glass border-0 glass-card-hover">
+   364→                  <CardHeader><CardTitle className="text-base">Display</CardTitle></CardHeader>
+   365→                  <CardContent className="space-y-4">
+   366→                    <div className="flex items-center justify-between">
+   367→                      <div>
+   368→                        <p className="text-sm font-medium">Compact Mode</p>
+   369→                        <p className="text-xs text-muted-foreground">Reduce spacing for more content on screen</p>
+   370→                      </div>
+   371→                      <Switch checked={compactMode} onCheckedChange={toggleCompactMode} />
+   372→                    </div>
+   373→                  </CardContent>
+   374→                </Card>
+   375→              </motion.div>
+   376→            )}
+   377→
+   378→            {activeSection === 'notifications' && (
+   379→              <motion.div key="notifications" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="space-y-4">
+   380→                <Card className="glass border-0 glass-card-hover">
+   381→                  <CardHeader>
+   382→                    <CardTitle className="text-base flex items-center gap-2">
+   383→                      <Bell className="w-4 h-4 text-emerald-400" />
+   384→                      Notification Preferences
+   385→                    </CardTitle>
+   386→                  </CardHeader>
+   387→                  <CardContent className="space-y-5">
+   388→                    {NOTIFICATION_ITEMS.map((item) => (
+   389→                      <motion.div
+   390→                        key={item.key}
+   391→                        className="flex items-center justify-between"
+   392→                        initial={{ opacity: 0, x: -10 }}
+   393→                        animate={{ opacity: 1, x: 0 }}
+   394→                        transition={{ delay: NOTIFICATION_ITEMS.indexOf(item) * 0.06 }}
+   395→                      >
+   396→                        <div className="flex items-start gap-3">
+   397→                          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center mt-0.5 shrink-0">
+   398→                            <item.icon className="w-4 h-4 text-emerald-400" />
+   399→                          </div>
+   400→                          <div>
+   401→                            <p className="text-sm font-medium">{item.label}</p>
+   402→                            <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+   403→                          </div>
+   404→                        </div>
+   405→                        <Switch
+   406→                          checked={prefs[item.key]}
+   407→                          onCheckedChange={(v) => updatePref(item.key, v)}
+   408→                        />
+   409→                      </motion.div>
+   410→                    ))}
+   411→                  </CardContent>
+   412→                </Card>
+   413→                <p className="text-xs text-muted-foreground text-center">Notification preferences are saved locally on your device.</p>
+   414→              </motion.div>
+   415→            )}
+   416→
+   417→            {activeSection === 'privacy' && (
+   418→              <motion.div key="privacy" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="space-y-4">
+   419→                <Card className="glass border-0 glass-card-hover">
+   420→                  <CardHeader><CardTitle className="text-base">Privacy Settings</CardTitle></CardHeader>
+   421→                  <CardContent className="space-y-4">
+   422→                    {[
+   423→                      { label: 'Allow AI to analyze transactions', desc: 'AI will generate insights from your spending data', defaultChecked: true, disabled: false },
+   424→                      { label: 'Delete documents after processing', desc: 'Uploaded documents are permanently deleted after analysis', defaultChecked: true, disabled: true },
+   425→                      { label: 'Anonymous analytics', desc: 'Help improve FinWise with anonymous usage data', defaultChecked: false, disabled: false },
+   426→                    ].map(item => (
+   427→                      <div key={item.label} className="flex items-center justify-between">
+   428→                        <div><p className="text-sm font-medium">{item.label}</p><p className="text-xs text-muted-foreground">{item.desc}</p></div>
+   429→                        <Switch defaultChecked={item.defaultChecked} disabled={item.disabled} />
+   430→                      </div>
+   431→                    ))}
+   432→                  </CardContent>
+   433→                </Card>
+   434→
+   435→                <Card className="glass border-0 glass-card-hover">
+   436→                  <CardHeader><CardTitle className="text-base">Data & Privacy</CardTitle></CardHeader>
+   437→                  <CardContent className="space-y-3">
+   438→                    <motion.button
+   439→                      whileHover={{ scale: 1.01 }}
+   440→                      whileTap={{ scale: 0.99 }}
+   441→                      onClick={handleExportData}
+   442→                      className="w-full flex items-center gap-3 p-3 rounded-xl glass hover:bg-white/5 transition-colors text-left"
+   443→                    >
+   444→                      <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+   445→                        <Download className="w-4 h-4 text-emerald-400" />
+   446→                      </div>
+   447→                      <div className="flex-1">
+   448→                        <p className="text-sm font-medium">Export All Data</p>
+   449→                        <p className="text-xs text-muted-foreground">Download a complete copy of your financial data</p>
+   450→                      </div>
+   451→                    </motion.button>
+   452→
+   453→                    <AlertDialog>
+   454→                      <AlertDialogTrigger asChild>
+   455→                        <motion.button
+   456→                          whileHover={{ scale: 1.01 }}
+   457→                          whileTap={{ scale: 0.99 }}
+   458→                          className="w-full flex items-center gap-3 p-3 rounded-xl glass hover:bg-rose-500/5 transition-colors text-left"
+   459→                        >
+   460→                          <div className="w-9 h-9 rounded-lg bg-rose-500/10 flex items-center justify-center shrink-0">
+   461→                            <Trash2 className="w-4 h-4 text-rose-400" />
+   462→                          </div>
+   463→                          <div className="flex-1">
+   464→                            <p className="text-sm font-medium text-rose-400">Clear All Data</p>
+   465→                            <p className="text-xs text-muted-foreground">Remove all your financial records</p>
+   466→                          </div>
+   467→                        </motion.button>
+   468→                      </AlertDialogTrigger>
+   469→                      <AlertDialogContent className="glass border-0">
+   470→                        <AlertDialogHeader>
+   471→                          <AlertDialogTitle>Clear all data?</AlertDialogTitle>
+   472→                          <AlertDialogDescription>
+   473→                            This will permanently delete all your expenses, incomes, budgets, goals, and chat history.
+   474→                            This action cannot be undone.
+   475→                          </AlertDialogDescription>
+   476→                        </AlertDialogHeader>
+   477→                        <AlertDialogFooter>
+   478→                          <AlertDialogCancel className="glass">Cancel</AlertDialogCancel>
+   479→                          <AlertDialogAction onClick={handleClearAllData} className="bg-rose-500 hover:bg-rose-600">Clear Everything</AlertDialogAction>
+   480→                        </AlertDialogFooter>
+   481→                      </AlertDialogContent>
+   482→                    </AlertDialog>
+   483→
+   484→                    <Button variant="outline" className="w-full justify-start glass text-rose-400 hover:text-rose-300 hover:bg-rose-500/10" onClick={handleClearChat}>
+   485→                      <Trash2 className="w-4 h-4 mr-2" /> Delete All Chat History
+   486→                    </Button>
+   487→                  </CardContent>
+   488→                </Card>
+   489→              </motion.div>
+   490→            )}
+   491→
+   492→            {activeSection === 'devices' && (
+   493→              <motion.div key="devices" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="space-y-4">
+   494→                <Card className="glass border-0 glass-card-hover">
+   495→                  <CardHeader className="flex flex-row items-center justify-between">
+   496→                    <CardTitle className="text-base">Connected Devices</CardTitle>
+   497→                    <Button variant="ghost" size="sm" className="text-xs text-rose-400 hover:text-rose-300">Sign out all</Button>
+   498→                  </CardHeader>
+   499→                  <CardContent className="space-y-3">
+   500→                    {MOCK_DEVICES.map(d => (
+   501→                      <div key={d.name} className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors">
+   502→                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center"><d.icon className="w-5 h-5 text-muted-foreground" /></div>
+   503→                        <div className="flex-1">
+   504→                          <div className="flex items-center gap-2"><p className="text-sm font-medium">{d.name}</p>{d.current && <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full">Current</span>}</div>
+   505→                          <p className="text-xs text-muted-foreground">{d.lastActive}</p>
+   506→                        </div>
+   507→                      </div>
+   508→                    ))}
+   509→                  </CardContent>
+   510→                </Card>
+   511→
+   512→                <Card className="glass border-0 glass-card-hover">
+   513→                  <CardHeader><CardTitle className="text-base">Data Management</CardTitle></CardHeader>
+   514→                  <CardContent className="space-y-3">
+   515→                    <Button variant="outline" className="w-full justify-start glass" onClick={() => toast.info('Export started')}>
+   516→                      <Download className="w-4 h-4 mr-2" /> Export All Data
+   517→                    </Button>
+   518→                    <Button variant="outline" className="w-full justify-start glass" onClick={handleReseed}>
+   519→                      <RefreshCw className="w-4 h-4 mr-2" /> Reseed Demo Data
+   520→                    </Button>
+   521→                  </CardContent>
+   522→                </Card>
+   523→              </motion.div>
+   524→            )}
+   525→
+   526→            {activeSection === 'about' && (
+   527→              <motion.div key="about" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="space-y-4">
+   528→                <Card className="glass border-0 glass-card-hover">
+   529→                  <CardHeader><CardTitle className="text-base">About FinWise AI</CardTitle></CardHeader>
+   530→                  <CardContent className="space-y-5">
+   531→                    <div className="flex items-center gap-4">
+   532→                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+   533→                        <span className="text-2xl font-bold text-white">F</span>
+   534→                      </div>
+   535→                      <div>
+   536→                        <h3 className="text-lg font-bold gradient-text">FinWise AI</h3>
+   537→                        <p className="text-xs text-muted-foreground">Your intelligent financial companion</p>
+   538→                      </div>
+   539→                    </div>
+   540→
+   541→                    <Separator className="bg-border/30" />
+   542→
+   543→                    <div className="space-y-3">
+   544→                      <div className="flex items-center justify-between text-sm">
+   545→                        <span className="text-muted-foreground">Version</span>
+   546→                        <Badge className="bg-emerald-500/10 text-emerald-400 border-0">v1.0.0</Badge>
+   547→                      </div>
+   548→                      <div className="flex items-center justify-between text-sm">
+   549→                        <span className="text-muted-foreground">Built with</span>
+   550→                        <div className="flex gap-1.5">
+   551→                          <Badge variant="outline" className="border-border/50 text-[10px]">Next.js</Badge>
+   552→                          <Badge variant="outline" className="border-border/50 text-[10px]">TypeScript</Badge>
+   553→                          <Badge variant="outline" className="border-border/50 text-[10px]">Tailwind</Badge>
+   554→                          <Badge variant="outline" className="border-border/50 text-[10px]">Prisma</Badge>
+   555→                        </div>
+   556→                      </div>
+   557→                    </div>
+   558→
+   559→                    <Separator className="bg-border/30" />
+   560→
+   561→                    <p className="text-sm text-muted-foreground text-center">Made with ❤️ by FinWise Team</p>
+   562→
+   563→                    <div className="flex gap-3 justify-center">
+   564→                      <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-emerald-400 transition-colors">
+   565→                        Privacy Policy <ExternalLink className="w-3 h-3" />
+   566→                      </button>
+   567→                      <span className="text-muted-foreground/30">|</span>
+   568→                      <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-emerald-400 transition-colors">
+   569→                        Terms of Service <ExternalLink className="w-3 h-3" />
+   570→                      </button>
+   571→                    </div>
+   572→                  </CardContent>
+   573→                </Card>
+   574→
+   575→                {/* Danger Zone */}
+   576→                <Card className="glass border-0 border-t-2 border-t-rose-500/30!">
+   577→                  <CardHeader><CardTitle className="text-base text-rose-400">Danger Zone</CardTitle></CardHeader>
+   578→                  <CardContent>
+   579→                    {deleteConfirmStep === 0 ? (
+   580→                      <Button
+   581→                        variant="outline"
+   582→                        className="w-full justify-start text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border-rose-500/20"
+   583→                        onClick={() => setDeleteConfirmStep(1)}
+   584→                      >
+   585→                        <AlertTriangle className="w-4 h-4 mr-2" /> Delete Account Permanently
+   586→                      </Button>
+   587→                    ) : (
+   588→                      <div className="space-y-3">
+   589→                        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20">
+   590→                          <p className="text-sm text-rose-400 font-medium">⚠️ This is irreversible!</p>
+   591→                          <p className="text-xs text-muted-foreground mt-1">Type <strong className="text-rose-400">DELETE</strong> below to confirm.</p>
+   592→                        </div>
+   593→                        <Input
+   594→                          placeholder='Type "DELETE" to confirm'
+   595→                          className="glass border-rose-500/20 focus-visible:ring-rose-500/30"
+   596→                          onChange={e => { if (e.target.value === 'DELETE') setDeleteConfirmStep(2) }}
+   597→                        />
+   598→                        {deleteConfirmStep === 2 && (
+   599→                          <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}>
+   600→                            <AlertDialog>
+   601→                              <AlertDialogTrigger asChild>
+   602→                                <Button className="w-full bg-rose-500 hover:bg-rose-600 text-white border-0">
+   603→                                  <AlertTriangle className="w-4 h-4 mr-2" /> Confirm Account Deletion
+   604→                                </Button>
+   605→                              </AlertDialogTrigger>
+   606→                              <AlertDialogContent className="glass border-0">
+   607→                                <AlertDialogHeader>
+   608→                                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+   609→                                  <AlertDialogDescription>
+   610→                                    This action cannot be undone. All your data will be permanently removed
+   611→                                    from our servers.
+   612→                                  </AlertDialogDescription>
+   613→                                </AlertDialogHeader>
+   614→                                <AlertDialogFooter>
+   615→                                  <AlertDialogCancel className="glass" onClick={() => setDeleteConfirmStep(0)}>Cancel</AlertDialogCancel>
+   616→                                  <AlertDialogAction onClick={handleDeleteAccount} className="bg-rose-500 hover:bg-rose-600">Delete Forever</AlertDialogAction>
+   617→                                </AlertDialogFooter>
+   618→                              </AlertDialogContent>
+   619→                            </AlertDialog>
+   620→                          </motion.div>
+   621→                        )}
+   622→                        <Button variant="ghost" size="sm" onClick={() => setDeleteConfirmStep(0)} className="text-muted-foreground">
+   623→                          Cancel
+   624→                        </Button>
+   625→                      </div>
+   626→                    )}
+   627→                  </CardContent>
+   628→                </Card>
+   629→              </motion.div>
+   630→            )}
+   631→          </AnimatePresence>
+   632→        </div>
+   633→      </div>
+   634→    </div>
+   635→  )
+   636→}

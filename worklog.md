@@ -1698,3 +1698,37 @@ Stage Summary:
 - Gemini API integration replacing z-ai-web-dev-sdk
 - All changes pass lint (0 errors, 0 warnings)
 - Dev server starts cleanly with zero errors
+---
+Task ID: 4
+Agent: Main
+Task: Statement Import Flow, Privacy Filtering, Data Management, Auth Fix
+
+Work Log:
+- Fixed critical auth bug: Login page was calling `fetch('/api/seed', { method: 'POST' })` WITHOUT userId on EVERY login, which wiped ALL users and recreated demo@finwise.ai. Now login page only seeds demo data when explicitly clicking "Try Demo Account" button.
+- Fixed page.tsx: Removed 3 duplicate `CategoriesPage` imports, removed non-existent `setUserId` and `login` store references
+- Fixed register page: Removed seed call after registration. New users go to onboarding (no demo data).
+- Added 'onboarding' to ViewType in Zustand store
+- Fixed onboarding state: Removed SSR localStorage read, now starts as `false` (no auto-complete)
+- Switched AI chat from z-ai-web-dev-sdk to Google Gemini API (gemini-2.0-flash)
+- Added privacy filtering to AI chat: Strips account numbers, PAN/Aadhaar, phone numbers, emails, IFSC codes, UPI IDs before sending to AI
+- Added privacy filtering to statement upload API: Same sensitive info stripping applied to transaction descriptions
+- Added UploadedFile model to Prisma schema (fileName, fileType, fileSize, filePath, rowCount)
+- Installed `xlsx` package for Excel file parsing
+- Built `/api/statements/upload` endpoint: Accepts CSV/Excel/TSV files, parses into transactions, auto-categorizes, saves to DB, stores file metadata
+- Built `/api/statements/files` endpoint: GET lists uploaded files, DELETE clears files (keeps transactions)
+- Built `/api/user/data` endpoint: DELETE removes all user data including physical files (account deletion)
+- Built StatementImport UI component with drag-and-drop, privacy notice, file validation, upload progress, success summary
+- Updated OnboardingWizard: New 5-step flow (Welcome → Preferences → **Import Statement** → Budgets → Complete). Import step has skip option.
+- Updated existing `/api/import-statement` to also support Excel files (.xlsx, .xls) via xlsx library
+- Updated BankStatementImport component to accept .xls/.xlsx files
+- Updated settings page: Added "Clear Uploaded Statements" button (keeps transactions), removed dangerous "Reseed Demo Data" button, updated Delete Account to call real API
+- Updated seed API: No longer deletes ALL users - only deletes the demo user's data when recreating
+
+Stage Summary:
+- **Auth bug FIXED**: New user registration now correctly creates and logs into the new account (not demo)
+- **Statement import BUILT**: Full CSV/Excel upload → parse → auto-categorize → save flow
+- **Privacy protection ADDED**: Sensitive info stripped from transaction descriptions and AI messages
+- **Data management ADDED**: "Clear Uploaded Statements" (keeps transactions) + "Delete Account" (removes everything)
+- **AI chat FIXED**: Switched to Gemini API with privacy-first approach
+- Files created: `src/app/api/statements/upload/route.ts`, `src/app/api/statements/files/route.ts`, `src/app/api/user/data/route.ts`, `src/components/statement/statement-import.tsx`
+- Files modified: `src/app/api/auth/route.ts`, `src/app/api/seed/route.ts`, `src/app/api/ai-chat/route.ts`, `src/app/api/import-statement/route.ts`, `src/components/auth/login-page.tsx`, `src/components/auth/register-page.tsx`, `src/components/onboarding/onboarding-wizard.tsx`, `src/components/settings/settings-page.tsx`, `src/components/shared/bank-statement-import.tsx`, `src/store/use-app-store.ts`, `src/app/page.tsx`, `prisma/schema.prisma`

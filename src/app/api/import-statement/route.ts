@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import * as XLSX from 'xlsx'
 
 // Common bank statement column header patterns
 const DATE_PATTERNS = /^(date|transactiondate|txn.?date|postingdate|value.?date|transdate|dt|on)$/i
@@ -144,7 +145,22 @@ export async function POST(req: NextRequest) {
     }
 
     if (!file) return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
-    const text = await file.text()
+
+    // Determine if file is Excel
+    const ext = file.name.split('.').pop()?.toLowerCase()
+    let text: string
+
+    if (ext === 'xlsx' || ext === 'xls') {
+      const buffer = await file.arrayBuffer()
+      const workbook = XLSX.read(buffer, { type: 'array' })
+      const sheetName = workbook.SheetNames[0]
+      if (!sheetName) return NextResponse.json({ error: 'No sheets found in Excel file' }, { status: 400 })
+      const sheet = workbook.Sheets[sheetName]
+      text = XLSX.utils.sheet_to_csv(sheet)
+    } else {
+      text = await file.text()
+    }
+
     const lines = text.split(/\r?\n/).filter(line => line.trim() !== '')
     if (lines.length < 2) return NextResponse.json({ error: 'File must have a header and data rows' }, { status: 400 })
 

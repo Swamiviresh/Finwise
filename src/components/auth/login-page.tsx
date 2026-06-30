@@ -6,13 +6,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Zap, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Zap, ArrowLeft, Eye, EyeOff, Loader2, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export default function LoginPage() {
   const { setView, setUser } = useAppStore()
-  const [email, setEmail] = useState('demo@finwise.ai')
-  const [password, setPassword] = useState('demo123')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -23,9 +23,6 @@ export default function LoginPage() {
     setError('')
 
     try {
-      // Seed demo data first (creates/updates demo user)
-      await fetch('/api/seed', { method: 'POST' })
-      
       const res = await fetch('/api/auth', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -35,6 +32,35 @@ export default function LoginPage() {
 
       if (!res.ok) {
         setError(data.error || 'Login failed')
+        return
+      }
+
+      setUser(data)
+      setView('dashboard')
+    } catch {
+      setError('Something went wrong')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDemoLogin = async () => {
+    setLoading(true)
+    setError('')
+
+    try {
+      // Only seed demo data when explicitly clicking "Try Demo"
+      await fetch('/api/seed', { method: 'POST' })
+
+      const res = await fetch('/api/auth', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'demo@finwise.ai', password: 'demo123' }),
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || 'Demo login failed')
         return
       }
 
@@ -88,6 +114,25 @@ export default function LoginPage() {
 
               <Button type="submit" disabled={loading} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0 rounded-xl">
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign In'}
+              </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-white/10" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-transparent px-2 text-muted-foreground">or</span>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                disabled={loading}
+                onClick={handleDemoLogin}
+                className="w-full h-11 glass border-white/10 hover:border-emerald-500/30 hover:bg-emerald-500/5 rounded-xl"
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Sparkles className="w-4 h-4 mr-2 text-emerald-400" /> Try Demo Account</>}
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">

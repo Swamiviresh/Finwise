@@ -19,22 +19,17 @@ import SecurityPage from '@/components/settings/security-page'
 import BillsPage from '@/components/bills/bills-page'
 import WalletsPage from '@/components/wallets/wallets-page'
 import CategoriesPage from '@/components/categories/categories-page'
-import CategoriesPage from '@/components/categories/categories-page'
-import CategoriesPage from '@/components/categories/categories-page'
-import CategoriesPage from '@/components/categories/categories-page'
 import InsightsPage from '@/components/insights/insights-page'
 import NotesPage from '@/components/notes/notes-page'
 
 export default function Home() {
-  const { currentView, isAuthenticated, hasCompletedOnboarding, setHasCompletedOnboarding, setView, setUserId, setUser, login } = useAppStore()
+  const { currentView, isAuthenticated, hasCompletedOnboarding, setHasCompletedOnboarding, setView, setUser } = useAppStore()
 
-  // Sync onboarding state from localStorage (fixes SSR hydration issue)
+  // Sync onboarding state from localStorage
   useEffect(() => {
-    if (isAuthenticated && !hasCompletedOnboarding) {
-      const stored = localStorage.getItem('finwise_onboarding_done')
-      if (stored === 'true') setHasCompletedOnboarding(true)
-    }
-  }, [isAuthenticated, hasCompletedOnboarding, setHasCompletedOnboarding])
+    const stored = localStorage.getItem('finwise_onboarding_done')
+    if (stored === 'true') setHasCompletedOnboarding(true)
+  }, [setHasCompletedOnboarding])
 
   // Expose store for automation/testing
   useEffect(() => {
@@ -52,7 +47,7 @@ export default function Home() {
   }
 
   // Onboarding (before dashboard)
-  if (!hasCompletedOnboarding) {
+  if (currentView === 'onboarding' || !hasCompletedOnboarding) {
     return <OnboardingWizard />
   }
 

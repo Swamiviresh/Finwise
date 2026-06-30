@@ -14,7 +14,8 @@ import { useTheme } from 'next-themes'
 import {
   Sun, Moon, Monitor, Download, Trash2, RefreshCw, Shield, Smartphone,
   Laptop, Globe, User, Palette, Lock, Database, AlertTriangle, Check,
-  X, ChevronDown, Bell, Target, Sparkles, BarChart3, Info, ExternalLink
+  X, ChevronDown, Bell, Target, Sparkles, BarChart3, Info, ExternalLink,
+  FileSpreadsheet, LogOut, Loader2
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
@@ -181,6 +182,22 @@ export default function SettingsPage() {
     }
   }
 
+  const handleClearFiles = async () => {
+    if (!user?.id) return
+    try {
+      toast.info('Clearing uploaded files...')
+      const res = await fetch(`/api/statements/files?userId=${user.id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success(data.message || 'Uploaded files cleared. Transactions are preserved.')
+      } else {
+        toast.error(data.error || 'Failed to clear files')
+      }
+    } catch {
+      toast.error('Failed to clear files')
+    }
+  }
+
   const handleClearAllData = async () => {
     try {
       toast.info('Clearing all data...')
@@ -195,9 +212,26 @@ export default function SettingsPage() {
     }
   }
 
-  const handleDeleteAccount = () => {
-    setUser(null)
-    toast.success('Account deleted')
+  const handleDeleteAccount = async () => {
+    if (!user?.id) return
+    try {
+      toast.info('Deleting account...')
+      const res = await fetch('/api/user/data', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      })
+      if (res.ok) {
+        setUser(null)
+        localStorage.removeItem('finwise_onboarding_done')
+        setDeleteConfirmStep(0)
+        toast.success('Account permanently deleted')
+      } else {
+        toast.error('Failed to delete account')
+      }
+    } catch {
+      toast.error('Failed to delete account')
+    }
   }
 
   const initials = user?.name?.split(' ').map(n => n[0]).join('') || 'U'
@@ -433,7 +467,7 @@ export default function SettingsPage() {
                 </Card>
 
                 <Card className="glass border-0 glass-card-hover">
-                  <CardHeader><CardTitle className="text-base">Data & Privacy</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-base">Data Management</CardTitle></CardHeader>
                   <CardContent className="space-y-3">
                     <motion.button
                       whileHover={{ scale: 1.01 }}
@@ -450,6 +484,21 @@ export default function SettingsPage() {
                       </div>
                     </motion.button>
 
+                    <motion.button
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                      onClick={handleClearFiles}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl glass hover:bg-amber-500/5 transition-colors text-left"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                        <FileSpreadsheet className="w-4 h-4 text-amber-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-amber-400">Clear Uploaded Statements</p>
+                        <p className="text-xs text-muted-foreground">Delete uploaded files from the system. Your transactions are kept.</p>
+                      </div>
+                    </motion.button>
+
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <motion.button
@@ -461,29 +510,24 @@ export default function SettingsPage() {
                             <Trash2 className="w-4 h-4 text-rose-400" />
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm font-medium text-rose-400">Clear All Data</p>
-                            <p className="text-xs text-muted-foreground">Remove all your financial records</p>
+                            <p className="text-sm font-medium text-rose-400">Clear Chat History</p>
+                            <p className="text-xs text-muted-foreground">Remove all AI chat messages</p>
                           </div>
                         </motion.button>
                       </AlertDialogTrigger>
                       <AlertDialogContent className="glass border-0">
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Clear all data?</AlertDialogTitle>
+                          <AlertDialogTitle>Clear chat history?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This will permanently delete all your expenses, incomes, budgets, goals, and chat history.
-                            This action cannot be undone.
+                            This will permanently delete all your AI chat messages. This action cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel className="glass">Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleClearAllData} className="bg-rose-500 hover:bg-rose-600">Clear Everything</AlertDialogAction>
+                          <AlertDialogAction onClick={handleClearChat} className="bg-rose-500 hover:bg-rose-600">Clear Chat</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
-
-                    <Button variant="outline" className="w-full justify-start glass text-rose-400 hover:text-rose-300 hover:bg-rose-500/10" onClick={handleClearChat}>
-                      <Trash2 className="w-4 h-4 mr-2" /> Delete All Chat History
-                    </Button>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -514,9 +558,6 @@ export default function SettingsPage() {
                   <CardContent className="space-y-3">
                     <Button variant="outline" className="w-full justify-start glass" onClick={() => toast.info('Export started')}>
                       <Download className="w-4 h-4 mr-2" /> Export All Data
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start glass" onClick={handleReseed}>
-                      <RefreshCw className="w-4 h-4 mr-2" /> Reseed Demo Data
                     </Button>
                   </CardContent>
                 </Card>

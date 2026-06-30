@@ -6,6 +6,7 @@ import { useAppStore } from '@/store/use-app-store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
+import StatementImport from '@/components/statement/statement-import'
 import {
   ArrowRight, ArrowLeft, Check, Zap, Wallet, Target, Sparkles,
   Utensils, Car, Gamepad2, ShoppingBag, Heart, Lightbulb, PiggyBank, TrendingUp, Shield
@@ -42,12 +43,6 @@ const DEFAULT_BUDGETS = [
   { category: 'Healthcare', icon: Heart, pct: 0.08, color: '#fb7185' },
   { category: 'Utilities', icon: Lightbulb, pct: 0.10, color: '#2dd4bf' },
 ]
-
-const slideVariants = {
-  enter: (dir: number) => ({ x: dir > 0 ? 200 : -200, opacity: 0 }),
-  center: { x: 0, opacity: 1 },
-  exit: (dir: number) => ({ x: dir > 0 ? -200 : 200, opacity: 0 }),
-}
 
 function StepWelcome({ userName, onNext }: { userName: string; onNext: () => void }) {
   return (
@@ -182,6 +177,8 @@ function StepPreferences({ onNext, onBack }: { onNext: () => void; onBack: () =>
 
 function StepBudgets({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
   const { setOnboardingData, onboardingData } = useAppStore()
+  const currency = (onboardingData.currency || 'USD') as string
+  const currSymbol = CURRENCIES.find(c => c.code === currency)?.symbol || '$'
   const rangeData = (onboardingData.incomeRangeData || INCOME_RANGES[1]) as { min: number; max: number }
   const midIncome = (rangeData.min + rangeData.max) / 2
   const [budgets, setBudgets] = useState(
@@ -205,7 +202,7 @@ function StepBudgets({ onNext, onBack }: { onNext: () => void; onBack: () => voi
     <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }} className="py-4">
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold mb-2">Set Up Your Budgets</h2>
-        <p className="text-sm text-foreground/60">AI-suggested budgets based on ~${midIncome.toLocaleString()}/month income. Adjust to fit your needs.</p>
+        <p className="text-sm text-foreground/60">AI-suggested budgets based on ~{currSymbol}{midIncome.toLocaleString()}/month income. Adjust to fit your needs.</p>
         <div className="inline-flex items-center gap-1.5 mt-2 badge-emerald text-[11px]">
           <Sparkles className="w-3 h-3" /> AI Suggested
         </div>
@@ -227,7 +224,7 @@ function StepBudgets({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                 </div>
                 <span className="text-sm font-medium">{b.category}</span>
               </div>
-              <span className="text-sm font-bold" style={{ color: b.color }}>${b.amount.toLocaleString()}</span>
+              <span className="text-sm font-bold" style={{ color: b.color }}>{currSymbol}{b.amount.toLocaleString()}</span>
             </div>
             <Slider
               value={[b.amount]}
@@ -243,7 +240,7 @@ function StepBudgets({ onNext, onBack }: { onNext: () => void; onBack: () => voi
       </div>
 
       <div className="text-center mt-4 mb-2">
-        <p className="text-sm text-foreground/60">Total Budget: <span className="font-bold text-foreground">${totalBudget.toLocaleString()}</span> / ${midIncome.toLocaleString()}</p>
+        <p className="text-sm text-foreground/60">Total Budget: <span className="font-bold text-foreground">{currSymbol}{totalBudget.toLocaleString()}</span> / {currSymbol}{midIncome.toLocaleString()}</p>
         <p className="text-xs text-foreground/40 mt-1">{Math.round(((midIncome - totalBudget) / midIncome) * 100)}% remaining for savings & other</p>
       </div>
 
@@ -310,7 +307,7 @@ function StepComplete({ userName, onDone }: { userName: string; onDone: () => vo
         transition={{ delay: 0.6 }}
         className="text-sm text-foreground/60 mb-6 max-w-sm"
       >
-        Your personalized dashboard is ready. Here&apos;s what we&apos;ve set up for you:
+        Your personalized dashboard is ready. Start adding transactions manually or import more statements anytime.
       </motion.p>
 
       <motion.div
@@ -351,15 +348,18 @@ function StepComplete({ userName, onDone }: { userName: string; onDone: () => vo
 }
 
 export default function OnboardingWizard() {
-  const { user, setHasCompletedOnboarding } = useAppStore()
+  const { user, setHasCompletedOnboarding, setView } = useAppStore()
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState(1)
 
-  const steps = ['Welcome', 'Preferences', 'Budgets', 'Complete']
+  const steps = ['Welcome', 'Preferences', 'Import', 'Budgets', 'Complete']
 
-  const goNext = () => { setDirection(1); setStep(s => Math.min(s + 1, 3)) }
+  const goNext = () => { setDirection(1); setStep(s => Math.min(s + 1, 4)) }
   const goBack = () => { setDirection(-1); setStep(s => Math.max(s - 1, 0)) }
-  const handleDone = () => { setHasCompletedOnboarding(true) }
+  const handleDone = () => {
+    setHasCompletedOnboarding(true)
+    setView('dashboard')
+  }
 
   return (
     <div className="dark min-h-screen mesh-bg-enhanced flex items-center justify-center p-4">
@@ -394,14 +394,15 @@ export default function OnboardingWizard() {
 
             <div className="w-full relative z-10 flex flex-col">
               <div className="flex-1">
-              <AnimatePresence mode="wait" custom={direction}>
-                {step === 0 && <StepWelcome key="welcome" userName={user?.name || 'there'} onNext={goNext} />}
-                {step === 1 && <StepPreferences key="prefs" onNext={goNext} onBack={goBack} />}
-                {step === 2 && <StepBudgets key="budgets" onNext={goNext} onBack={goBack} />}
-                {step === 3 && <StepComplete key="complete" userName={user?.name || 'there'} onDone={handleDone} />}
-              </AnimatePresence>
+                <AnimatePresence mode="wait" custom={direction}>
+                  {step === 0 && <StepWelcome key="welcome" userName={user?.name || 'there'} onNext={goNext} />}
+                  {step === 1 && <StepPreferences key="prefs" onNext={goNext} onBack={goBack} />}
+                  {step === 2 && <StatementImport key="import" onNext={goNext} onBack={goBack} />}
+                  {step === 3 && <StepBudgets key="budgets" onNext={goNext} onBack={goBack} />}
+                  {step === 4 && <StepComplete key="complete" userName={user?.name || 'there'} onDone={handleDone} />}
+                </AnimatePresence>
               </div>
-              {step < 3 && (
+              {step < 4 && step !== 2 && (
                 <div className="pt-4 mt-auto">
                   <Button
                     type="button"
@@ -416,8 +417,6 @@ export default function OnboardingWizard() {
             </div>
           </CardContent>
         </Card>
-
-
       </div>
     </div>
   )

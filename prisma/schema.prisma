@@ -26,6 +26,7 @@ model User {
   notes        Note[]
   categories   Category[]
   tags         Tag[]
+  uploadedFiles UploadedFile[]
 }
 
 model Expense {
@@ -188,4 +189,19 @@ model Category {
 
   @@index([userId])
   @@index([type])
+}
+
+model UploadedFile {
+  id        String   @id @default(cuid())
+  userId    String
+  fileName  String
+  fileType  String
+  fileSize  Int
+  filePath  String
+  rowCount  Int      @default(0)
+ createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

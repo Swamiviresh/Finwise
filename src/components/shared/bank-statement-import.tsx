@@ -81,7 +81,7 @@ export default function BankStatementImport() {
           <DialogDescription>Upload your bank statement CSV. We auto-detect columns and categorize transactions.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={onFileChange} />
+          <input ref={fileRef} type="file" accept=".csv,.xls,.xlsx,.tsv" className="hidden" onChange={onFileChange} />
           {!preview && !error && (
             <div
               onClick={() => fileRef.current?.click()}
