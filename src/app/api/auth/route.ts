@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password, name } = await req.json()
+    const { email, password, name, currency } = await req.json()
 
     if (!email || !password || !name) {
       return NextResponse.json({ error: 'Email, password, and name are required' }, { status: 400 })
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const passwordHash = Buffer.from(password).toString('base64')
 
     const user = await db.user.create({
-      data: { email, passwordHash, name, currency: 'USD' },
+      data: { email, passwordHash, name, currency: currency || 'USD' },
     })
 
     return NextResponse.json({

@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Plus, Search, Utensils, Home, ShoppingBag, Heart, GraduationCap, Car, Film, Zap, TrendingUp, Shield, RotateCcw, MoreHorizontal, Settings2, Tag } from 'lucide-react'
 import TransactionDetail from '@/components/shared/transaction-detail'
 import CsvImportButton from '@/components/shared/csv-import-button'
+import BankStatementImport from '@/components/shared/bank-statement-import'
 import RecurringManager from '@/components/shared/recurring-manager'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -94,6 +95,7 @@ export default function ExpensesPage() {
           <p className="text-sm text-secondary">Track and manage your spending</p>
         </div>
         <div className="flex items-center gap-2">
+          <BankStatementImport />
           <CsvImportButton defaultType="expense" />
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>

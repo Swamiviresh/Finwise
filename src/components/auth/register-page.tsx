@@ -36,22 +36,40 @@ export default function RegisterPage() {
     setError('')
 
     try {
-      // Seed demo data first (creates/updates demo user)
-      await fetch('/api/seed', { method: 'POST' })
-      
-      const res = await fetch('/api/auth', {
-        method: 'PUT',
+      // Step 1: Create the user account
+      const regRes = await fetch('/api/auth', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'demo@finwise.ai', password: 'demo123' }),
+        body: JSON.stringify({ name, email, password }),
       })
-      const data = await res.json()
+      const regData = await regRes.json()
 
-      if (!res.ok) {
-        setError(data.error || 'Registration failed')
+      if (!regRes.ok) {
+        setError(regData.error || 'Registration failed')
         return
       }
 
-      setUser(data)
+      // Step 2: Seed demo data for the new user
+      await fetch('/api/seed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: regData.id, name, email }),
+      })
+
+      // Step 3: Log in with the new credentials
+      const loginRes = await fetch('/api/auth', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      const loginData = await loginRes.json()
+
+      if (!loginRes.ok) {
+        setError(loginData.error || 'Login after registration failed')
+        return
+      }
+
+      setUser(loginData)
       setView('dashboard')
     } catch {
       setError('Something went wrong')

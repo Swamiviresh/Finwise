@@ -1672,3 +1672,29 @@ The FinWise AI application is now an extremely comprehensive personal finance Sa
 8. **LOW**: Add accessibility audit (ARIA labels, keyboard navigation, screen reader testing)
 9. **LOW**: Add Sankey diagram for money flow visualization
 10. **LOW**: Add bulk transaction operations (multi-select, batch delete/edit)
+
+---
+Task ID: 9
+Agent: Main
+Task: Fix 3 user-reported issues: registration, AI chat, bank statement import
+
+Work Log:
+- **Fixed Registration**: Register page was hardcoded to always create/login as demo@finwise.ai. Rewrote to: (1) POST /api/auth with user's actual name/email/password, (2) POST /api/seed with userId to seed data for that specific user, (3) PUT /api/auth to log in. Each new user now gets their OWN account with demo data.
+- **Fixed Auth API**: Added optional `currency` field to POST /api/auth registration.
+- **Fixed Seed API**: Made `/api/seed` accept `userId` in request body. When provided, creates expenses/incomes/budgets/goals for that user only (no user creation/deletion). Preserves legacy behavior when no userId given.
+- **Added PATCH /api/auth**: New endpoint to update user fields (currency, name) in database — used by settings and onboarding.
+- **Fixed AI Chat Error Handling**: Instead of generic "try again" message, now shows specific error (e.g., "GEMINI_API_KEY not configured") directly in the chat bubble.
+- **Switched AI from z-ai-web-dev-sdk to Google Gemini**: Installed @google/generative-ai, rewrote ai-chat route to use Gemini 2.0 Flash, removed z-ai-web-dev-sdk dependency.
+- **Added Bank Statement Import**: New `/api/import-statement/route.ts` API that auto-detects bank CSV columns (Date, Description, Debit, Credit), auto-categorizes transactions by keyword matching (60+ keywords for Indian & global banks), supports DD/MM/YYYY and other date formats.
+- **Added BankStatementImport component**: New UI component at `/src/components/shared/bank-statement-import.tsx` with drag-and-drop upload, preview table, summary stats, and one-click import.
+- **Added to Expenses page**: "Bank Statement" button placed next to existing "Import CSV" button.
+- **Created /src/lib/format-currency.ts**: Shared utility for dynamic currency formatting (reads from user's selected currency in Zustand store).
+- **Recreated format-currency.ts**: File was lost during context reset, recreated with getUserCurrency(), getCurrencySymbol(), formatCurrency().
+
+Stage Summary:
+- Registration now creates REAL user accounts (not always demo)
+- AI chat shows clear error messages when API key is missing
+- Bank statement import with auto-column detection and auto-categorization
+- Gemini API integration replacing z-ai-web-dev-sdk
+- All changes pass lint (0 errors, 0 warnings)
+- Dev server starts cleanly with zero errors

@@ -74,10 +74,18 @@ export default function AICoachPage() {
         body: JSON.stringify({ message: msg, financialSummary: buildFinancialSummary(), userId: user.id }),
       })
       const data = await res.json()
-      if (data.error) throw new Error(data.error)
+      if (data.error) {
+        const errMsg = data.error.toLowerCase().includes('api key')
+          ? 'AI is not configured yet. Please set your GEMINI_API_KEY to enable AI chat.'
+          : data.error
+        addChatMessage({ id: (Date.now() + 1).toString(), role: 'assistant', content: `⚠️ **Error:** ${errMsg}`, createdAt: new Date().toISOString() })
+        toast.error('AI is not available. Check your API key configuration.')
+        return
+      }
       addChatMessage({ id: (Date.now() + 1).toString(), role: 'assistant', content: data.response, createdAt: new Date().toISOString() })
-    } catch {
-      addChatMessage({ id: (Date.now() + 1).toString(), role: 'assistant', content: 'Sorry, I encountered an error. Please try again.', createdAt: new Date().toISOString() })
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error'
+      addChatMessage({ id: (Date.now() + 1).toString(), role: 'assistant', content: `⚠️ **Connection error:** ${msg}. Please try again later.`, createdAt: new Date().toISOString() })
       toast.error('AI response failed')
     } finally {
       setLoading(false)
