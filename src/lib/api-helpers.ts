@@ -14,10 +14,21 @@ import type { JwtPayload } from '@/lib/auth';
 export async function getAuthUser(
   request: NextRequest,
 ): Promise<JwtPayload | null> {
+  // First try the httpOnly cookie
   const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  if (!token) return null;
-  return verifyToken(token);
+  const cookieToken = cookieStore.get(COOKIE_NAME)?.value;
+  if (cookieToken) {
+    return verifyToken(cookieToken);
+  }
+
+  // Fallback: check Authorization header (used by client-side requests)
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const bearerToken = authHeader.slice(7);
+    return verifyToken(bearerToken);
+  }
+
+  return null;
 }
 
 /**

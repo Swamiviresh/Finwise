@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { AppHeader } from '@/components/layout/app-header'
@@ -11,10 +11,18 @@ import { AppRoute } from '@/types'
 export function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
   const { setRoute } = useRouterStore()
+  const hasRedirected = useRef(false)
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    // Only redirect to login after initial load is complete AND user is not authenticated
+    // Prevents redirecting during the loading/verification phase
+    if (!isLoading && !isAuthenticated && !hasRedirected.current) {
+      hasRedirected.current = true
       setRoute(AppRoute.LOGIN)
+    }
+    // Reset the ref when authenticated (allows future redirects if session expires)
+    if (isAuthenticated) {
+      hasRedirected.current = false
     }
   }, [isAuthenticated, isLoading, setRoute])
 

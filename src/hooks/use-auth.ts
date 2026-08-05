@@ -20,6 +20,14 @@ function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY)
 }
 
+export function setToken(token: string) {
+  localStorage.setItem(TOKEN_KEY, token)
+}
+
+export function clearToken() {
+  localStorage.removeItem(TOKEN_KEY)
+}
+
 async function apiRequest<T>(
   url: string,
   options?: RequestInit,
@@ -44,8 +52,10 @@ async function apiRequest<T>(
 export function useAuth() {
   const { setAuth, clearAuth, isAuthenticated, user } = useRouterStore()
   const queryClient = useQueryClient()
+  // Track whether we've already checked /api/auth/me at least once
+  const hasCheckedRef = React.useRef(false)
 
-  const { data: meData, isLoading, isError } = useQuery<ApiResponse<User>>({
+  const { data: meData, isLoading, isError, refetch } = useQuery<ApiResponse<User>>({
     queryKey: ['auth', 'me'],
     queryFn: () => apiRequest('/api/auth/me'),
     retry: false,
@@ -53,6 +63,14 @@ export function useAuth() {
     enabled: !!getToken(),
   })
 
+  // Mark check as done once loading completes
+  React.useEffect(() => {
+    if (!isLoading && getToken()) {
+      hasCheckedRef.current = true
+    }
+  }, [isLoading])
+
+  // Sync auth state from /api/auth/me response
   React.useEffect(() => {
     if (meData?.data) {
       const token = getToken()
@@ -62,9 +80,11 @@ export function useAuth() {
     }
   }, [meData, setAuth])
 
+  // Only clear auth on error if we've already successfully loaded once
+  // This prevents clearing auth right after login before /me returns
   React.useEffect(() => {
-    if (isError) {
-      localStorage.removeItem(TOKEN_KEY)
+    if (isError && hasCheckedRef.current) {
+      clearToken()
       clearAuth()
     }
   }, [isError, clearAuth])
@@ -81,9 +101,10 @@ export function useAuth() {
       return res.data
     },
     onSuccess: ({ user: authUser, token }) => {
-      localStorage.setItem(TOKEN_KEY, token)
+      setToken(token)
       setAuth(authUser, token)
-      queryClient.invalidateQueries()
+      // Invalidate to trigger a fresh /me check (won't clear auth since hasCheckedRef is false)
+      queryClient.setQueryData(['auth', 'me'], { success: true, data: authUser })
       toast.success('Welcome back!')
     },
     onError: (error: Error) => {
@@ -103,8 +124,10 @@ export function useAuth() {
       return res.data
     },
     onSuccess: ({ user: authUser, token }) => {
-      localStorage.setItem(TOKEN_KEY, token)
+      setToken(token)
       setAuth(authUser, token)
+      // Pre-populate the query cache so useAuth knows we're authenticated
+      queryClient.setQueryData(['auth', 'me'], { success: true, data: authUser })
       toast.success('Account created successfully!')
     },
     onError: (error: Error) => {
@@ -152,7 +175,7 @@ export function useAuth() {
   })
 
   const logout = React.useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY)
+    clearToken()
     queryClient.clear()
     clearAuth()
     toast.success('Logged out successfully')

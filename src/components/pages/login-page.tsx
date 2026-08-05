@@ -8,6 +8,7 @@ import { useRouterStore } from '@/store/router-store'
 import { useAuth } from '@/hooks/use-auth'
 import { loginSchema } from '@/lib/validators'
 import type { LoginInput } from '@/types'
+import { AppRoute } from '@/types'
 import { AuthLayout } from '@/components/pages/auth-layout'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -39,7 +40,7 @@ export function LoginPage() {
   // Navigate to dashboard once authenticated
   React.useEffect(() => {
     if (isAuthenticated) {
-      setRoute('/dashboard')
+      setRoute(AppRoute.DASHBOARD)
     }
   }, [isAuthenticated, setRoute])
 
