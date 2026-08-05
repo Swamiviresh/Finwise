@@ -1,0 +1,752 @@
+     1→'use client'
+     2→
+     3→import * as React from 'react'
+     4→import { useForm, Controller } from 'react-hook-form'
+     5→import { zodResolver } from '@hookform/resolvers/zod'
+     6→import { z } from 'zod'
+     7→import { motion, AnimatePresence } from 'framer-motion'
+     8→import {
+     9→  format,
+    10→  parseISO,
+    11→  differenceInDays,
+    12→  addDays,
+    13→  isWithinInterval,
+    14→  startOfDay,
+    15→  isAfter,
+    16→  isBefore,
+    17→} from 'date-fns'
+    18→import {
+    19→  Plus,
+    20→  Pencil,
+    21→  Trash2,
+    22→  ArrowUpDown,
+    23→  ArrowUp,
+    24→  ArrowDown,
+    25→  CreditCard,
+    26→  Repeat,
+    27→  CalendarClock,
+    28→  ChevronDown,
+    29→  ExternalLink,
+    30→  Clock,
+    31→  Loader2,
+    32→  Sparkles,
+    33→  X,
+    34→} from 'lucide-react'
+    35→import { useMediaQuery } from '@reactuses/core'
+    36→
+    37→import { useRouterStore } from '@/store/router-store'
+    38→import {
+    39→  useSubscriptions,
+    40→  useCreateSubscription,
+    41→  useUpdateSubscription,
+    42→  useDeleteSubscription,
+    43→} from '@/hooks/use-subscriptions'
+    44→import { PageHeader } from '@/components/shared/page-header'
+    45→import { EmptyState } from '@/components/shared/empty-state'
+    46→import { CardSkeleton, ListSkeleton } from '@/components/shared/loading-skeleton'
+    47→import { ConfirmDialog } from '@/components/shared/confirm-dialog'
+    48→import { StatCard } from '@/components/shared/stat-card'
+    49→import { formatCurrency, formatDate } from '@/lib/format'
+    50→import { APP_CONFIG, SUBSCRIPTION_BILLING_CYCLES } from '@/lib/constants'
+    51→import type { Subscription, SubscriptionCreate, PaginationParams } from '@/types'
+    52→
+    53→import { Button } from '@/components/ui/button'
+    54→import { Input } from '@/components/ui/input'
+    55→import { Textarea } from '@/components/ui/textarea'
+    56→import { Badge } from '@/components/ui/badge'
+    57→import { Label } from '@/components/ui/label'
+    58→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+    59→import {
+    60→  Table,
+    61→  TableBody,
+    62→  TableCell,
+    63→  TableHead,
+    64→  TableHeader,
+    65→  TableRow,
+    66→} from '@/components/ui/table'
+    67→import {
+    68→  Select,
+    69→  SelectContent,
+    70→  SelectItem,
+    71→  SelectTrigger,
+    72→  SelectValue,
+    73→} from '@/components/ui/select'
+    74→import {
+    75→  Sheet,
+    76→  SheetContent,
+    77→  SheetDescription,
+    78→  SheetFooter,
+    79→  SheetHeader,
+    80→  SheetTitle,
+    81→} from '@/components/ui/sheet'
+    82→import {
+    83→  DropdownMenu,
+    84→  DropdownMenuContent,
+    85→  DropdownMenuItem,
+    86→  DropdownMenuSeparator,
+    87→  DropdownMenuTrigger,
+    88→} from '@/components/ui/dropdown-menu'
+    89→import {
+    90→  Popover,
+    91→  PopoverContent,
+    92→  PopoverTrigger,
+    93→} from '@/components/ui/popover'
+    94→import { Calendar } from '@/components/ui/calendar'
+    95→import {
+    96→  Form,
+    97→  FormControl,
+    98→  FormField,
+    99→  FormItem,
+   100→  FormLabel,
+   101→  FormMessage,
+   102→} from '@/components/ui/form'
+   103→import {
+   104→  Collapsible,
+   105→  CollapsibleContent,
+   106→  CollapsibleTrigger,
+   107→} from '@/components/ui/collapsible'
+   108→import { Separator } from '@/components/ui/separator'
+   109→import { ScrollArea } from '@/components/ui/scroll-area'
+   110→import {
+   111→  Command,
+   112→  CommandEmpty,
+   113→  CommandGroup,
+   114→  CommandInput,
+   115→  CommandItem,
+   116→  CommandList,
+   117→} from '@/components/ui/command'
+   118→
+   119→// ============================================================================
+   120→// Subscription Presets
+   121→// ============================================================================
+   122→
+   123→interface SubscriptionPreset {
+   124→  name: string
+   125→  icon: string
+   126→  color: string
+   127→  category: string
+   128→  typicalAmount: number
+   129→  billingCycle: 'monthly' | 'yearly' | 'weekly'
+   130→}
+   131→
+   132→export const SUBSCRIPTION_PRESETS: SubscriptionPreset[] = [
+   133→  { name: 'Netflix', icon: 'N', color: '#E50914', category: 'Entertainment', typicalAmount: 15.99, billingCycle: 'monthly' },
+   134→  { name: 'Spotify', icon: 'S', color: '#1DB954', category: 'Entertainment', typicalAmount: 10.99, billingCycle: 'monthly' },
+   135→  { name: 'Amazon Prime', icon: 'A', color: '#FF9900', category: 'Shopping', typicalAmount: 14.99, billingCycle: 'monthly' },
+   136→  { name: 'Disney+', icon: 'D', color: '#113CCF', category: 'Entertainment', typicalAmount: 13.99, billingCycle: 'monthly' },
+   137→  { name: 'HBO', icon: 'H', color: '#B01EE5', category: 'Entertainment', typicalAmount: 15.99, billingCycle: 'monthly' },
+   138→  { name: 'Apple Music', icon: 'A', color: '#FC3C44', category: 'Entertainment', typicalAmount: 10.99, billingCycle: 'monthly' },
+   139→  { name: 'YouTube Premium', icon: 'Y', color: '#FF0000', category: 'Entertainment', typicalAmount: 13.99, billingCycle: 'monthly' },
+   140→  { name: 'iCloud', icon: 'i', color: '#3693F5', category: 'Utilities', typicalAmount: 2.99, billingCycle: 'monthly' },
+   141→  { name: 'Adobe CC', icon: 'A', color: '#FF0000', category: 'Education', typicalAmount: 54.99, billingCycle: 'monthly' },
+   142→  { name: 'Microsoft 365', icon: 'M', color: '#00A4EF', category: 'Education', typicalAmount: 9.99, billingCycle: 'monthly' },
+   143→  { name: 'Slack', icon: 'S', color: '#4A154B', category: 'Business', typicalAmount: 8.75, billingCycle: 'monthly' },
+   144→  { name: 'GitHub', icon: 'G', color: '#24292E', category: 'Education', typicalAmount: 4.0, billingCycle: 'monthly' },
+   145→  { name: 'Notion', icon: 'N', color: '#000000', category: 'Productivity', typicalAmount: 10.0, billingCycle: 'monthly' },
+   146→  { name: 'Figma', icon: 'F', color: '#F24E1E', category: 'Education', typicalAmount: 15.0, billingCycle: 'monthly' },
+   147→  { name: 'ChatGPT Plus', icon: 'C', color: '#10A37F', category: 'Productivity', typicalAmount: 20.0, billingCycle: 'monthly' },
+   148→]
+   149→
+   150→function findPreset(name: string): SubscriptionPreset | undefined {
+   151→  return SUBSCRIPTION_PRESETS.find(
+   152→    (p) => p.name.toLowerCase() === name.toLowerCase(),
+   153→  )
+   154→}
+   155→
+   156→// ============================================================================
+   157→// Form Schema
+   158→// ============================================================================
+   159→
+   160→const subscriptionFormSchema = z.object({
+   161→  name: z.string().min(1, 'Name is required'),
+   162→  amount: z.coerce.number().min(0.01, 'Amount must be greater than 0'),
+   163→  billingCycle: z.enum(['monthly', 'yearly', 'weekly']),
+   164→  nextBillingDate: z.string().min(1, 'Next billing date is required'),
+   165→  category: z.string().optional(),
+   166→  url: z.string().url('Invalid URL').optional().or(z.literal('')),
+   167→  notes: z.string().optional(),
+   168→})
+   169→
+   170→type SubscriptionFormValues = z.infer<typeof subscriptionFormSchema>
+   171→
+   172→// ============================================================================
+   173→// Constants
+   174→// ============================================================================
+   175→
+   176→const SUBSCRIPTION_CATEGORIES = [
+   177→  'Entertainment',
+   178→  'Shopping',
+   179→  'Education',
+   180→  'Utilities',
+   181→  'Business',
+   182→  'Productivity',
+   183→  'Health & Fitness',
+   184→  'Insurance',
+   185→  'Other',
+   186→]
+   187→
+   188→const BILLING_CYCLE_BADGE: Record<string, string> = {
+   189→  weekly: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400 border-sky-200 dark:border-sky-800',
+   190→  monthly: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400 border-violet-200 dark:border-violet-800',
+   191→  yearly: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 border-amber-200 dark:border-amber-800',
+   192→}
+   193→
+   194→const SORT_OPTIONS = [
+   195→  { value: 'nextBillingDate', label: 'Next Billing' },
+   196→  { value: 'amount', label: 'Amount' },
+   197→  { value: 'name', label: 'Name' },
+   198→] as const
+   199→
+   200→type SortField = (typeof SORT_OPTIONS)[number]['value']
+   201→
+   202→// ============================================================================
+   203→// Animations
+   204→// ============================================================================
+   205→
+   206→const cardVariants = {
+   207→  hidden: { opacity: 0, y: 8 },
+   208→  visible: (i: number) => ({
+   209→    opacity: 1,
+   210→    y: 0,
+   211→    transition: { delay: i * 0.04, duration: 0.3, ease: 'easeOut' },
+   212→  }),
+   213→  exit: { opacity: 0, y: -8, transition: { duration: 0.2 } },
+   214→}
+   215→
+   216→// ============================================================================
+   217→// Subscription Icon
+   218→// ============================================================================
+   219→
+   220→function SubscriptionIcon({
+   221→  name,
+   222→  icon,
+   223→  color,
+   224→  size = 'md',
+   225→}: {
+   226→  name: string
+   227→  icon?: string | null
+   228→  color?: string
+   229→  size?: 'sm' | 'md' | 'lg'
+   230→}) {
+   231→  const preset = findPreset(name)
+   232→  const resolvedIcon = icon || preset?.icon || name.charAt(0).toUpperCase()
+   233→  const resolvedColor = color || preset?.color || '#6b7280'
+   234→
+   235→  const sizeClass = {
+   236→    sm: 'size-8 text-xs',
+   237→    md: 'size-10 text-sm',
+   238→    lg: 'size-12 text-base',
+   239→  }[size]
+   240→
+   241→  return (
+   242→    <div
+   243→      className={`${sizeClass} flex shrink-0 items-center justify-center rounded-xl font-bold text-white shadow-sm`}
+   244→      style={{ backgroundColor: resolvedColor }}
+   245→    >
+   246→      {resolvedIcon}
+   247→    </div>
+   248→  )
+   249→}
+   250→
+   251→// ============================================================================
+   252→// Countdown Badge
+   253→// ============================================================================
+   254→
+   255→function CountdownBadge({ date }: { date: Date | string }) {
+   256→  const days = differenceInDays(parseISO(date as string), new Date())
+   257→
+   258→  let variant: 'urgent' | 'soon' | 'normal' = 'normal'
+   259→  if (days <= 3) variant = 'urgent'
+   260→  else if (days <= 7) variant = 'soon'
+   261→
+   262→  const classMap = {
+   263→    urgent: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
+   264→    soon: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
+   265→    normal: 'bg-muted text-muted-foreground',
+   266→  }
+   267→
+   268→  const label =
+   269→    days < 0
+   270→      ? `${Math.abs(days)}d overdue`
+   271→      : days === 0
+   272→        ? 'Today'
+   273→        : days === 1
+   274→          ? 'Tomorrow'
+   275→          : `${days}d left`
+   276→
+   277→  return (
+   278→    <span
+   279→      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${classMap[variant]}`}
+   280→    >
+   281→      <Clock className="size-3" />
+   282→      {label}
+   283→    </span>
+   284→  )
+   285→}
+   286→
+   287→// ============================================================================
+   288→// Monthly Equivalent
+   289→// ============================================================================
+   290→
+   291→function getMonthlyEquivalent(
+   292→  amount: number,
+   293→  billingCycle: 'weekly' | 'monthly' | 'yearly',
+   294→): number {
+   295→  if (billingCycle === 'weekly') return amount * 4.33
+   296→  if (billingCycle === 'yearly') return amount / 12
+   297→  return amount
+   298→}
+   299→
+   300→function getPerCycleLabel(
+   301→  billingCycle: 'weekly' | 'monthly' | 'yearly',
+   302→): string {
+   303→  if (billingCycle === 'weekly') return '/wk'
+   304→  if (billingCycle === 'yearly') return '/yr'
+   305→  return '/mo'
+   306→}
+   307→
+   308→// ============================================================================
+   309→// Subscription Form Sheet
+   310→// ============================================================================
+   311→
+   312→function SubscriptionFormSheet({
+   313→  open,
+   314→  onOpenChange,
+   315→  editingSubscription,
+   316→  onSubmit,
+   317→  isSubmitting,
+   318→}: {
+   319→  open: boolean
+   320→  onOpenChange: (open: boolean) => void
+   321→  editingSubscription: Subscription | null
+   322→  onSubmit: (data: SubscriptionFormValues) => void
+   323→  isSubmitting: boolean
+   324→}) {
+   325→  const [presetOpen, setPresetOpen] = React.useState(false)
+   326→  const [calendarOpen, setCalendarOpen] = React.useState(false)
+   327→
+   328→  const form = useForm<SubscriptionFormValues>({
+   329→    resolver: zodResolver(subscriptionFormSchema),
+   330→    defaultValues: {
+   331→      name: '',
+   332→      amount: undefined as unknown as number,
+   333→      billingCycle: 'monthly',
+   334→      nextBillingDate: format(addDays(new Date(), 30), 'yyyy-MM-dd'),
+   335→      category: '',
+   336→      url: '',
+   337→      notes: '',
+   338→    },
+   339→  })
+   340→
+   341→  const watchedName = form.watch('name')
+   342→  const matchedPreset = findPreset(watchedName)
+   343→
+   344→  // Populate form when editing
+   345→  React.useEffect(() => {
+   346→    if (editingSubscription) {
+   347→      form.reset({
+   348→        name: editingSubscription.name,
+   349→        amount: editingSubscription.amount,
+   350→        billingCycle: editingSubscription.billingCycle,
+   351→        nextBillingDate: format(
+   352→          parseISO(editingSubscription.nextBillingDate as unknown as string),
+   353→          'yyyy-MM-dd',
+   354→        ),
+   355→        category: editingSubscription.category || '',
+   356→        url: editingSubscription.url || '',
+   357→        notes: editingSubscription.notes || '',
+   358→      })
+   359→    } else {
+   360→      form.reset({
+   361→        name: '',
+   362→        amount: undefined as unknown as number,
+   363→        billingCycle: 'monthly',
+   364→        nextBillingDate: format(addDays(new Date(), 30), 'yyyy-MM-dd'),
+   365→        category: '',
+   366→        url: '',
+   367→        notes: '',
+   368→      })
+   369→    }
+   370→  }, [editingSubscription, form, open])
+   371→
+   372→  const handlePresetSelect = (preset: SubscriptionPreset) => {
+   373→    form.setValue('name', preset.name)
+   374→    form.setValue('amount', preset.typicalAmount)
+   375→    form.setValue('billingCycle', preset.billingCycle)
+   376→    form.setValue('category', preset.category)
+   377→    setPresetOpen(false)
+   378→  }
+   379→
+   380→  return (
+   381→    <Sheet open={open} onOpenChange={onOpenChange}>
+   382→      <SheetContent className="w-full overflow-y-auto sm:max-w-md">
+   383→        <SheetHeader className="pr-6">
+   384→          <SheetTitle>
+   385→            {editingSubscription ? 'Edit Subscription' : 'Add Subscription'}
+   386→          </SheetTitle>
+   387→          <SheetDescription>
+   388→            {editingSubscription
+   389→              ? 'Update your subscription details.'
+   390→              : 'Add a new recurring subscription to track.'}
+   391→          </SheetDescription>
+   392→        </SheetHeader>
+   393→
+   394→        <Form {...form}>
+   395→          <form
+   396→            onSubmit={form.handleSubmit(onSubmit)}
+   397→            className="flex flex-col gap-4 px-4"
+   398→          >
+   399→            {/* Preset Picker */}
+   400→            {!editingSubscription && (
+   401→              <div className="space-y-2">
+   402→                <Label className="text-sm font-medium">
+   403→                  Quick Add Preset
+   404→                </Label>
+   405→                <Popover open={presetOpen} onOpenChange={setPresetOpen}>
+   406→                  <PopoverTrigger asChild>
+   407→                    <Button
+   408→                      type="button"
+   409→                      variant="outline"
+   410→                      className="w-full justify-start gap-2"
+   411→                    >
+   412→                      <Sparkles className="size-4 text-amber-500" />
+   413→                      {matchedPreset
+   414→                        ? `Detected: ${matchedPreset.name}`
+   415→                        : 'Choose a popular service...'}
+   416→                    </Button>
+   417→                  </PopoverTrigger>
+   418→                  <PopoverContent className="w-[300px] p-0" align="start">
+   419→                    <Command>
+   420→                      <CommandInput placeholder="Search services..." />
+   421→                      <CommandList>
+   422→                        <CommandEmpty>No service found.</CommandEmpty>
+   423→                        <CommandGroup>
+   424→                          {SUBSCRIPTION_PRESETS.map((preset) => (
+   425→                            <CommandItem
+   426→                              key={preset.name}
+   427→                              value={preset.name}
+   428→                              onSelect={() => handlePresetSelect(preset)}
+   429→                              className="flex items-center gap-3"
+   430→                            >
+   431→                              <SubscriptionIcon
+   432→                                name={preset.name}
+   433→                                icon={preset.icon}
+   434→                                color={preset.color}
+   435→                                size="sm"
+   436→                              />
+   437→                              <div className="flex flex-col">
+   438→                                <span className="text-sm font-medium">
+   439→                                  {preset.name}
+   440→                                </span>
+   441→                                <span className="text-xs text-muted-foreground">
+   442→                                  {formatCurrency(preset.typicalAmount)}
+   443→                                  {getPerCycleLabel(preset.billingCycle)}
+   444→                                </span>
+   445→                              </div>
+   446→                            </CommandItem>
+   447→                          ))}
+   448→                        </CommandGroup>
+   449→                      </CommandList>
+   450→                    </Command>
+   451→                  </PopoverContent>
+   452→                </Popover>
+   453→              </div>
+   454→            )}
+   455→
+   456→            {/* Name */}
+   457→            <FormField
+   458→              control={form.control}
+   459→              name="name"
+   460→              render={({ field }) => (
+   461→                <FormItem>
+   462→                  <FormLabel>Name</FormLabel>
+   463→                  <FormControl>
+   464→                    <Input placeholder="e.g., Netflix, Spotify..." {...field} />
+   465→                  </FormControl>
+   466→                  <FormMessage />
+   467→                </FormItem>
+   468→              )}
+   469→            />
+   470→
+   471→            {/* Amount + Billing Cycle */}
+   472→            <div className="grid grid-cols-2 gap-3">
+   473→              <FormField
+   474→                control={form.control}
+   475→                name="amount"
+   476→                render={({ field }) => (
+   477→                  <FormItem>
+   478→                    <FormLabel>Amount</FormLabel>
+   479→                    <FormControl>
+   480→                      <Input
+   481→                        type="number"
+   482→                        step="0.01"
+   483→                        min="0"
+   484→                        placeholder="0.00"
+   485→                        {...field}
+   486→                      />
+   487→                    </FormControl>
+   488→                    <FormMessage />
+   489→                  </FormItem>
+   490→                )}
+   491→              />
+   492→              <FormField
+   493→                control={form.control}
+   494→                name="billingCycle"
+   495→                render={({ field }) => (
+   496→                  <FormItem>
+   497→                    <FormLabel>Billing Cycle</FormLabel>
+   498→                    <Select
+   499→                      value={field.value}
+   500→                      onValueChange={field.onChange}
+   501→                    >
+   502→                      <FormControl>
+   503→                        <SelectTrigger>
+   504→                          <SelectValue />
+   505→                        </SelectTrigger>
+   506→                      </FormControl>
+   507→                      <SelectContent>
+   508→                        {SUBSCRIPTION_BILLING_CYCLES.map((cycle) => (
+   509→                          <SelectItem key={cycle.value} value={cycle.value}>
+   510→                            {cycle.label}
+   511→                          </SelectItem>
+   512→                        ))}
+   513→                      </SelectContent>
+   514→                    </Select>
+   515→                    <FormMessage />
+   516→                  </FormItem>
+   517→                )}
+   518→              />
+   519→            </div>
+   520→
+   521→            {/* Next Billing Date */}
+   522→            <FormField
+   523→              control={form.control}
+   524→              name="nextBillingDate"
+   525→              render={({ field }) => (
+   526→                <FormItem>
+   527→                  <FormLabel>Next Billing Date</FormLabel>
+   528→                  <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+   529→                    <PopoverTrigger asChild>
+   530→                      <FormControl>
+   531→                        <Button
+   532→                          type="button"
+   533→                          variant="outline"
+   534→                          className="w-full justify-start text-left font-normal"
+   535→                        >
+   536→                          {field.value
+   537→                            ? formatDate(field.value)
+   538→                            : 'Pick a date'}
+   539→                        </Button>
+   540→                      </FormControl>
+   541→                    </PopoverTrigger>
+   542→                    <PopoverContent className="w-auto p-0" align="start">
+   543→                      <Calendar
+   544→                        mode="single"
+   545→                        selected={
+   546→                          field.value
+   547→                            ? parseISO(field.value)
+   548→                            : undefined
+   549→                        }
+   550→                        onSelect={(d) => {
+   551→                          if (d) {
+   552→                            field.onChange(format(d, 'yyyy-MM-dd'))
+   553→                            setCalendarOpen(false)
+   554→                          }
+   555→                        }}
+   556→                        initialFocus
+   557→                      />
+   558→                    </PopoverContent>
+   559→                  </Popover>
+   560→                  <FormMessage />
+   561→                </FormItem>
+   562→              )}
+   563→            />
+   564→
+   565→            {/* Category */}
+   566→            <FormField
+   567→              control={form.control}
+   568→              name="category"
+   569→              render={({ field }) => (
+   570→                <FormItem>
+   571→                  <FormLabel>Category</FormLabel>
+   572→                  <Select
+   573→                    value={field.value}
+   574→                    onValueChange={field.onChange}
+   575→                  >
+   576→                    <FormControl>
+   577→                      <SelectTrigger>
+   578→                        <SelectValue placeholder="Select category" />
+   579→                      </SelectTrigger>
+   580→                    </FormControl>
+   581→                    <SelectContent>
+   582→                      {SUBSCRIPTION_CATEGORIES.map((cat) => (
+   583→                        <SelectItem key={cat} value={cat}>
+   584→                          {cat}
+   585→                        </SelectItem>
+   586→                      ))}
+   587→                    </SelectContent>
+   588→                  </Select>
+   589→                  <FormMessage />
+   590→                </FormItem>
+   591→              )}
+   592→            />
+   593→
+   594→            {/* URL */}
+   595→            <FormField
+   596→              control={form.control}
+   597→              name="url"
+   598→              render={({ field }) => (
+   599→                <FormItem>
+   600→                  <FormLabel>URL (optional)</FormLabel>
+   601→                  <FormControl>
+   602→                    <Input
+   603→                      type="url"
+   604→                      placeholder="https://..."
+   605→                      {...field}
+   606→                    />
+   607→                  </FormControl>
+   608→                  <FormMessage />
+   609→                </FormItem>
+   610→              )}
+   611→            />
+   612→
+   613→            {/* Notes */}
+   614→            <FormField
+   615→              control={form.control}
+   616→              name="notes"
+   617→              render={({ field }) => (
+   618→                <FormItem>
+   619→                  <FormLabel>Notes (optional)</FormLabel>
+   620→                  <FormControl>
+   621→                    <Textarea
+   622→                      placeholder="Any additional notes..."
+   623→                      rows={3}
+   624→                      {...field}
+   625→                    />
+   626→                  </FormControl>
+   627→                  <FormMessage />
+   628→                </FormItem>
+   629→              )}
+   630→            />
+   631→
+   632→            <SheetFooter className="pt-4">
+   633→              <Button
+   634→                type="button"
+   635→                variant="outline"
+   636→                onClick={() => onOpenChange(false)}
+   637→                disabled={isSubmitting}
+   638→              >
+   639→                Cancel
+   640→              </Button>
+   641→              <Button type="submit" disabled={isSubmitting}>
+   642→                {isSubmitting && (
+   643→                  <Loader2 className="mr-2 size-4 animate-spin" />
+   644→                )}
+   645→                {editingSubscription ? 'Update' : 'Add Subscription'}
+   646→              </Button>
+   647→            </SheetFooter>
+   648→          </form>
+   649→        </Form>
+   650→      </SheetContent>
+   651→    </Sheet>
+   652→  )
+   653→}
+   654→
+   655→// ============================================================================
+   656→// Subscription Card (Mobile)
+   657→// ============================================================================
+   658→
+   659→function SubscriptionCard({
+   660→  subscription,
+   661→  currency,
+   662→  index,
+   663→  onEdit,
+   664→  onDelete,
+   665→}: {
+   666→  subscription: Subscription
+   667→  currency: string
+   668→  index: number
+   669→  onEdit: (sub: Subscription) => void
+   670→  onDelete: (sub: Subscription) => void
+   671→}) {
+   672→  return (
+   673→    <motion.div
+   674→      custom={index}
+   675→      variants={cardVariants}
+   676→      initial="hidden"
+   677→      animate="visible"
+   678→      exit="exit"
+   679→      layout
+   680→    >
+   681→      <Card className="group overflow-hidden transition-shadow hover:shadow-md">
+   682→        <CardContent className="p-4">
+   683→          <div className="flex items-start gap-3">
+   684→            <SubscriptionIcon
+   685→              name={subscription.name}
+   686→              icon={subscription.icon}
+   687→              color={subscription.color}
+   688→              size="md"
+   689→            />
+   690→            <div className="min-w-0 flex-1">
+   691→              <div className="flex items-center justify-between gap-2">
+   692→                <h4 className="truncate text-sm font-semibold">
+   693→                  {subscription.name}
+   694→                </h4>
+   695→                <div className="flex items-center gap-1.5">
+   696→                  <Badge
+   697→                    variant="outline"
+   698→                    className={BILLING_CYCLE_BADGE[subscription.billingCycle]}
+   699→                  >
+   700→                    {subscription.billingCycle}
+   701→                  </Badge>
+   702→                  <DropdownMenu>
+   703→                    <DropdownMenuTrigger asChild>
+   704→                      <Button
+   705→                        variant="ghost"
+   706→                        size="icon"
+   707→                        className="size-8 opacity-0 transition-opacity group-hover:opacity-100"
+   708→                      >
+   709→                        <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+   710→                          <circle cx="12" cy="6" r="1.5" />
+   711→                          <circle cx="12" cy="12" r="1.5" />
+   712→                          <circle cx="12" cy="18" r="1.5" />
+   713→                        </svg>
+   714→                      </Button>
+   715→                    </DropdownMenuTrigger>
+   716→                    <DropdownMenuContent align="end">
+   717→                      <DropdownMenuItem onClick={() => onEdit(subscription)}>
+   718→                        <Pencil className="mr-2 size-4" />
+   719→                        Edit
+   720→                      </DropdownMenuItem>
+   721→                      {subscription.url && (
+   722→                        <DropdownMenuItem asChild>
+   723→                          <a
+   724→                            href={subscription.url}
+   725→                            target="_blank"
+   726→                            rel="noopener noreferrer"
+   727→                          >
+   728→                            <ExternalLink className="mr-2 size-4" />
+   729→                            Visit Site
+   730→                          </a>
+   731→                        </DropdownMenuItem>
+   732→                      )}
+   733→                      <DropdownMenuSeparator />
+   734→                      <DropdownMenuItem
+   735→                        className="text-red-600 dark:text-red-400"
+   736→                        onClick={() => onDelete(subscription)}
+   737→                      >
+   738→                        <Trash2 className="mr-2 size-4" />
+   739→                        Delete
+   740→                      </DropdownMenuItem>
+   741→                    </DropdownMenuContent>
+   742→                  </DropdownMenu>
+   743→                </div>
+   744→              </div>
+   745→
+   746→              <div className="mt-1 flex items-baseline gap-1">
+   747→                <span className="text-lg font-bold">
+   748→                  {formatCurrency(subscription.amount, currency)}
+   749→                </span>
+   750→                <span className="text-xs text-muted-foreground">
+
+[showing lines 1-750 of 1464; use offset=751 with limit to continue reading]

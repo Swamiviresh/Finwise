@@ -679,7 +679,7 @@ function SubscriptionCard({
       layout
     >
       <Card className="group overflow-hidden transition-shadow hover:shadow-md">
-        <CardContent className="p-4">
+        <CardContent className="p-6">
           <div className="flex items-start gap-3">
             <SubscriptionIcon
               name={subscription.name}
@@ -811,7 +811,7 @@ function SubscriptionTableRow({
       animate="visible"
       exit="exit"
       layout
-      className="group border-b transition-colors last:border-0 hover:bg-muted/50"
+      className="group border-b border-border/30 transition-all duration-200 last:border-0 hover:bg-muted/30"
     >
       <TableCell className="w-12">
         <SubscriptionIcon
@@ -957,7 +957,7 @@ function UpcomingRenewals({
   )
 
   return (
-    <Card>
+    <Card className="rounded-2xl border-border/40">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -983,7 +983,7 @@ function UpcomingRenewals({
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                  className="flex items-center gap-3 rounded-xl border border-border/40 p-3.5 transition-all duration-200 hover:bg-muted/30 hover:shadow-sm"
                 >
                   <SubscriptionIcon
                     name={sub.name}
@@ -1191,7 +1191,7 @@ export function SubscriptionsPage() {
         <PageHeader
           title="Subscriptions"
           actions={
-            <Button onClick={openCreateForm}>
+            <Button className="rounded-xl h-11 shadow-sm" onClick={openCreateForm}>
               <Plus className="mr-2 size-4" />
               Add Subscription
             </Button>
@@ -1215,7 +1215,7 @@ export function SubscriptionsPage() {
         title="Subscriptions"
         description="Manage and track your recurring expenses"
         actions={
-          <Button onClick={openCreateForm}>
+          <Button className="rounded-xl h-11" onClick={openCreateForm}>
             <Plus className="mr-2 size-4" />
             Add Subscription
           </Button>
@@ -1251,7 +1251,7 @@ export function SubscriptionsPage() {
       <UpcomingRenewals subscriptions={subscriptions} currency={currency} />
 
       {/* ---- Active Subscriptions ---- */}
-      <Card>
+      <Card className="rounded-2xl border-border/40">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">
@@ -1325,7 +1325,7 @@ export function SubscriptionsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12" />
-                  <TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
                     <button
                       className="inline-flex items-center font-medium"
                       onClick={() => handleSort('name')}
@@ -1343,8 +1343,8 @@ export function SubscriptionsPage() {
                       <SortIcon field="amount" currentSortField={sortField} currentSortOrder={sortOrder} />
                     </button>
                   </TableHead>
-                  <TableHead>Cycle</TableHead>
-                  <TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Cycle</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
                     <button
                       className="inline-flex items-center font-medium"
                       onClick={() => handleSort('nextBillingDate')}
@@ -1353,7 +1353,7 @@ export function SubscriptionsPage() {
                       <SortIcon field="nextBillingDate" currentSortField={sortField} currentSortOrder={sortOrder} />
                     </button>
                   </TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Status</TableHead>
                   <TableHead className="w-12" />
                 </TableRow>
               </TableHeader>
@@ -1379,9 +1379,9 @@ export function SubscriptionsPage() {
       {/* ---- Inactive Subscriptions (Collapsible) ---- */}
       {inactiveSubscriptions.length > 0 && (
         <Collapsible open={inactiveOpen} onOpenChange={setInactiveOpen}>
-          <Card>
+          <Card className="rounded-2xl border-border/40">
             <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer select-none pb-3 transition-colors hover:bg-muted/50">
+              <CardHeader className="cursor-pointer select-none pb-3 transition-colors hover:bg-muted/30">
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-base">
                     Inactive Subscriptions

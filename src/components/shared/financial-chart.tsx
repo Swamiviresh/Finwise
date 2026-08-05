@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { motion } from 'framer-motion'
 import {
   LineChart,
   Line,
@@ -71,6 +72,14 @@ const DEFAULT_COLORS = [
   '#8b5cf6',
 ]
 
+function PremiumTooltipContent(props: React.ComponentProps<typeof ChartTooltipContent>) {
+  return (
+    <div className="rounded-xl border-border/40 bg-background/90 p-3 shadow-xl shadow-black/[0.06] backdrop-blur-xl">
+      <ChartTooltipContent {...props} className="rounded-lg" />
+    </div>
+  )
+}
+
 export function FinancialChart({
   type,
   data,
@@ -119,18 +128,20 @@ export function FinancialChart({
         return (
           <LineChart data={data}>
             {showGrid && (
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.3} />
             )}
             <XAxis
               dataKey={xAxisKey}
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              tick={{ fontSize: 12, fill: 'oklch(0.55 0.02 260)' }}
             />
             <YAxis
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              tick={{ fontSize: 12, fill: 'oklch(0.55 0.02 260)' }}
               tickFormatter={(v) =>
                 typeof v === 'number'
                   ? v >= 1000
@@ -140,7 +151,7 @@ export function FinancialChart({
               }
             />
             {showTooltip && (
-              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartTooltip content={<PremiumTooltipContent />} />
             )}
             <Line
               type="monotone"
@@ -148,7 +159,9 @@ export function FinancialChart({
               stroke={colors[0]}
               strokeWidth={2}
               dot={false}
-              activeDot={{ r: 4 }}
+              activeDot={{ r: 5, strokeWidth: 2, stroke: colors[0], fill: 'var(--background)' }}
+              animationDuration={800}
+              animationEasing="ease-out"
             />
             {secondaryDataKey && (
               <Line
@@ -157,7 +170,10 @@ export function FinancialChart({
                 stroke={colors[1]}
                 strokeWidth={2}
                 dot={false}
-                activeDot={{ r: 4 }}
+                activeDot={{ r: 5, strokeWidth: 2, stroke: colors[1], fill: 'var(--background)' }}
+                animationDuration={800}
+                animationEasing="ease-out"
+                animationBegin={100}
               />
             )}
           </LineChart>
@@ -167,18 +183,20 @@ export function FinancialChart({
         return (
           <AreaChart data={data}>
             {showGrid && (
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.3} />
             )}
             <XAxis
               dataKey={xAxisKey}
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              tick={{ fontSize: 12, fill: 'oklch(0.55 0.02 260)' }}
             />
             <YAxis
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              tick={{ fontSize: 12, fill: 'oklch(0.55 0.02 260)' }}
               tickFormatter={(v) =>
                 typeof v === 'number'
                   ? v >= 1000
@@ -188,14 +206,14 @@ export function FinancialChart({
               }
             />
             {showTooltip && (
-              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartTooltip content={<PremiumTooltipContent />} />
             )}
             <defs>
-              <linearGradient id={dataKey} x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={`grad-${dataKey}`} x1="0" y1="0" x2="0" y2="1">
                 <stop
-                  offset="5%"
+                  offset="0%"
                   stopColor={colors[0]}
-                  stopOpacity={0.3}
+                  stopOpacity={0.25}
                 />
                 <stop
                   offset="95%"
@@ -209,7 +227,9 @@ export function FinancialChart({
               dataKey={dataKey}
               stroke={colors[0]}
               strokeWidth={2}
-              fill={`url(#${dataKey})`}
+              fill={`url(#grad-${dataKey})`}
+              animationDuration={800}
+              animationEasing="ease-out"
             />
           </AreaChart>
         )
@@ -218,18 +238,20 @@ export function FinancialChart({
         return (
           <BarChart data={data}>
             {showGrid && (
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.3} />
             )}
             <XAxis
               dataKey={xAxisKey}
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              tick={{ fontSize: 12, fill: 'oklch(0.55 0.02 260)' }}
             />
             <YAxis
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              tick={{ fontSize: 12, fill: 'oklch(0.55 0.02 260)' }}
               tickFormatter={(v) =>
                 typeof v === 'number'
                   ? v >= 1000
@@ -239,9 +261,15 @@ export function FinancialChart({
               }
             />
             {showTooltip && (
-              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartTooltip content={<PremiumTooltipContent />} />
             )}
-            <Bar dataKey={dataKey} fill={colors[0]} radius={[4, 4, 0, 0]} />
+            <Bar
+              dataKey={dataKey}
+              fill={colors[0]}
+              radius={[6, 6, 0, 0]}
+              animationDuration={800}
+              animationEasing="ease-out"
+            />
           </BarChart>
         )
 
@@ -249,7 +277,7 @@ export function FinancialChart({
         return (
           <PieChart>
             {showTooltip && (
-              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartTooltip content={<PremiumTooltipContent />} />
             )}
             <Pie
               data={data}
@@ -260,6 +288,8 @@ export function FinancialChart({
               paddingAngle={2}
               dataKey={dataKey}
               nameKey={xAxisKey}
+              animationDuration={800}
+              animationEasing="ease-out"
             >
               {data.map((_, index) => (
                 <Cell
@@ -280,25 +310,44 @@ export function FinancialChart({
   }
 
   return (
-    <Card className={className}>
-      {(title || description) && (
-        <CardHeader className="pb-2">
-          {title && <CardTitle className="text-base">{title}</CardTitle>}
-          {description && (
-            <p className="text-sm text-muted-foreground">{description}</p>
-          )}
-        </CardHeader>
-      )}
-      <CardContent>
-        <ChartContainer config={chartConfig} className="mx-auto w-full">
-          <div style={{ height }}>
-            {renderChart()}
-          </div>
-        </ChartContainer>
-        {showLegend && type === 'pie' && (
-          <ChartLegend content={<ChartLegendContent nameKey={xAxisKey} />} />
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+    >
+      <Card className={cn('border-border/50 shadow-none', className)}>
+        {(title || description) && (
+          <CardHeader className="pb-2">
+            {title && (
+              <CardTitle className="text-[15px] font-semibold tracking-tight">
+                {title}
+              </CardTitle>
+            )}
+            {description && (
+              <p className="text-[13px] text-muted-foreground/70">
+                {description}
+              </p>
+            )}
+          </CardHeader>
         )}
-      </CardContent>
-    </Card>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="mx-auto w-full">
+            <div style={{ height }}>{renderChart()}</div>
+          </ChartContainer>
+          {showLegend && type === 'pie' && (
+            <div className="mt-2">
+              <ChartLegend
+                content={
+                  <ChartLegendContent
+                    nameKey={xAxisKey}
+                    className="[&>li]:gap-2 [&>li]:text-xs [&>li]:font-medium"
+                  />
+                }
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   )
 }

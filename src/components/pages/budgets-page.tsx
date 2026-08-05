@@ -130,15 +130,15 @@ type BudgetFormValues = z.infer<typeof budgetFormSchema>
 // ---------------------------------------------------------------------------
 
 function getProgressColor(percent: number): string {
-  if (percent >= 90) return 'bg-red-500'
-  if (percent >= 70) return 'bg-amber-500'
-  return 'bg-emerald-500'
+  if (percent >= 90) return 'bg-gradient-to-r from-red-500 to-rose-500'
+  if (percent >= 70) return 'bg-gradient-to-r from-amber-500 to-orange-500'
+  return 'bg-gradient-to-r from-emerald-500 to-teal-500'
 }
 
 function getProgressBgColor(percent: number): string {
-  if (percent >= 90) return 'bg-red-500/20'
-  if (percent >= 70) return 'bg-amber-500/20'
-  return 'bg-emerald-500/20'
+  if (percent >= 90) return 'bg-red-500/10'
+  if (percent >= 70) return 'bg-amber-500/10'
+  return 'bg-emerald-500/10'
 }
 
 function getProgressTextColor(percent: number): string {
@@ -165,7 +165,7 @@ const cardVariants = {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { delay: i * 0.06, duration: 0.4, ease: 'easeOut' },
+    transition: { delay: i * 0.07, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] },
   }),
 }
 
@@ -685,7 +685,7 @@ export function BudgetsPage() {
           title="Budgets"
           description="Track and manage your spending limits"
           actions={
-            <Button onClick={openCreate}>
+            <Button className="rounded-xl h-11" onClick={openCreate}>
               <Plus className="mr-2 size-4" />
               Create Budget
             </Button>
@@ -720,7 +720,7 @@ export function BudgetsPage() {
         title="Budgets"
         description="Track and manage your spending limits"
         actions={
-          <Button onClick={openCreate}>
+          <Button className="rounded-xl h-11" onClick={openCreate}>
             <Plus className="mr-2 size-4" />
             Create Budget
           </Button>
@@ -787,14 +787,16 @@ export function BudgetsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <CircleDollarSign className="size-5 text-primary" />
+        <Card className="rounded-2xl border-border/40 backdrop-blur-sm bg-card/80">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2.5 text-base">
+              <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
+                <CircleDollarSign className="size-4 text-primary" />
+              </div>
               Overall Budget Overview
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5 p-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Total Spent</p>
@@ -822,7 +824,7 @@ export function BudgetsPage() {
                   remaining
                 </span>
               </div>
-              <div className={`h-3 w-full rounded-full ${getProgressBgColor(overallPercent)}`}>
+              <div className={`h-2.5 w-full rounded-full ${getProgressBgColor(overallPercent)}`}>
                 <motion.div
                   className={`h-full rounded-full ${getProgressColor(overallPercent)}`}
                   initial={{ width: 0 }}
@@ -836,7 +838,7 @@ export function BudgetsPage() {
       </motion.div>
 
       {/* Budget Cards Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <AnimatePresence mode="popLayout">
           {budgets.map((budget, i) => {
             const pct =
@@ -857,7 +859,7 @@ export function BudgetsPage() {
                 exit="hidden"
                 layout
               >
-                <Card className="group h-full transition-all hover:shadow-lg hover:-translate-y-0.5">
+                <Card className="group h-full transition-all duration-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Wallet className="size-4 text-muted-foreground" />

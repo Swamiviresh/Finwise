@@ -35,6 +35,8 @@ import { Badge } from '@/components/ui/badge'
 // Animation helpers
 // ---------------------------------------------------------------------------
 
+const easeOut = [0.21, 0.47, 0.32, 0.98]
+
 function FadeIn({
   children,
   className,
@@ -45,13 +47,13 @@ function FadeIn({
   delay?: number
 }) {
   const ref = React.useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-60px' })
+  const inView = useInView(ref, { once: true, margin: '-100px' })
   return (
     <motion.div
       ref={ref}
       initial={{ opacity: 0, y: 32 }}
       animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 32 }}
-      transition={{ duration: 0.6, delay, ease: [0.21, 0.47, 0.32, 0.98] }}
+      transition={{ duration: 0.6, delay, ease: easeOut }}
       className={className}
     >
       {children}
@@ -67,7 +69,7 @@ function StaggerContainer({
   className?: string
 }) {
   const ref = React.useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-60px' })
+  const inView = useInView(ref, { once: true, margin: '-100px' })
   return (
     <motion.div
       ref={ref}
@@ -95,7 +97,7 @@ function StaggerItem({
     <motion.div
       variants={{
         hidden: { opacity: 0, y: 24 },
-        show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.21, 0.47, 0.32, 0.98] } },
+        show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easeOut } },
       }}
       className={className}
     >
@@ -152,40 +154,50 @@ function HeroSection() {
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
+            transition={{ duration: 0.8, ease: easeOut }}
             className="text-center lg:text-left"
           >
-            <Badge variant="secondary" className="mb-6 gap-1.5 px-3 py-1">
-              <Sparkles className="size-3.5" />
-              Powered by AI
-            </Badge>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <Badge variant="secondary" className="mb-6 gap-1.5 px-3 py-1">
+                <Sparkles className="size-3.5" />
+                Powered by AI
+              </Badge>
+            </motion.div>
+            <h1 className="text-5xl font-extrabold tracking-tighter sm:text-6xl md:text-7xl">
               Your AI Powered{' '}
-              <span className="bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+              <span className="gradient-text">
                 Personal Finance
               </span>{' '}
               Companion
             </h1>
-            <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground lg:mx-0">
+            <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl lg:mx-0">
               Take control of your money with intelligent budgeting, real-time
               analytics, and AI-powered insights. FinWise makes managing your
               finances effortless and rewarding.
             </p>
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row lg:justify-start">
-              <Button
-                size="lg"
-                className="h-12 px-8 text-base"
-                onClick={() => setRoute('/register')}
-              >
-                Get Started Free
-                <ArrowRight className="ml-1 size-4" />
-              </Button>
-              <Button variant="outline" size="lg" className="h-12 px-8 text-base">
-                <Play className="mr-1 size-4" />
-                Watch Demo
-              </Button>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button
+                  size="lg"
+                  className="h-12 rounded-xl px-8 text-base shadow-lg shadow-primary/20"
+                  onClick={() => setRoute('/register')}
+                >
+                  Get Started Free
+                  <ArrowRight className="ml-1 size-4" />
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button variant="outline" size="lg" className="h-12 rounded-xl border-white/10 bg-white/5 px-8 text-base backdrop-blur-sm">
+                  <Play className="mr-1 size-4" />
+                  Watch Demo
+                </Button>
+              </motion.div>
             </div>
-            <div className="mt-8 flex items-center justify-center gap-6 text-sm text-muted-foreground lg:justify-start">
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground lg:justify-start">
               <div className="flex items-center gap-1.5">
                 <Check className="size-4 text-primary" />
                 Free forever plan
@@ -201,19 +213,19 @@ function HeroSection() {
             </div>
           </motion.div>
 
-          {/* Right: Floating Card Mockups */}
+          {/* Right: Floating Glass Card Mockups */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: [0.21, 0.47, 0.32, 0.98] }}
+            transition={{ duration: 0.8, delay: 0.2, ease: easeOut }}
             className="relative hidden lg:block"
           >
-            <div className="relative h-[480px]">
+            <div className="relative h-[520px]">
               {/* Main dashboard card */}
               <motion.div
                 animate={{ y: [0, -8, 0] }}
                 transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute right-0 top-4 w-[340px] rounded-2xl border bg-card/80 p-5 shadow-2xl backdrop-blur-xl"
+                className="glass absolute right-0 top-4 w-[360px] rounded-2xl p-6 shadow-2xl animate-float"
               >
                 <div className="mb-4 flex items-center justify-between">
                   <span className="text-sm font-semibold">Total Balance</span>
@@ -230,7 +242,7 @@ function HeroSection() {
                     { label: 'Expenses', value: '$3,120', color: 'bg-rose-500' },
                     { label: 'Savings', value: '$5,120', color: 'bg-primary' },
                   ].map((item) => (
-                    <div key={item.label} className="rounded-lg bg-muted/50 p-2.5">
+                    <div key={item.label} className="rounded-xl bg-muted/50 p-2.5">
                       <div className={`mb-1.5 h-1 w-8 rounded-full ${item.color}`} />
                       <div className="text-xs text-muted-foreground">{item.label}</div>
                       <div className="text-sm font-semibold">{item.value}</div>
@@ -243,10 +255,10 @@ function HeroSection() {
               <motion.div
                 animate={{ y: [0, 6, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-                className="absolute left-0 top-16 w-[220px] rounded-xl border bg-card/70 p-4 shadow-xl backdrop-blur-xl"
+                className="glass absolute left-0 top-16 w-[240px] rounded-2xl p-4 shadow-xl animate-float [animation-delay:1s]"
               >
                 <div className="mb-2 flex items-center gap-2">
-                  <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
+                  <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
                     <Brain className="size-4 text-primary" />
                   </div>
                   <span className="text-xs font-semibold">AI Insight</span>
@@ -261,7 +273,7 @@ function HeroSection() {
               <motion.div
                 animate={{ y: [0, -6, 0] }}
                 transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-                className="absolute bottom-12 left-8 w-[200px] rounded-xl border bg-card/70 p-4 shadow-xl backdrop-blur-xl"
+                className="glass absolute bottom-12 left-8 w-[210px] rounded-2xl p-4 shadow-xl animate-float [animation-delay:2s]"
               >
                 <div className="mb-2 text-xs font-semibold">Vacation Fund</div>
                 <div className="mb-2 h-2 w-full overflow-hidden rounded-full bg-muted">
@@ -285,25 +297,34 @@ function HeroSection() {
 // ---------------------------------------------------------------------------
 
 function BrandsSection() {
+  const ref = React.useRef(null)
+  const inView = useInView(ref, { once: true, margin: '-60px' })
+
   const brands = ['Acme Corp', 'Globex', 'Initech', 'Umbrella', 'Stark Industries', 'Wayne Enterprises']
   return (
-    <section className="border-y bg-muted/30 py-12">
+    <motion.section
+      ref={ref}
+      initial={{ opacity: 0 }}
+      animate={inView ? { opacity: 1 } : { opacity: 0 }}
+      transition={{ duration: 0.6 }}
+      className="border-y bg-muted/30 py-16"
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <p className="mb-8 text-center text-sm font-medium uppercase tracking-widest text-muted-foreground">
+        <p className="mb-10 text-center text-sm font-medium uppercase tracking-widest text-muted-foreground/60">
           Trusted by forward-thinking teams
         </p>
         <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
           {brands.map((brand) => (
             <span
               key={brand}
-              className="text-lg font-bold tracking-tight text-muted-foreground/50 transition-colors hover:text-muted-foreground/80"
+              className="text-lg font-bold tracking-tight text-muted-foreground/40 transition-colors duration-300 hover:text-muted-foreground/70"
             >
               {brand}
             </span>
           ))}
         </div>
       </div>
-    </section>
+    </motion.section>
   )
 }
 
@@ -364,11 +385,11 @@ const FEATURES = [
 
 function FeaturesSection() {
   return (
-    <section id="features" className="py-24 sm:py-32">
+    <section id="features" className="py-28 sm:py-36">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <FadeIn className="mx-auto mb-16 max-w-2xl text-center">
           <Badge variant="secondary" className="mb-4">Features</Badge>
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
             Everything you need to manage your finances
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
@@ -381,14 +402,14 @@ function FeaturesSection() {
             const Icon = feature.icon
             return (
               <StaggerItem key={feature.title}>
-                <Card className="group relative h-full overflow-hidden border-transparent transition-all duration-300 hover:border-border hover:shadow-lg">
+                <Card className="premium-card group relative h-full overflow-hidden rounded-2xl border-transparent">
                   <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 transition-opacity duration-300 group-hover:opacity-100`} />
-                  <CardContent className="relative p-6">
-                    <div className={`mb-4 flex size-11 items-center justify-center rounded-xl ${feature.iconBg}`}>
+                  <CardContent className="relative p-8">
+                    <div className={`mb-5 flex size-10 items-center justify-center rounded-xl ${feature.iconBg}`}>
                       <Icon className="size-5" />
                     </div>
                     <h3 className="mb-2 text-lg font-semibold">{feature.title}</h3>
-                    <p className="text-sm leading-relaxed text-muted-foreground">
+                    <p className="leading-relaxed text-muted-foreground">
                       {feature.description}
                     </p>
                   </CardContent>
@@ -408,11 +429,11 @@ function FeaturesSection() {
 
 function ScreenshotSection() {
   return (
-    <section className="bg-muted/30 py-24 sm:py-32">
+    <section className="bg-muted/30 py-28 sm:py-36">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <FadeIn className="mx-auto mb-16 max-w-2xl text-center">
           <Badge variant="secondary" className="mb-4">Dashboard Preview</Badge>
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
             A beautiful dashboard that makes sense of your money
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
@@ -421,17 +442,21 @@ function ScreenshotSection() {
         </FadeIn>
 
         <FadeIn delay={0.15}>
-          <div className="mx-auto max-w-5xl">
+          <motion.div
+            animate={{ y: [0, -6, 0] }}
+            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+            className="mx-auto max-w-5xl"
+          >
             {/* Browser chrome */}
-            <div className="overflow-hidden rounded-xl border bg-card shadow-2xl">
+            <div className="glass overflow-hidden rounded-2xl shadow-2xl">
               {/* Title bar */}
-              <div className="flex items-center gap-2 border-b bg-muted/50 px-4 py-3">
+              <div className="flex items-center gap-2 border-b bg-muted/50 px-5 py-3">
                 <div className="flex gap-1.5">
                   <div className="size-3 rounded-full bg-red-400" />
                   <div className="size-3 rounded-full bg-yellow-400" />
                   <div className="size-3 rounded-full bg-green-400" />
                 </div>
-                <div className="mx-auto flex h-6 w-64 items-center justify-center rounded-md bg-background text-xs text-muted-foreground">
+                <div className="mx-auto flex h-7 w-72 items-center justify-center rounded-lg bg-background text-xs text-muted-foreground shadow-sm">
                   app.finwise.com/dashboard
                 </div>
               </div>
@@ -450,7 +475,7 @@ function ScreenshotSection() {
                     {['Dashboard', 'Transactions', 'Budgets', 'Goals', 'Analytics', 'Settings'].map((item, i) => (
                       <div
                         key={item}
-                        className={`rounded-lg px-3 py-2 text-xs ${
+                        className={`rounded-lg px-3 py-2 text-xs transition-colors ${
                           i === 0 ? 'bg-primary/10 font-medium text-primary' : 'text-muted-foreground'
                         }`}
                       >
@@ -470,7 +495,7 @@ function ScreenshotSection() {
                       { label: 'Monthly Expenses', value: '$3,120', change: '-8.1%', positive: true },
                       { label: 'Savings Rate', value: '62%', change: '+5.3%', positive: true },
                     ].map((stat) => (
-                      <div key={stat.label} className="rounded-lg border bg-card p-3">
+                      <div key={stat.label} className="rounded-xl border bg-card p-3">
                         <div className="text-xs text-muted-foreground">{stat.label}</div>
                         <div className="mt-1 text-lg font-bold">{stat.value}</div>
                         <div className={`text-xs ${stat.positive ? 'text-emerald-500' : 'text-rose-500'}`}>
@@ -481,7 +506,7 @@ function ScreenshotSection() {
                   </div>
 
                   {/* Chart area */}
-                  <div className="mb-6 rounded-lg border bg-card p-4">
+                  <div className="mb-6 rounded-xl border bg-card p-4">
                     <div className="mb-3 text-sm font-semibold">Income vs Expenses</div>
                     <div className="flex h-32 items-end gap-2">
                       {[40, 65, 45, 70, 55, 80, 60, 75, 85, 65, 90, 70].map((h, i) => (
@@ -499,7 +524,7 @@ function ScreenshotSection() {
                   </div>
 
                   {/* Recent transactions */}
-                  <div className="rounded-lg border bg-card p-4">
+                  <div className="rounded-xl border bg-card p-4">
                     <div className="mb-3 text-sm font-semibold">Recent Transactions</div>
                     <div className="space-y-2.5">
                       {[
@@ -528,7 +553,7 @@ function ScreenshotSection() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </FadeIn>
       </div>
     </section>
@@ -568,33 +593,33 @@ const TESTIMONIALS = [
 
 function TestimonialsSection() {
   return (
-    <section className="py-24 sm:py-32">
+    <section className="py-28 sm:py-36">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <FadeIn className="mx-auto mb-16 max-w-2xl text-center">
           <Badge variant="secondary" className="mb-4">Testimonials</Badge>
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
             Loved by thousands of users
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Don\'t just take our word for it. Here\'s what our users have to say.
+            Don&apos;t just take our word for it. Here&apos;s what our users have to say.
           </p>
         </FadeIn>
 
         <StaggerContainer className="grid gap-6 md:grid-cols-3">
           {TESTIMONIALS.map((t) => (
             <StaggerItem key={t.name}>
-              <Card className="h-full">
+              <Card className="glass premium-card h-full rounded-2xl">
                 <CardContent className="p-6">
                   <div className="mb-4 flex gap-0.5">
                     {Array.from({ length: t.rating }).map((_, i) => (
                       <Star key={i} className="size-4 fill-amber-400 text-amber-400" />
                     ))}
                   </div>
-                  <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
+                  <p className="mb-6 text-sm leading-relaxed italic text-muted-foreground">
                     &ldquo;{t.quote}&rdquo;
                   </p>
                   <div className="flex items-center gap-3">
-                    <div className="flex size-10 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                    <div className="flex size-10 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground ring-2 ring-primary/20 ring-offset-2 ring-offset-card">
                       {t.avatar}
                     </div>
                     <div>
@@ -674,31 +699,31 @@ function PricingSection() {
   const { setRoute } = useRouterStore()
 
   return (
-    <section id="pricing" className="bg-muted/30 py-24 sm:py-32">
+    <section id="pricing" className="bg-muted/30 py-28 sm:py-36">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <FadeIn className="mx-auto mb-16 max-w-2xl text-center">
           <Badge variant="secondary" className="mb-4">Pricing</Badge>
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
             Simple, transparent pricing
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Choose the plan that\'s right for you. Upgrade or downgrade anytime.
+            Choose the plan that&apos;s right for you. Upgrade or downgrade anytime.
           </p>
         </FadeIn>
 
-        <StaggerContainer className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
+        <StaggerContainer className="mx-auto grid max-w-5xl items-center gap-6 md:grid-cols-3">
           {PRICING_TIERS.map((tier) => (
             <StaggerItem key={tier.name}>
               <Card
-                className={`relative h-full ${
+                className={`premium-card relative h-full rounded-2xl transition-shadow duration-300 ${
                   tier.highlighted
-                    ? 'border-primary shadow-lg shadow-primary/10'
+                    ? 'scale-105 border-primary shadow-xl shadow-primary/10'
                     : ''
                 }`}
               >
                 {tier.highlighted && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="px-3 py-1">Most Popular</Badge>
+                    <Badge className="px-3 py-1 shadow-sm">Most Popular</Badge>
                   </div>
                 )}
                 <CardHeader className="pb-0">
@@ -718,14 +743,16 @@ function PricingSection() {
                       </li>
                     ))}
                   </ul>
-                  <Button
-                    className="w-full"
-                    variant={tier.highlighted ? 'default' : 'outline'}
-                    size="lg"
-                    onClick={() => setRoute('/register')}
-                  >
-                    {tier.cta}
-                  </Button>
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Button
+                      className="w-full rounded-xl"
+                      variant={tier.highlighted ? 'default' : 'outline'}
+                      size="lg"
+                      onClick={() => setRoute('/register')}
+                    >
+                      {tier.cta}
+                    </Button>
+                  </motion.div>
                 </CardContent>
               </Card>
             </StaggerItem>
@@ -769,11 +796,11 @@ const FAQ_ITEMS = [
 
 function FAQSection() {
   return (
-    <section id="faq" className="py-24 sm:py-32">
+    <section id="faq" className="py-28 sm:py-36">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <FadeIn className="mx-auto mb-16 text-center">
           <Badge variant="secondary" className="mb-4">FAQ</Badge>
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
             Frequently asked questions
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
@@ -784,7 +811,7 @@ function FAQSection() {
         <FadeIn delay={0.15}>
           <Accordion type="single" collapsible className="w-full">
             {FAQ_ITEMS.map((item, i) => (
-              <AccordionItem key={i} value={`item-${i}`}>
+              <AccordionItem key={i} value={`item-${i}`} className="border-border/50">
                 <AccordionTrigger className="text-left text-sm font-medium sm:text-base">
                   {item.q}
                 </AccordionTrigger>
@@ -808,7 +835,7 @@ function CTASection() {
   const { setRoute } = useRouterStore()
 
   return (
-    <section className="relative overflow-hidden py-24 sm:py-32">
+    <section className="relative overflow-hidden py-28 sm:py-36">
       {/* Gradient background */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(120,119,198,0.1),transparent_70%)]" />
@@ -822,18 +849,22 @@ function CTASection() {
             Join thousands of users who have already transformed their financial lives with FinWise.
             Start for free, no credit card required.
           </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Button
-              size="lg"
-              className="h-12 px-8 text-base"
-              onClick={() => setRoute('/register')}
-            >
-              Get Started Free
-              <ArrowRight className="ml-1 size-4" />
-            </Button>
-            <Button variant="outline" size="lg" className="h-12 px-8 text-base">
-              Schedule a Demo
-            </Button>
+          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                size="lg"
+                className="h-12 rounded-xl px-8 text-base shadow-lg shadow-primary/20"
+                onClick={() => setRoute('/register')}
+              >
+                Get Started Free
+                <ArrowRight className="ml-1 size-4" />
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button variant="outline" size="lg" className="h-12 rounded-xl border-white/10 bg-white/5 px-8 text-base backdrop-blur-sm">
+                Schedule a Demo
+              </Button>
+            </motion.div>
           </div>
         </FadeIn>
       </div>

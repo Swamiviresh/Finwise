@@ -197,20 +197,20 @@ export function ProfilePage() {
         {/* Left column — Avatar + Account Info */}
         <div className="space-y-6 lg:col-span-1">
           {/* Avatar Card */}
-          <Card>
+          <Card className="rounded-2xl border-border/40">
             <CardContent className="flex flex-col items-center gap-4 p-6">
               <div className="relative">
-                <Avatar className="size-24">
+                <Avatar className="size-28 ring-4 ring-primary/10 ring-offset-4 ring-offset-background">
                   {profile?.avatar && (
                     <AvatarImage src={profile.avatar} alt={displayName} />
                   )}
-                  <AvatarFallback className="bg-primary/10 text-2xl font-bold text-primary">
+                  <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/5 text-3xl font-bold text-primary">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
                 <Button
                   size="icon"
-                  className="absolute -bottom-1 -right-1 size-8 rounded-full border-2 border-background shadow-sm"
+                  className="absolute -bottom-1 -right-1 size-9 rounded-full border-2 border-background shadow-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                   onClick={handleAvatarUpload}
                   disabled={avatarUploading}
                 >
@@ -233,7 +233,7 @@ export function ProfilePage() {
           </Card>
 
           {/* Account Info Card */}
-          <Card>
+          <Card className="rounded-2xl border-border/40">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Account Information</CardTitle>
             </CardHeader>
@@ -292,7 +292,7 @@ export function ProfilePage() {
             <CardContent>
               <Button
                 variant="destructive"
-                className="w-full gap-2"
+                className="w-full gap-2 rounded-xl h-11"
                 onClick={() => setDeleteDialogOpen(true)}
               >
                 <Trash2 className="size-4" />
@@ -305,7 +305,7 @@ export function ProfilePage() {
         {/* Right column — Profile Form */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Personal Information</CardTitle>
+            <CardTitle className="flex items-center gap-2">Personal Information</CardTitle>
             <CardDescription>
               Update your personal details and preferences
             </CardDescription>
@@ -507,7 +507,7 @@ export function ProfilePage() {
                   <Button
                     type="submit"
                     disabled={updateProfile.isPending}
-                    className="gap-2"
+                    className="gap-2 rounded-xl h-11 shadow-sm"
                   >
                     {updateProfile.isPending ? (
                       <>

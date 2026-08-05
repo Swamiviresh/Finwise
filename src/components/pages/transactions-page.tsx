@@ -142,11 +142,11 @@ const typeBadgeClass: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 const rowVariants = {
-  hidden: { opacity: 0, y: 8 },
+  hidden: { opacity: 0, y: 12 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.03, duration: 0.3, ease: 'easeOut' },
+    transition: { delay: i * 0.05, duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] },
   }),
   exit: { opacity: 0, y: -8, transition: { duration: 0.2 } },
 }
@@ -471,7 +471,7 @@ export function TransactionsPage() {
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" disabled={transactions.length === 0}>
+                <Button variant="outline" size="sm" className="rounded-xl h-10" disabled={transactions.length === 0}>
                   <Download className="size-4" />
                   <span className="hidden sm:inline">Export</span>
                 </Button>
@@ -488,7 +488,7 @@ export function TransactionsPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button size="sm" onClick={openCreateForm}>
+            <Button size="sm" className="rounded-xl h-10" onClick={openCreateForm}>
               <Plus className="size-4" />
               <span className="hidden sm:inline">Add Transaction</span>
             </Button>
@@ -501,7 +501,7 @@ export function TransactionsPage() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="rounded-lg border bg-card p-4"
+        className="rounded-2xl border border-border/40 bg-card/80 backdrop-blur-sm p-5 shadow-sm"
       >
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-2">
           {/* Search */}
@@ -650,8 +650,8 @@ export function TransactionsPage() {
 
       {/* Content */}
       {isLoading ? (
-        <Card>
-          <CardContent className="p-4">
+        <Card className="rounded-2xl border-border/40">
+          <CardContent className="p-6">
             <div className="hidden md:block">
               {Array.from({ length: 8 }).map((_, i) => (
                 <TransactionSkeleton key={i} />
@@ -663,7 +663,7 @@ export function TransactionsPage() {
           </CardContent>
         </Card>
       ) : isError ? (
-        <Card>
+        <Card className="rounded-2xl border-border/40">
           <CardContent className="flex min-h-[300px] items-center justify-center p-8">
             <p className="text-sm text-muted-foreground">
               Failed to load transactions. Please try again.
@@ -695,17 +695,17 @@ export function TransactionsPage() {
             transition={{ duration: 0.3 }}
             className="hidden md:block"
           >
-            <Card>
+            <Card className="rounded-2xl border-border/40 overflow-hidden">
               <Table>
                 <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="pl-4">Description</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Payment</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="pr-4 text-right">Actions</TableHead>
+                  <TableRow className="hover:bg-transparent border-border/40">
+                    <TableHead className="pl-5 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Description</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Category</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Type</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Payment</TableHead>
+                    <TableHead className="text-right text-xs uppercase tracking-wider font-semibold text-muted-foreground">Amount</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Date</TableHead>
+                    <TableHead className="pr-5 text-right text-xs uppercase tracking-wider font-semibold text-muted-foreground">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -719,11 +719,11 @@ export function TransactionsPage() {
                         animate="visible"
                         exit="exit"
                         className={
-                          'group border-b transition-colors hover:bg-muted/50' +
-                          (i % 2 === 1 ? ' bg-muted/30' : '')
+                          'group border-b border-border/30 transition-all duration-200 hover:bg-muted/30' +
+                          (i % 2 === 1 ? ' bg-muted/20' : '')
                         }
                       >
-                        <TableCell className="max-w-[200px] truncate pl-4 font-medium">
+                        <TableCell className="max-w-[200px] truncate pl-5 font-medium">
                           {t.description}
                         </TableCell>
                         <TableCell>
@@ -755,7 +755,7 @@ export function TransactionsPage() {
                         </TableCell>
                         <TableCell
                           className={
-                            'text-right font-semibold tabular-nums ' +
+                            'text-right font-semibold font-mono tabular-nums ' +
                             (t.type === 'income'
                               ? 'text-emerald-600 dark:text-emerald-400'
                               : t.type === 'expense'
@@ -766,10 +766,10 @@ export function TransactionsPage() {
                           {t.type === 'income' ? '+' : t.type === 'expense' ? '-' : ''}
                           {formatCurrency(t.amount, currency)}
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="text-muted-foreground text-sm">
                           {formatDate(t.date)}
                         </TableCell>
-                        <TableCell className="pr-4">
+                        <TableCell className="pr-5">
                           <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                             <Button
                               variant="ghost"
@@ -809,8 +809,8 @@ export function TransactionsPage() {
                   animate="visible"
                   exit="exit"
                 >
-                  <Card className="overflow-hidden">
-                    <CardContent className="p-4">
+                  <Card className="rounded-xl overflow-hidden border-border/40 hover:shadow-md transition-shadow duration-200">
+                    <CardContent className="p-5">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
@@ -944,7 +944,7 @@ export function TransactionsPage() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="size-8"
+                  className="size-8 rounded-lg"
                   disabled={currentPage <= 1}
                   onClick={() => updateFilter({ page: 1 })}
                 >
@@ -953,7 +953,7 @@ export function TransactionsPage() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="size-8"
+                  className="size-8 rounded-lg"
                   disabled={currentPage <= 1}
                   onClick={() =>
                     updateFilter({ page: currentPage - 1 })
@@ -975,7 +975,7 @@ export function TransactionsPage() {
                       key={page}
                       variant={currentPage === page ? 'default' : 'outline'}
                       size="icon"
-                      className="size-8"
+                      className="size-8 rounded-lg"
                       onClick={() => updateFilter({ page })}
                     >
                       {page}
@@ -986,7 +986,7 @@ export function TransactionsPage() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="size-8"
+                  className="size-8 rounded-lg"
                   disabled={currentPage >= totalPages}
                   onClick={() =>
                     updateFilter({ page: currentPage + 1 })
@@ -997,7 +997,7 @@ export function TransactionsPage() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="size-8"
+                  className="size-8 rounded-lg"
                   disabled={currentPage >= totalPages}
                   onClick={() => updateFilter({ page: totalPages })}
                 >
@@ -1012,7 +1012,7 @@ export function TransactionsPage() {
       {/* ========== Add / Edit Transaction Dialog (Desktop) ========== */}
       {!isMobile && (
         <Dialog open={formOpen} onOpenChange={setFormOpen}>
-          <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto rounded-2xl border-border/40">
             <DialogHeader>
               <DialogTitle>
                 {editingTransaction
@@ -1039,6 +1039,7 @@ export function TransactionsPage() {
                 variant="outline"
                 onClick={() => setFormOpen(false)}
                 disabled={isSubmitting}
+                className="rounded-xl h-10"
               >
                 Cancel
               </Button>
@@ -1046,6 +1047,7 @@ export function TransactionsPage() {
                 type="button"
                 onClick={form.handleSubmit(onSubmit)}
                 disabled={isSubmitting}
+                className="rounded-xl h-10"
               >
                 {isSubmitting && <Loader2 className="size-4 animate-spin" />}
                 {editingTransaction ? 'Save Changes' : 'Create Transaction'}
@@ -1058,7 +1060,7 @@ export function TransactionsPage() {
       {/* ========== Add / Edit Transaction Sheet (Mobile) ========== */}
       {isMobile && (
         <Sheet open={formOpen} onOpenChange={setFormOpen}>
-          <SheetContent side="bottom" className="max-h-[90vh] rounded-t-xl">
+          <SheetContent side="bottom" className="max-h-[90vh] rounded-t-2xl">
             <SheetHeader>
               <SheetTitle>
                 {editingTransaction
@@ -1086,14 +1088,14 @@ export function TransactionsPage() {
                 variant="outline"
                 onClick={() => setFormOpen(false)}
                 disabled={isSubmitting}
-                className="flex-1"
+                className="flex-1 rounded-xl h-10"
               >
                 Cancel
               </Button>
               <Button
                 onClick={form.handleSubmit(onSubmit)}
                 disabled={isSubmitting}
-                className="flex-1"
+                className="flex-1 rounded-xl h-10"
               >
                 {isSubmitting && <Loader2 className="size-4 animate-spin" />}
                 {editingTransaction ? 'Save Changes' : 'Create'}
@@ -1154,7 +1156,7 @@ function TransactionForm({
             <FormItem>
               <FormLabel>Type</FormLabel>
               <FormControl>
-                <div className="flex gap-2 rounded-lg border p-1">
+                <div className="flex gap-2 rounded-xl border p-1">
                   {(['income', 'expense'] as const).map((type) => (
                     <button
                       key={type}
@@ -1163,7 +1165,7 @@ function TransactionForm({
                         field.onChange(type)
                         onTypeChange(type)
                       }}
-                      className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                      className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
                         field.value === type
                           ? type === 'income'
                             ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'

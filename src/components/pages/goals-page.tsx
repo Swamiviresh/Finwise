@@ -203,7 +203,7 @@ const cardVariants = {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { delay: i * 0.06, duration: 0.4, ease: 'easeOut' },
+    transition: { delay: i * 0.08, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] },
   }),
 }
 
@@ -493,10 +493,10 @@ function GoalFormContent({
         />
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
+          <Button type="button" variant="outline" onClick={onClose} className="rounded-xl h-10">
             Cancel
           </Button>
-          <Button type="submit" disabled={isPending}>
+          <Button type="submit" disabled={isPending} className="rounded-xl h-10">
             {isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
             {isEditing ? 'Update Goal' : 'Create Goal'}
           </Button>
@@ -722,7 +722,7 @@ export function GoalsPage() {
           title="Financial Goals"
           description="Set and track your savings goals"
           actions={
-            <Button onClick={openCreate}>
+            <Button className="rounded-xl h-11" onClick={openCreate}>
               <Plus className="mr-2 size-4" />
               Create Goal
             </Button>
@@ -756,7 +756,7 @@ export function GoalsPage() {
         title="Financial Goals"
         description="Set and track your savings goals"
         actions={
-          <Button onClick={openCreate}>
+          <Button className="rounded-xl h-11" onClick={openCreate}>
             <Plus className="mr-2 size-4" />
             Create Goal
           </Button>
@@ -770,8 +770,8 @@ export function GoalsPage() {
         transition={{ duration: 0.3 }}
         className="grid gap-4 sm:grid-cols-3"
       >
-        <Card>
-          <CardContent className="p-5">
+        <Card className="rounded-2xl border-border/40">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="space-y-1.5">
                 <p className="text-sm font-medium text-muted-foreground">
@@ -781,15 +781,15 @@ export function GoalsPage() {
                   {formatCurrency(totalSaved, currency)}
                 </p>
               </div>
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10">
                 <PiggyBank className="size-5 text-emerald-600 dark:text-emerald-400" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-5">
+        <Card className="rounded-2xl border-border/40">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="space-y-1.5">
                 <p className="text-sm font-medium text-muted-foreground">
@@ -806,8 +806,8 @@ export function GoalsPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-5">
+        <Card className="rounded-2xl border-border/40">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="space-y-1.5">
                 <p className="text-sm font-medium text-muted-foreground">
@@ -867,7 +867,7 @@ export function GoalsPage() {
                     layout
                   >
                     <Card
-                      className="group h-full transition-all hover:shadow-lg hover:-translate-y-0.5"
+                      className="group h-full transition-all duration-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
                     >
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -902,8 +902,8 @@ export function GoalsPage() {
                         <div className="flex items-center gap-4">
                           <CircularProgress
                             value={pct}
-                            size={72}
-                            strokeWidth={5}
+                            size={84}
+                            strokeWidth={6}
                             color={goal.color || '#10b981'}
                           />
                           <div className="flex-1 space-y-1">
@@ -934,7 +934,7 @@ export function GoalsPage() {
 
                         {/* Progress Bar */}
                         <div className="space-y-1.5">
-                          <div className="h-2 w-full rounded-full bg-muted">
+                          <div className="h-2 w-full rounded-full overflow-hidden bg-muted">
                             <motion.div
                               className="h-full rounded-full"
                               style={{ backgroundColor: goal.color || '#10b981' }}
@@ -1033,7 +1033,7 @@ export function GoalsPage() {
                 animate="visible"
                 layout
               >
-                <Card className="h-full opacity-75 transition-all hover:opacity-100">
+                <Card className="h-full rounded-2xl border-border/40 opacity-60 backdrop-blur-sm transition-all duration-300 hover:opacity-90 hover:shadow-md">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <CircleCheckBig className="size-5 text-emerald-500" />
@@ -1163,7 +1163,7 @@ export function GoalsPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-8"
+                    className="h-9 rounded-xl"
                     disabled={isAddingFunds}
                     onClick={() => handleQuickAdd(amt)}
                   >
@@ -1206,10 +1206,11 @@ export function GoalsPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setAddFundsTarget(null)}
+                    className="rounded-xl h-10"
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={isAddingFunds}>
+                  <Button type="submit" disabled={isAddingFunds} className="rounded-xl h-10">
                     {isAddingFunds && (
                       <Loader2 className="mr-2 size-4 animate-spin" />
                     )}

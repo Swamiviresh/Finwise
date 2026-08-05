@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -40,6 +40,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 
 type NavItem = {
   label: string
@@ -82,10 +83,8 @@ export function AppSidebar() {
     clearAuth()
   }
 
-  const renderNavItems = (
-    items: NavItem[],
-  ) => {
-    return items.map((item) => {
+  const renderNavItems = (items: NavItem[]) => {
+    return items.map((item, index) => {
       const isActive = route === item.route
       const Icon = item.icon
 
@@ -95,20 +94,50 @@ export function AppSidebar() {
             isActive={isActive}
             onClick={() => handleNavClick(item.route)}
             tooltip={item.label}
+            className={cn(
+              'relative group transition-all duration-150 ease-out',
+              'hover:scale-[1.02]',
+              isActive && 'font-medium',
+            )}
           >
+            {isActive && (
+              <motion.div
+                layoutId="sidebar-active-indicator"
+                className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2px] rounded-full bg-primary"
+                transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+              />
+            )}
             <motion.div
-              whileHover={{ scale: 1.1 }}
+              whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.95 }}
               className="flex items-center gap-3"
+              initial={false}
             >
-              <Icon className="size-4 shrink-0" />
+              <Icon
+                className={cn(
+                  'size-[18px] shrink-0 transition-colors duration-150',
+                  isActive
+                    ? 'text-primary'
+                    : 'text-muted-foreground group-hover:text-foreground',
+                )}
+              />
               <span className="truncate">{item.label}</span>
             </motion.div>
           </SidebarMenuButton>
           {item.badge && item.badge > 0 && (
-            <div className="absolute right-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{
+                type: 'spring',
+                stiffness: 400,
+                damping: 20,
+                delay: index * 0.05,
+              }}
+              className="absolute right-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/90 px-1.5 text-[10px] font-bold text-primary-foreground shadow-sm"
+            >
               {item.badge > 99 ? '99+' : item.badge}
-            </div>
+            </motion.div>
           )}
         </SidebarMenuItem>
       )
@@ -126,32 +155,36 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary">
-            <Wallet className="size-4 text-primary-foreground" />
+      <SidebarHeader className="p-4 pb-3">
+        <div className="flex items-center gap-3 rounded-xl bg-gradient-to-br from-primary/8 via-primary/4 to-transparent p-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary shadow-md shadow-primary/20">
+            <Wallet className="size-[18px] text-primary-foreground" />
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-base font-bold tracking-tight">FinWise</span>
-            <span className="text-[11px] text-muted-foreground">
+            <span className="text-[15px] font-bold tracking-tight">FinWise</span>
+            <span className="text-[11px] font-medium tracking-wide text-muted-foreground">
               Smart Finance
             </span>
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarSeparator />
+      <SidebarSeparator className="opacity-50" />
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            Menu
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>{renderNavItems(mainNavItems)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Tools</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            Tools
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>{renderNavItems(secondaryNavItems)}</SidebarMenu>
           </SidebarGroupContent>
@@ -159,7 +192,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <SidebarSeparator />
+        <SidebarSeparator className="opacity-50" />
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>{renderNavItems(bottomNavItems)}</SidebarMenu>
@@ -168,14 +201,14 @@ export function AppSidebar() {
               <SidebarMenuButton
                 onClick={handleLogout}
                 tooltip="Logout"
-                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                className="text-destructive/70 hover:bg-destructive/8 hover:text-destructive transition-colors duration-150"
               >
                 <motion.div
-                  whileHover={{ scale: 1.1 }}
+                  whileHover={{ scale: 1.08 }}
                   whileTap={{ scale: 0.95 }}
                   className="flex items-center gap-3"
                 >
-                  <LogOut className="size-4 shrink-0" />
+                  <LogOut className="size-[18px] shrink-0" />
                   <span className="truncate">Logout</span>
                 </motion.div>
               </SidebarMenuButton>
@@ -183,24 +216,35 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <div className="group-data-[collapsible=icon]:hidden p-3">
-          <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-2.5">
-            <Avatar className="size-8">
-              <AvatarImage src={user?.avatar ?? undefined} alt={user?.name ?? 'User'} />
-              <AvatarFallback className="text-xs font-semibold">
-                {userInitials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-1 flex-col overflow-hidden">
-              <span className="truncate text-sm font-medium">
-                {user?.name ?? 'User'}
-              </span>
-              <span className="truncate text-[11px] text-muted-foreground">
-                {user?.email ?? ''}
-              </span>
+        <AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="group-data-[collapsible=icon]:hidden p-3 pt-1"
+          >
+            <div className="flex items-center gap-3 rounded-2xl border border-border/40 bg-background/40 p-3 shadow-sm backdrop-blur-xl">
+              <Avatar className="size-9 ring-2 ring-primary/15 ring-offset-1 ring-offset-background">
+                <AvatarImage
+                  src={user?.avatar ?? undefined}
+                  alt={user?.name ?? 'User'}
+                />
+                <AvatarFallback className="text-xs font-semibold bg-gradient-to-br from-primary/20 to-primary/5">
+                  {userInitials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-1 flex-col overflow-hidden">
+                <span className="truncate text-[13px] font-semibold">
+                  {user?.name ?? 'User'}
+                </span>
+                <span className="truncate text-[11px] text-muted-foreground">
+                  {user?.email ?? ''}
+                </span>
+              </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </AnimatePresence>
       </SidebarFooter>
 
       <SidebarRail />

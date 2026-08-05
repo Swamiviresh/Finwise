@@ -1,0 +1,1239 @@
+     1→     1→'use client'
+     2→     2→
+     3→     3→import * as React from 'react'
+     4→     4→import { useForm, Controller } from 'react-hook-form'
+     5→     5→import { zodResolver } from '@hookform/resolvers/zod'
+     6→     6→import { z } from 'zod'
+     7→     7→import { useQuery } from '@tanstack/react-query'
+     8→     8→import { motion, AnimatePresence } from 'framer-motion'
+     9→     9→import {
+    10→    10→  format,
+    11→    11→  parseISO,
+    12→    12→  differenceInDays,
+    13→    13→  differenceInMonths,
+    14→    14→  differenceInWeeks,
+    15→    15→  addDays,
+    16→    16→  addMonths,
+    17→    17→  addWeeks,
+    18→    18→} from 'date-fns'
+    19→    19→import {
+    20→    20→  Plus,
+    21→    21→  Pencil,
+    22→    22→  Trash2,
+    23→    23→  Target,
+    24→    24→  PiggyBank,
+    25→    25→  Trophy,
+    26→    26→  CalendarDays,
+    27→    27→  Loader2,
+    28→    28→  CircleCheckBig,
+    29→    29→  Sparkles,
+    30→    30→  TrendingUp,
+    31→    31→  Clock,
+    32→    32→} from 'lucide-react'
+    33→    33→
+    34→    34→import { useRouterStore } from '@/store/router-store'
+    35→    35→import {
+    36→    36→  useGoals,
+    37→    37→  useCreateGoal,
+    38→    38→  useUpdateGoal,
+    39→    39→  useDeleteGoal,
+    40→    40→} from '@/hooks/use-goals'
+    41→    41→import { PageHeader } from '@/components/shared/page-header'
+    42→    42→import { EmptyState } from '@/components/shared/empty-state'
+    43→    43→import { CardSkeleton } from '@/components/shared/loading-skeleton'
+    44→    44→import { ConfirmDialog } from '@/components/shared/confirm-dialog'
+    45→    45→import { formatCurrency, formatDate, formatPercentage } from '@/lib/format'
+    46→    46→import { APP_CONFIG } from '@/lib/constants'
+    47→    47→import type { Goal, GoalCreate, GoalUpdate, ApiResponse } from '@/types'
+    48→    48→
+    49→    49→import { Button } from '@/components/ui/button'
+    50→    50→import { Input } from '@/components/ui/input'
+    51→    51→import { Badge } from '@/components/ui/badge'
+    52→    52→import { Separator } from '@/components/ui/separator'
+    53→    53→import { Textarea } from '@/components/ui/textarea'
+    54→    54→import {
+    55→    55→  Card,
+    56→    56→  CardContent,
+    57→    57→  CardHeader,
+    58→    58→  CardTitle,
+    59→    59→  CardAction,
+    60→    60→  CardDescription,
+    61→    61→} from '@/components/ui/card'
+    62→    62→import {
+    63→    63→  Dialog,
+    64→    64→  DialogContent,
+    65→    65→  DialogDescription,
+    66→    66→  DialogFooter,
+    67→    67→  DialogHeader,
+    68→    68→  DialogTitle,
+    69→    69→} from '@/components/ui/dialog'
+    70→    70→import {
+    71→    71→  Sheet,
+    72→    72→  SheetContent,
+    73→    73→  SheetDescription,
+    74→    74→  SheetFooter,
+    75→    75→  SheetHeader,
+    76→    76→  SheetTitle,
+    77→    77→} from '@/components/ui/sheet'
+    78→    78→import {
+    79→    79→  Select,
+    80→    80→  SelectContent,
+    81→    81→  SelectItem,
+    82→    82→  SelectTrigger,
+    83→    83→  SelectValue,
+    84→    84→} from '@/components/ui/select'
+    85→    85→import {
+    86→    86→  Form,
+    87→    87→  FormControl,
+    88→    88→  FormField,
+    89→    89→  FormItem,
+    90→    90→  FormLabel,
+    91→    91→  FormMessage,
+    92→    92→  FormDescription,
+    93→    93→} from '@/components/ui/form'
+    94→    94→import {
+    95→    95→  Popover,
+    96→    96→  PopoverContent,
+    97→    97→  PopoverTrigger,
+    98→    98→} from '@/components/ui/popover'
+    99→    99→import { Calendar } from '@/components/ui/calendar'
+   100→   100→import { useMediaQuery } from '@reactuses/core'
+   101→   101→
+   102→   102→// ---------------------------------------------------------------------------
+   103→   103→// Constants
+   104→   104→// ---------------------------------------------------------------------------
+   105→   105→
+   106→   106→const GOAL_EMOJIS = [
+   107→   107→  '🎯', '🏠', '🚗', '✈️', '💍', '🎓', '💻', '📱', '🎮', '🏖️',
+   108→   108→  '🏦', '💰', '📊', '🛡️', '🎁', '🎵', '🏋️', '🏥', '👶', '🐕',
+   109→   109→  '🚀', '🌍', '📱', '🎨', '📚', '🧳', '🏔️', '⛵', '🎸', '🍕',
+   110→   110→] as const
+   111→   111→
+   112→   112→const GOAL_COLORS = [
+   113→   113→  { label: 'Emerald', value: '#10b981' },
+   114→   114→  { label: 'Teal', value: '#14b8a6' },
+   115→   115→  { label: 'Cyan', value: '#06b6d4' },
+   116→   116→  { label: 'Rose', value: '#f43f5e' },
+   117→   117→  { label: 'Pink', value: '#ec4899' },
+   118→   118→  { label: 'Purple', value: '#a855f7' },
+   119→   119→  { label: 'Violet', value: '#8b5cf6' },
+   120→   120→  { label: 'Orange', value: '#f97316' },
+   121→   121→  { label: 'Amber', value: '#f59e0b' },
+   122→   122→  { label: 'Lime', value: '#84cc16' },
+   123→   123→] as const
+   124→   124→
+   125→   125→const QUICK_ADD_AMOUNTS = [10, 25, 50, 100, 250, 500, 1000] as const
+   126→   126→
+   127→   127→// ---------------------------------------------------------------------------
+   128→   128→// Form schemas
+   129→   129→// ---------------------------------------------------------------------------
+   130→   130→
+   131→   131→const goalFormSchema = z.object({
+   132→   132→  name: z.string().min(1, 'Name is required').max(100),
+   133→   133→  targetAmount: z.coerce.number().min(1, 'Target must be greater than 0'),
+   134→   134→  currentAmount: z.coerce.number().min(0).default(0),
+   135→   135→  deadline: z.string().optional(),
+   136→   136→  description: z.string().optional(),
+   137→   137→  icon: z.string().default('🎯'),
+   138→   138→  color: z.string().default('#10b981'),
+   139→   139→})
+   140→   140→
+   141→   141→type GoalFormValues = z.infer<typeof goalFormSchema>
+   142→   142→
+   143→   143→const addFundsSchema = z.object({
+   144→   144→  amount: z.coerce.number().min(0.01, 'Amount must be greater than 0'),
+   145→   145→})
+   146→   146→
+   147→   147→type AddFundsValues = z.infer<typeof addFundsSchema>
+   148→   148→
+   149→   149→// ---------------------------------------------------------------------------
+   150→   150→// Helpers
+   151→   151→// ---------------------------------------------------------------------------
+   152→   152→
+   153→   153→function getDeadlineCountdown(deadline: Date | string | null): string {
+   154→   154→  if (!deadline) return ''
+   155→   155→  const d = typeof deadline === 'string' ? parseISO(deadline) : deadline
+   156→   156→  const now = new Date()
+   157→   157→  const days = differenceInDays(d, now)
+   158→   158→
+   159→   159→  if (days < 0) return `${Math.abs(days)} days overdue`
+   160→   160→  if (days === 0) return 'Due today'
+   161→   161→  if (days === 1) return '1 day left'
+   162→   162→  if (days <= 7) return `${days} days left`
+   163→   163→  if (days <= 30) {
+   164→   164→    const weeks = Math.floor(days / 7)
+   165→   165→    const remDays = days % 7
+   166→   166→    return remDays > 0
+   167→   167→      ? `${weeks}w ${remDays}d left`
+   168→   168→      : `${weeks} week${weeks > 1 ? 's' : ''} left`
+   169→   169→  }
+   170→   170→  const months = differenceInMonths(d, now)
+   171→   171→  if (months > 0) {
+   172→   172→    const remDays = differenceInDays(d, addMonths(now, months))
+   173→   173→    return remDays > 0
+   174→   174→      ? `${months}mo ${remDays}d left`
+   175→   175→      : `${months} month${months > 1 ? 's' : ''} left`
+   176→   176→  }
+   177→   177→  return `${days} days left`
+   178→   178→}
+   179→   179→
+   180→   180→function estimateCompletionDate(
+   181→   181→  currentAmount: number,
+   182→   182→  targetAmount: number,
+   183→   183→  createdAt: Date | string,
+   184→   184→): string | null {
+   185→   185→  if (currentAmount <= 0 || targetAmount <= 0) return null
+   186→   186→  if (currentAmount >= targetAmount) return null
+   187→   187→
+   188→   188→  const created = typeof createdAt === 'string' ? parseISO(createdAt) : createdAt
+   189→   189→  const now = new Date()
+   190→   190→  const daysElapsed = Math.max(differenceInDays(now, created), 1)
+   191→   191→  const dailyRate = currentAmount / daysElapsed
+   192→   192→
+   193→   193→  if (dailyRate <= 0) return null
+   194→   194→
+   195→   195→  const remaining = targetAmount - currentAmount
+   196→   196→  const daysNeeded = Math.ceil(remaining / dailyRate)
+   197→   197→  return format(addDays(now, daysNeeded), 'MMM d, yyyy')
+   198→   198→}
+   199→   199→
+   200→   200→const cardVariants = {
+   201→   201→  hidden: { opacity: 0, y: 16, scale: 0.97 },
+   202→   202→  visible: (i: number) => ({
+   203→   203→    opacity: 1,
+   204→   204→    y: 0,
+   205→   205→    scale: 1,
+   206→   206→    transition: { delay: i * 0.06, duration: 0.4, ease: 'easeOut' },
+   207→   207→  }),
+   208→   208→}
+   209→   209→
+   210→   210→// ---------------------------------------------------------------------------
+   211→   211→// Circular Progress
+   212→   212→// ---------------------------------------------------------------------------
+   213→   213→
+   214→   214→function CircularProgress({
+   215→   215→  value,
+   216→   216→  size = 80,
+   217→   217→  strokeWidth = 6,
+   218→   218→  color = '#10b981',
+   219→   219→}: {
+   220→   220→  value: number
+   221→   221→  size?: number
+   222→   222→  strokeWidth?: number
+   223→   223→  color?: string
+   224→   224→}) {
+   225→   225→  const radius = (size - strokeWidth) / 2
+   226→   226→  const circumference = 2 * Math.PI * radius
+   227→   227→  const clampedValue = Math.min(Math.max(value, 0), 100)
+   228→   228→  const offset = circumference - (clampedValue / 100) * circumference
+   229→   229→
+   230→   230→  return (
+   231→   231→    <div className="relative" style={{ width: size, height: size }}>
+   232→   232→      <svg
+   233→   233→        width={size}
+   234→   234→        height={size}
+   235→   235→        className="-rotate-90"
+   236→   236→        aria-label={`${Math.round(clampedValue)}% complete`}
+   237→   237→      >
+   238→   238→        <circle
+   239→   239→          cx={size / 2}
+   240→   240→          cy={size / 2}
+   241→   241→          r={radius}
+   242→   242→          fill="none"
+   243→   243→          stroke="currentColor"
+   244→   244→          strokeWidth={strokeWidth}
+   245→   245→          className="text-muted/30"
+   246→   246→        />
+   247→   247→        <motion.circle
+   248→   248→          cx={size / 2}
+   249→   249→          cy={size / 2}
+   250→   250→          r={radius}
+   251→   251→          fill="none"
+   252→   252→          stroke={color}
+   253→   253→          strokeWidth={strokeWidth}
+   254→   254→          strokeLinecap="round"
+   255→   255→          strokeDasharray={circumference}
+   256→   256→          initial={{ strokeDashoffset: circumference }}
+   257→   257→          animate={{ strokeDashoffset: offset }}
+   258→   258→          transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
+   259→   259→        />
+   260→   260→      </svg>
+   261→   261→      <div className="absolute inset-0 flex items-center justify-center">
+   262→   262→        <span className="text-sm font-bold">
+   263→   263→          {Math.round(clampedValue)}%
+   264→   264→        </span>
+   265→   265→      </div>
+   266→   266→    </div>
+   267→   267→  )
+   268→   268→}
+   269→   269→
+   270→   270→// ---------------------------------------------------------------------------
+   271→   271→// Color Swatch
+   272→   272→// ---------------------------------------------------------------------------
+   273→   273→
+   274→   274→function ColorSwatch({
+   275→   275→  color,
+   276→   276→  selected,
+   277→   277→  onClick,
+   278→   278→}: {
+   279→   279→  color: string
+   280→   280→  selected: boolean
+   281→   281→  onClick: () => void
+   282→   282→}) {
+   283→   283→  return (
+   284→   284→    <button
+   285→   285→      type="button"
+   286→   286→      onClick={onClick}
+   287→   287→      className={
+   288→   288→        'h-7 w-7 rounded-full transition-all ' +
+   289→   289→        (selected
+   290→   290→          ? 'ring-2 ring-offset-2 ring-offset-background'
+   291→   291→          : 'hover:scale-110')
+   292→   292→      }
+   293→   293→      style={{
+   294→   294→        backgroundColor: color,
+   295→   295→        ...(selected ? { ringColor: color } : {}),
+   296→   296→      }}
+   297→   297→      aria-label={`Select color ${color}`}
+   298→   298→    />
+   299→   299→  )
+   300→   300→}
+   301→   301→
+   302→   302→// ---------------------------------------------------------------------------
+   303→   303→// Goal Form Content
+   304→   304→// ---------------------------------------------------------------------------
+   305→   305→
+   306→   306→interface GoalFormContentProps {
+   307→   307→  form: ReturnType<typeof useForm<GoalFormValues>>
+   308→   308→  isEditing: boolean
+   309→   309→  isPending: boolean
+   310→   310→  onClose: () => void
+   311→   311→  onSubmit: (values: GoalFormValues) => void
+   312→   312→}
+   313→   313→
+   314→   314→function GoalFormContent({
+   315→   315→  form,
+   316→   316→  isEditing,
+   317→   317→  isPending,
+   318→   318→  onClose,
+   319→   319→  onSubmit,
+   320→   320→}: GoalFormContentProps) {
+   321→   321→  return (
+   322→   322→    <Form {...form}>
+   323→   323→      <form
+   324→   324→        onSubmit={form.handleSubmit(onSubmit)}
+   325→   325→        className="flex flex-col gap-5"
+   326→   326→      >
+   327→   327→        <FormField
+   328→   328→          control={form.control}
+   329→   329→          name="name"
+   330→   330→          render={({ field }) => (
+   331→   331→            <FormItem>
+   332→   332→              <FormLabel>Goal Name</FormLabel>
+   333→   333→              <FormControl>
+   334→   334→                <Input placeholder="e.g. Emergency Fund" {...field} />
+   335→   335→              </FormControl>
+   336→   336→              <FormMessage />
+   337→   337→            </FormItem>
+   338→   338→          )}
+   339→   339→        />
+   340→   340→
+   341→   341→        <FormField
+   342→   342→          control={form.control}
+   343→   343→          name="description"
+   344→   344→          render={({ field }) => (
+   345→   345→            <FormItem>
+   346→   346→              <FormLabel>Description (optional)</FormLabel>
+   347→   347→              <FormControl>
+   348→   348→                <Textarea
+   349→   349→                  placeholder="What are you saving for?"
+   350→   350→                  className="resize-none"
+   351→   351→                  rows={3}
+   352→   352→                  {...field}
+   353→   353→                />
+   354→   354→              </FormControl>
+   355→   355→              <FormMessage />
+   356→   356→            </FormItem>
+   357→   357→          )}
+   358→   358→        />
+   359→   359→
+   360→   360→        <div className="grid gap-4 sm:grid-cols-2">
+   361→   361→          <FormField
+   362→   362→            control={form.control}
+   363→   363→            name="targetAmount"
+   364→   364→            render={({ field }) => (
+   365→   365→              <FormItem>
+   366→   366→                <FormLabel>Target Amount</FormLabel>
+   367→   367→                <FormControl>
+   368→   368→                  <Input
+   369→   369→                    type="number"
+   370→   370→                    step="0.01"
+   371→   371→                    min="0"
+   372→   372→                    placeholder="0.00"
+   373→   373→                    {...field}
+   374→   374→                  />
+   375→   375→                </FormControl>
+   376→   376→                <FormMessage />
+   377→   377→              </FormItem>
+   378→   378→            )}
+   379→   379→          />
+   380→   380→
+   381→   381→          {isEditing && (
+   382→   382→            <FormField
+   383→   383→              control={form.control}
+   384→   384→              name="currentAmount"
+   385→   385→              render={({ field }) => (
+   386→   386→                <FormItem>
+   387→   387→                  <FormLabel>Current Amount</FormLabel>
+   388→   388→                  <FormControl>
+   389→   389→                    <Input
+   390→   390→                      type="number"
+   391→   391→                      step="0.01"
+   392→   392→                      min="0"
+   393→   393→                      placeholder="0.00"
+   394→   394→                      {...field}
+   395→   395→                    />
+   396→   396→                  </FormControl>
+   397→   397→                  <FormMessage />
+   398→   398→                </FormItem>
+   399→   399→              )}
+   400→   400→            />
+   401→   401→          )}
+   402→   402→        </div>
+   403→   403→
+   404→   404→        <FormField
+   405→   405→          control={form.control}
+   406→   406→          name="deadline"
+   407→   407→          render={({ field }) => (
+   408→   408→            <FormItem>
+   409→   409→              <FormLabel>Deadline (optional)</FormLabel>
+   410→   410→              <Popover>
+   411→   411→                <PopoverTrigger asChild>
+   412→   412→                  <FormControl>
+   413→   413→                    <Button
+   414→   414→                      type="button"
+   415→   415→                      variant="outline"
+   416→   416→                      className="w-full justify-start text-left font-normal"
+   417→   417→                    >
+   418→   418→                      <CalendarDays className="mr-2 size-4" />
+   419→   419→                      {field.value
+   420→   420→                        ? format(parseISO(field.value), 'MMM d, yyyy')
+   421→   421→                        : 'Pick a date'}
+   422→   422→                    </Button>
+   423→   423→                  </FormControl>
+   424→   424→                </PopoverTrigger>
+   425→   425→                <PopoverContent className="w-auto p-0" align="start">
+   426→   426→                  <Calendar
+   427→   427→                    mode="single"
+   428→   428→                    selected={
+   429→   429→                      field.value ? parseISO(field.value) : undefined
+   430→   430→                    }
+   431→   431→                    onSelect={(date) =>
+   432→   432→                      field.onChange(
+   433→   433→                        date ? format(date, 'yyyy-MM-dd') : '',
+   434→   434→                      )
+   435→   435→                    }
+   436→   436→                  />
+   437→   437→                </PopoverContent>
+   438→   438→              </Popover>
+   439→   439→              <FormMessage />
+   440→   440→            </FormItem>
+   441→   441→          )}
+   442→   442→        />
+   443→   443→
+   444→   444→        {/* Icon Picker */}
+   445→   445→        <FormField
+   446→   446→          control={form.control}
+   447→   447→          name="icon"
+   448→   448→          render={({ field }) => (
+   449→   449→            <FormItem>
+   450→   450→              <FormLabel>Icon</FormLabel>
+   451→   451→              <div className="flex flex-wrap gap-2 rounded-lg border p-3">
+   452→   452→                {GOAL_EMOJIS.map((emoji) => (
+   453→   453→                  <button
+   454→   454→                    key={emoji}
+   455→   455→                    type="button"
+   456→   456→                    onClick={() => field.onChange(emoji)}
+   457→   457→                    className={
+   458→   458→                      'h-9 w-9 rounded-md text-lg flex items-center justify-center transition-all ' +
+   459→   459→                      (field.value === emoji
+   460→   460→                        ? 'bg-primary/10 ring-2 ring-primary'
+   461→   461→                        : 'hover:bg-muted')
+   462→   462→                    }
+   463→   463→                  >
+   464→   464→                    {emoji}
+   465→   465→                  </button>
+   466→   466→                ))}
+   467→   467→              </div>
+   468→   468→              <FormMessage />
+   469→   469→            </FormItem>
+   470→   470→          )}
+   471→   471→        />
+   472→   472→
+   473→   473→        {/* Color Picker */}
+   474→   474→        <FormField
+   475→   475→          control={form.control}
+   476→   476→          name="color"
+   477→   477→          render={({ field }) => (
+   478→   478→            <FormItem>
+   479→   479→              <FormLabel>Accent Color</FormLabel>
+   480→   480→              <div className="flex flex-wrap gap-2">
+   481→   481→                {GOAL_COLORS.map((c) => (
+   482→   482→                  <ColorSwatch
+   483→   483→                    key={c.value}
+   484→   484→                    color={c.value}
+   485→   485→                    selected={field.value === c.value}
+   486→   486→                    onClick={() => field.onChange(c.value)}
+   487→   487→                  />
+   488→   488→                ))}
+   489→   489→              </div>
+   490→   490→              <FormMessage />
+   491→   491→            </FormItem>
+   492→   492→          )}
+   493→   493→        />
+   494→   494→
+   495→   495→        <DialogFooter>
+   496→   496→          <Button type="button" variant="outline" onClick={onClose}>
+   497→   497→            Cancel
+   498→   498→          </Button>
+   499→   499→          <Button type="submit" disabled={isPending}>
+   500→   500→            {isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
+   501→   501→            {isEditing ? 'Update Goal' : 'Create Goal'}
+   502→   502→          </Button>
+   503→   503→        </DialogFooter>
+   504→   504→      </form>
+   505→   505→    </Form>
+   506→   506→  )
+   507→   507→}
+   508→   508→
+   509→   509→// ============================================================================
+   510→   510→// Goals Page
+   511→   511→// ============================================================================
+   512→   512→
+   513→   513→export function GoalsPage() {
+   514→   514→  const { user } = useRouterStore()
+   515→   515→  const isMobile = useMediaQuery('(max-width: 768px)')
+   516→   516→  const currency = user?.currency || APP_CONFIG.DEFAULT_CURRENCY
+   517→   517→
+   518→   518→  // ---- State ----
+   519→   519→  const [formOpen, setFormOpen] = React.useState(false)
+   520→   520→  const [editingGoal, setEditingGoal] = React.useState<Goal | null>(null)
+   521→   521→  const [deleteTarget, setDeleteTarget] = React.useState<Goal | null>(null)
+   522→   522→  const [addFundsTarget, setAddFundsTarget] = React.useState<Goal | null>(null)
+   523→   523→
+   524→   524→  // ---- Data ----
+   525→   525→  const { data, isLoading, isError } = useGoals({
+   526→   526→    limit: APP_CONFIG.MAX_PAGE_SIZE,
+   527→   527→  })
+   528→   528→
+   529→   529→  const goals = data?.data ?? []
+   530→   530→
+   531→   531→  // ---- Mutations ----
+   532→   532→  const createMutation = useCreateGoal()
+   533→   533→  const updateMutation = useUpdateGoal()
+   534→   534→  const deleteMutation = useDeleteGoal()
+   535→   535→
+   536→   536→  // ---- Derived ----
+   537→   537→  const activeGoals = React.useMemo(
+   538→   538→    () => goals.filter((g) => !g.isCompleted),
+   539→   539→    [goals],
+   540→   540→  )
+   541→   541→  const completedGoals = React.useMemo(
+   542→   542→    () => goals.filter((g) => g.isCompleted),
+   543→   543→    [goals],
+   544→   544→  )
+   545→   545→
+   546→   546→  const totalTarget = React.useMemo(
+   547→   547→    () => goals.reduce((s, g) => s + g.targetAmount, 0),
+   548→   548→    [goals],
+   549→   549→  )
+   550→   550→  const totalSaved = React.useMemo(
+   551→   551→    () => goals.reduce((s, g) => s + g.currentAmount, 0),
+   552→   552→    [goals],
+   553→   553→  )
+   554→   554→  const overallPercent =
+   555→   555→    totalTarget > 0 ? Math.min((totalSaved / totalTarget) * 100, 100) : 0
+   556→   556→
+   557→   557→  // ---- Form ----
+   558→   558→  const form = useForm<GoalFormValues>({
+   559→   559→    resolver: zodResolver(goalFormSchema),
+   560→   560→    defaultValues: {
+   561→   561→      name: '',
+   562→   562→      targetAmount: 0,
+   563→   563→      currentAmount: 0,
+   564→   564→      deadline: '',
+   565→   565→      description: '',
+   566→   566→      icon: '🎯',
+   567→   567→      color: '#10b981',
+   568→   568→    },
+   569→   569→  })
+   570→   570→
+   571→   571→  // ---- Add Funds Form ----
+   572→   572→  const addFundsForm = useForm<AddFundsValues>({
+   573→   573→    resolver: zodResolver(addFundsSchema),
+   574→   574→    defaultValues: { amount: 0 },
+   575→   575→  })
+   576→   576→
+   577→   577→  const isEditing = !!editingGoal
+   578→   578→  const isPending = createMutation.isPending || updateMutation.isPending
+   579→   579→  const isAddingFunds = updateMutation.isPending && !!addFundsTarget
+   580→   580→
+   581→   581→  // ---- Handlers ----
+   582→   582→  const openCreate = React.useCallback(() => {
+   583→   583→    setEditingGoal(null)
+   584→   584→    form.reset({
+   585→   585→      name: '',
+   586→   586→      targetAmount: 0,
+   587→   587→      currentAmount: 0,
+   588→   588→      deadline: '',
+   589→   589→      description: '',
+   590→   590→      icon: '🎯',
+   591→   591→      color: '#10b981',
+   592→   592→    })
+   593→   593→    setFormOpen(true)
+   594→   594→  }, [form])
+   595→   595→
+   596→   596→  const openEdit = React.useCallback(
+   597→   597→    (goal: Goal) => {
+   598→   598→      setEditingGoal(goal)
+   599→   599→      form.reset({
+   600→   600→        name: goal.name,
+   601→   601→        targetAmount: goal.targetAmount,
+   602→   602→        currentAmount: goal.currentAmount,
+   603→   603→        deadline: goal.deadline
+   604→   604→          ? format(new Date(goal.deadline), 'yyyy-MM-dd')
+   605→   605→          : '',
+   606→   606→        description: goal.description || '',
+   607→   607→        icon: goal.icon || '🎯',
+   608→   608→        color: goal.color || '#10b981',
+   609→   609→      })
+   610→   610→      setFormOpen(true)
+   611→   611→    },
+   612→   612→    [form],
+   613→   613→  )
+   614→   614→
+   615→   615→  const openAddFunds = React.useCallback((goal: Goal) => {
+   616→   616→    setAddFundsTarget(goal)
+   617→   617→    addFundsForm.reset({ amount: 0 })
+   618→   618→  }, [addFundsForm])
+   619→   619→
+   620→   620→  const onSubmitGoal = React.useCallback(
+   621→   621→    (values: GoalFormValues) => {
+   622→   622→      const payload: GoalCreate = {
+   623→   623→        name: values.name,
+   624→   624→        targetAmount: values.targetAmount,
+   625→   625→        deadline: values.deadline || undefined,
+   626→   626→        description: values.description || undefined,
+   627→   627→        icon: values.icon,
+   628→   628→        color: values.color,
+   629→   629→      }
+   630→   630→
+   631→   631→      if (isEditing && editingGoal) {
+   632→   632→        const updatePayload: GoalUpdate = {
+   633→   633→          name: values.name,
+   634→   634→          targetAmount: values.targetAmount,
+   635→   635→          currentAmount: values.currentAmount,
+   636→   636→          deadline: values.deadline || undefined,
+   637→   637→          description: values.description || undefined,
+   638→   638→          icon: values.icon,
+   639→   639→          color: values.color,
+   640→   640→        }
+   641→   641→        updateMutation.mutate(
+   642→   642→          { id: editingGoal.id, data: updatePayload },
+   643→   643→          { onSuccess: () => setFormOpen(false) },
+   644→   644→        )
+   645→   645→      } else {
+   646→   646→        createMutation.mutate(payload, {
+   647→   647→          onSuccess: () => setFormOpen(false),
+   648→   648→        })
+   649→   649→      }
+   650→   650→    },
+   651→   651→    [isEditing, editingGoal, createMutation, updateMutation],
+   652→   652→  )
+   653→   653→
+   654→   654→  const onSubmitAddFunds = React.useCallback(
+   655→   655→    (values: AddFundsValues) => {
+   656→   656→      if (!addFundsTarget) return
+   657→   657→      updateMutation.mutate(
+   658→   658→        {
+   659→   659→          id: addFundsTarget.id,
+   660→   660→          data: {
+   661→   661→            currentAmount: addFundsTarget.currentAmount + values.amount,
+   662→   662→            isCompleted:
+   663→   663→              addFundsTarget.currentAmount + values.amount >=
+   664→   664→              addFundsTarget.targetAmount,
+   665→   665→          },
+   666→   666→        },
+   667→   667→        { onSuccess: () => setAddFundsTarget(null) },
+   668→   668→      )
+   669→   669→    },
+   670→   670→    [addFundsTarget, updateMutation],
+   671→   671→  )
+   672→   672→
+   673→   673→  const handleQuickAdd = React.useCallback(
+   674→   674→    (amount: number) => {
+   675→   675→      if (!addFundsTarget) return
+   676→   676→      updateMutation.mutate(
+   677→   677→        {
+   678→   678→          id: addFundsTarget.id,
+   679→   679→          data: {
+   680→   680→            currentAmount: addFundsTarget.currentAmount + amount,
+   681→   681→            isCompleted:
+   682→   682→              addFundsTarget.currentAmount + amount >=
+   683→   683→              addFundsTarget.targetAmount,
+   684→   684→          },
+   685→   685→        },
+   686→   686→        { onSuccess: () => setAddFundsTarget(null) },
+   687→   687→      )
+   688→   688→    },
+   689→   689→    [addFundsTarget, updateMutation],
+   690→   690→  )
+   691→   691→
+   692→   692→  const handleDelete = React.useCallback(() => {
+   693→   693→    if (!deleteTarget) return
+   694→   694→    deleteMutation.mutate(deleteTarget.id, {
+   695→   695→      onSuccess: () => setDeleteTarget(null),
+   696→   696→    })
+   697→   697→  }, [deleteTarget, deleteMutation])
+   698→   698→
+   699→   699→  // ---- Render ----
+   700→   700→  if (isLoading) {
+   701→   701→    return (
+   702→   702→      <div className="space-y-6">
+   703→   703→        <PageHeader title="Financial Goals" actions={<div className="h-10 w-40" />} />
+   704→   704→        <div className="grid gap-4 sm:grid-cols-3">
+   705→   705→          <CardSkeleton />
+   706→   706→          <CardSkeleton />
+   707→   707→          <CardSkeleton />
+   708→   708→        </div>
+   709→   709→        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+   710→   710→          {Array.from({ length: 6 }).map((_, i) => (
+   711→   711→            <CardSkeleton key={i} />
+   712→   712→          ))}
+   713→   713→        </div>
+   714→   714→      </div>
+   715→   715→    )
+   716→   716→  }
+   717→   717→
+   718→   718→  if (isError || goals.length === 0) {
+   719→   719→    return (
+   720→   720→      <div className="space-y-6">
+   721→   721→        <PageHeader
+   722→   722→          title="Financial Goals"
+   723→   723→          description="Set and track your savings goals"
+   724→   724→          actions={
+   725→   725→            <Button onClick={openCreate}>
+   726→   726→              <Plus className="mr-2 size-4" />
+   727→   727→              Create Goal
+   728→   728→            </Button>
+   729→   729→          }
+   730→   730→        />
+   731→   731→        <EmptyState
+   732→   732→          icon={Target}
+   733→   733→          title="Start your first savings goal"
+   734→   734→          description="Whether it's an emergency fund, a dream vacation, or a new car — set a goal and start tracking your progress toward financial freedom."
+   735→   735→          actionLabel="Create Your First Goal"
+   736→   736→          onAction={openCreate}
+   737→   737→        />
+   738→   738→      </div>
+   739→   739→    )
+   740→   740→  }
+   741→   741→
+   742→   742→  const formContent = (
+   743→   743→    <GoalFormContent
+   744→   744→      form={form}
+   745→   745→      isEditing={isEditing}
+   746→   746→      isPending={isPending}
+   747→   747→      onClose={() => setFormOpen(false)}
+   748→   748→      onSubmit={onSubmitGoal}
+   749→   749→    />
+   750→   750→  )
+   751→   751→
+   752→   752→  return (
+   753→   753→    <div className="space-y-6">
+   754→   754→      {/* Page Header */}
+   755→   755→      <PageHeader
+   756→   756→        title="Financial Goals"
+   757→   757→        description="Set and track your savings goals"
+   758→   758→        actions={
+   759→   759→          <Button onClick={openCreate}>
+   760→   760→            <Plus className="mr-2 size-4" />
+   761→   761→            Create Goal
+   762→   762→          </Button>
+   763→   763→        }
+   764→   764→      />
+   765→   765→
+   766→   766→      {/* Summary Stats */}
+   767→   767→      <motion.div
+   768→   768→        initial={{ opacity: 0, y: 12 }}
+   769→   769→        animate={{ opacity: 1, y: 0 }}
+   770→   770→        transition={{ duration: 0.3 }}
+   771→   771→        className="grid gap-4 sm:grid-cols-3"
+   772→   772→      >
+   773→   773→        <Card>
+   774→   774→          <CardContent className="p-5">
+   775→   775→            <div className="flex items-center justify-between">
+   776→   776→              <div className="space-y-1.5">
+   777→   777→                <p className="text-sm font-medium text-muted-foreground">
+   778→   778→                  Total Saved
+   779→   779→                </p>
+   780→   780→                <p className="text-2xl font-bold tracking-tight">
+   781→   781→                  {formatCurrency(totalSaved, currency)}
+   782→   782→                </p>
+   783→   783→              </div>
+   784→   784→              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10">
+   785→   785→                <PiggyBank className="size-5 text-emerald-600 dark:text-emerald-400" />
+   786→   786→              </div>
+   787→   787→            </div>
+   788→   788→          </CardContent>
+   789→   789→        </Card>
+   790→   790→
+   791→   791→        <Card>
+   792→   792→          <CardContent className="p-5">
+   793→   793→            <div className="flex items-center justify-between">
+   794→   794→              <div className="space-y-1.5">
+   795→   795→                <p className="text-sm font-medium text-muted-foreground">
+   796→   796→                  Total Target
+   797→   797→                </p>
+   798→   798→                <p className="text-2xl font-bold tracking-tight">
+   799→   799→                  {formatCurrency(totalTarget, currency)}
+   800→   800→                </p>
+   801→   801→              </div>
+   802→   802→              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+   803→   803→                <Target className="size-5 text-primary" />
+   804→   804→              </div>
+   805→   805→            </div>
+   806→   806→          </CardContent>
+   807→   807→        </Card>
+   808→   808→
+   809→   809→        <Card>
+   810→   810→          <CardContent className="p-5">
+   811→   811→            <div className="flex items-center justify-between">
+   812→   812→              <div className="space-y-1.5">
+   813→   813→                <p className="text-sm font-medium text-muted-foreground">
+   814→   814→                  Overall Progress
+   815→   815→                </p>
+   816→   816→                <p className="text-2xl font-bold tracking-tight">
+   817→   817→                  {formatPercentage(overallPercent, 0)}
+   818→   818→                </p>
+   819→   819→              </div>
+   820→   820→              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-violet-500/10">
+   821→   821→                <TrendingUp className="size-5 text-violet-600 dark:text-violet-400" />
+   822→   822→              </div>
+   823→   823→            </div>
+   824→   824→          </CardContent>
+   825→   825→        </Card>
+   826→   826→      </motion.div>
+   827→   827→
+   828→   828→      {/* Active Goals */}
+   829→   829→      {activeGoals.length > 0 && (
+   830→   830→        <section className="space-y-4">
+   831→   831→          <h2 className="text-lg font-semibold flex items-center gap-2">
+   832→   832→            <Sparkles className="size-5 text-amber-500" />
+   833→   833→            Active Goals
+   834→   834→            <Badge variant="secondary" className="ml-1">
+   835→   835→              {activeGoals.length}
+   836→   836→            </Badge>
+   837→   837→          </h2>
+   838→   838→
+   839→   839→          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+   840→   840→            <AnimatePresence mode="popLayout">
+   841→   841→              {activeGoals.map((goal, i) => {
+   842→   842→                const pct =
+   843→   843→                  goal.targetAmount > 0
+   844→   844→                    ? Math.min(
+   845→   845→                        (goal.currentAmount / goal.targetAmount) * 100,
+   846→   846→                        100,
+   847→   847→                      )
+   848→   848→                    : 0
+   849→   849→                const remaining = Math.max(
+   850→   850→                  goal.targetAmount - goal.currentAmount,
+   851→   851→                  0,
+   852→   852→                )
+   853→   853→                const estDate = estimateCompletionDate(
+   854→   854→                  goal.currentAmount,
+   855→   855→                  goal.targetAmount,
+   856→   856→                  goal.createdAt,
+   857→   857→                )
+   858→   858→
+   859→   859→                return (
+   860→   860→                  <motion.div
+   861→   861→                    key={goal.id}
+   862→   862→                    custom={i}
+   863→   863→                    variants={cardVariants}
+   864→   864→                    initial="hidden"
+   865→   865→                    animate="visible"
+   866→   866→                    exit="hidden"
+   867→   867→                    layout
+   868→   868→                  >
+   869→   869→                    <Card
+   870→   870→                      className="group h-full transition-all hover:shadow-lg hover:-translate-y-0.5"
+   871→   871→                    >
+   872→   872→                      <CardHeader>
+   873→   873→                        <CardTitle className="flex items-center gap-2">
+   874→   874→                          <span className="text-xl" role="img">
+   875→   875→                            {goal.icon || '🎯'}
+   876→   876→                          </span>
+   877→   877→                          <span className="truncate">{goal.name}</span>
+   878→   878→                        </CardTitle>
+   879→   879→                        <CardAction>
+   880→   880→                          <Badge
+   881→   881→                            variant="outline"
+   882→   882→                            className={
+   883→   883→                              'text-xs ' +
+   884→   884→                              (pct >= 70
+   885→   885→                                ? 'border-emerald-300 text-emerald-600 dark:text-emerald-400'
+   886→   886→                                : '')
+   887→   887→                            }
+   888→   888→                          >
+   889→   889→                            {formatPercentage(pct, 0)}
+   890→   890→                          </Badge>
+   891→   891→                        </CardAction>
+   892→   892→                      </CardHeader>
+   893→   893→
+   894→   894→                      <CardContent className="space-y-4">
+   895→   895→                        {goal.description && (
+   896→   896→                          <p className="text-sm text-muted-foreground line-clamp-2">
+   897→   897→                            {goal.description}
+   898→   898→                          </p>
+   899→   899→                        )}
+   900→   900→
+   901→   901→                        {/* Progress Circle + Amounts */}
+   902→   902→                        <div className="flex items-center gap-4">
+   903→   903→                          <CircularProgress
+   904→   904→                            value={pct}
+   905→   905→                            size={72}
+   906→   906→                            strokeWidth={5}
+   907→   907→                            color={goal.color || '#10b981'}
+   908→   908→                          />
+   909→   909→                          <div className="flex-1 space-y-1">
+   910→   910→                            <div>
+   911→   911→                              <p className="text-xs text-muted-foreground">
+   912→   912→                                Saved
+   913→   913→                              </p>
+   914→   914→                              <p className="text-lg font-bold">
+   915→   915→                                {formatCurrency(
+   916→   916→                                  goal.currentAmount,
+   917→   917→                                  currency,
+   918→   918→                                )}
+   919→   919→                              </p>
+   920→   920→                            </div>
+   921→   921→                            <div>
+   922→   922→                              <p className="text-xs text-muted-foreground">
+   923→   923→                                Target
+   924→   924→                              </p>
+   925→   925→                              <p className="text-sm font-medium text-muted-foreground">
+   926→   926→                                {formatCurrency(
+   927→   927→                                  goal.targetAmount,
+   928→   928→                                  currency,
+   929→   929→                                )}
+   930→   930→                              </p>
+   931→   931→                            </div>
+   932→   932→                          </div>
+   933→   933→                        </div>
+   934→   934→
+   935→   935→                        {/* Progress Bar */}
+   936→   936→                        <div className="space-y-1.5">
+   937→   937→                          <div className="h-2 w-full rounded-full bg-muted">
+   938→   938→                            <motion.div
+   939→   939→                              className="h-full rounded-full"
+   940→   940→                              style={{ backgroundColor: goal.color || '#10b981' }}
+   941→   941→                              initial={{ width: 0 }}
+   942→   942→                              animate={{ width: `${pct}%` }}
+   943→   943→                              transition={{
+   944→   944→                                duration: 0.8,
+   945→   945→                                ease: 'easeOut',
+   946→   946→                                delay: i * 0.06 + 0.2,
+   947→   947→                              }}
+   948→   948→                            />
+   949→   949→                          </div>
+   950→   950→                          <p className="text-xs text-muted-foreground">
+   951→   951→                            {formatCurrency(remaining, currency)} remaining
+   952→   952→                          </p>
+   953→   953→                        </div>
+   954→   954→
+   955→   955→                        {/* Deadline & Estimated */}
+   956→   956→                        <div className="space-y-1.5 text-xs text-muted-foreground">
+   957→   957→                          {goal.deadline && (
+   958→   958→                            <div className="flex items-center gap-1.5">
+   959→   959→                              <CalendarDays className="size-3" />
+   960→   960→                              <span>{getDeadlineCountdown(goal.deadline)}</span>
+   961→   961→                            </div>
+   962→   962→                          )}
+   963→   963→                          {estDate && (
+   964→   964→                            <div className="flex items-center gap-1.5">
+   965→   965→                              <Clock className="size-3" />
+   966→   966→                              <span>Est. completion: {estDate}</span>
+   967→   967→                            </div>
+   968→   968→                          )}
+   969→   969→                        </div>
+   970→   970→
+   971→   971→                        {/* Actions */}
+   972→   972→                        <Separator />
+   973→   973→                        <div className="flex items-center justify-between gap-2">
+   974→   974→                          <Button
+   975→   975→                            size="sm"
+   976→   976→                            className="h-8 text-xs"
+   977→   977→                            style={{
+   978→   978→                              backgroundColor: goal.color || '#10b981',
+   979→   979→                              color: '#fff',
+   980→   980→                            }}
+   981→   981→                            onClick={() => openAddFunds(goal)}
+   982→   982→                          >
+   983→   983→                            <Plus className="mr-1.5 size-3" />
+   984→   984→                            Add Funds
+   985→   985→                          </Button>
+   986→   986→                          <div className="flex items-center gap-1">
+   987→   987→                            <Button
+   988→   988→                              variant="ghost"
+   989→   989→                              size="sm"
+   990→   990→                              className="h-8 text-xs"
+   991→   991→                              onClick={() => openEdit(goal)}
+   992→   992→                            >
+   993→   993→                              <Pencil className="size-3" />
+   994→   994→                            </Button>
+   995→   995→                            <Button
+   996→   996→                              variant="ghost"
+   997→   997→                              size="sm"
+   998→   998→                              className="h-8 text-xs text-destructive hover:text-destructive"
+   999→   999→                              onClick={() => setDeleteTarget(goal)}
+  1000→  1000→                            >
+  1001→  1001→                              <Trash2 className="size-3" />
+  1002→  1002→                            </Button>
+  1003→  1003→                          </div>
+  1004→  1004→                        </div>
+  1005→  1005→                      </CardContent>
+  1006→  1006→                    </Card>
+  1007→  1007→                  </motion.div>
+  1008→  1008→                )
+  1009→  1009→              })}
+  1010→  1010→            </AnimatePresence>
+  1011→  1011→          </div>
+  1012→  1012→        </section>
+  1013→  1013→      )}
+  1014→  1014→
+  1015→  1015→      {/* Completed Goals */}
+  1016→  1016→      {completedGoals.length > 0 && (
+  1017→  1017→        <section className="space-y-4">
+  1018→  1018→          <h2 className="text-lg font-semibold flex items-center gap-2">
+  1019→  1019→            <Trophy className="size-5 text-amber-500" />
+  1020→  1020→            Completed
+  1021→  1021→            <Badge variant="secondary" className="ml-1">
+  1022→  1022→              {completedGoals.length}
+  1023→  1023→            </Badge>
+  1024→  1024→          </h2>
+  1025→  1025→
+  1026→  1026→          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+  1027→  1027→            {completedGoals.map((goal, i) => (
+  1028→  1028→              <motion.div
+  1029→  1029→                key={goal.id}
+  1030→  1030→                custom={i}
+  1031→  1031→                variants={cardVariants}
+  1032→  1032→                initial="hidden"
+  1033→  1033→                animate="visible"
+  1034→  1034→                layout
+  1035→  1035→              >
+  1036→  1036→                <Card className="h-full opacity-75 transition-all hover:opacity-100">
+  1037→  1037→                  <CardHeader>
+  1038→  1038→                    <CardTitle className="flex items-center gap-2">
+  1039→  1039→                      <CircleCheckBig className="size-5 text-emerald-500" />
+  1040→  1040→                      <span className="truncate">{goal.name}</span>
+  1041→  1041→                    </CardTitle>
+  1042→  1042→                    <CardAction>
+  1043→  1043→                      <div className="flex items-center gap-1">
+  1044→  1044→                        <Button
+  1045→  1045→                          variant="ghost"
+  1046→  1046→                          size="sm"
+  1047→  1047→                          className="h-8 text-xs"
+  1048→  1048→                          onClick={() => openEdit(goal)}
+  1049→  1049→                        >
+  1050→  1050→                          <Pencil className="size-3" />
+  1051→  1051→                        </Button>
+  1052→  1052→                        <Button
+  1053→  1053→                          variant="ghost"
+  1054→  1054→                          size="sm"
+  1055→  1055→                          className="h-8 text-xs text-destructive hover:text-destructive"
+  1056→  1056→                          onClick={() => setDeleteTarget(goal)}
+  1057→  1057→                        >
+  1058→  1058→                          <Trash2 className="size-3" />
+  1059→  1059→                        </Button>
+  1060→  1060→                      </div>
+  1061→  1061→                    </CardAction>
+  1062→  1062→                  </CardHeader>
+  1063→  1063→                  <CardContent className="space-y-3">
+  1064→  1064→                    <div className="flex items-center gap-4">
+  1065→  1065→                      <CircularProgress
+  1066→  1066→                        value={100}
+  1067→  1067→                        size={64}
+  1068→  1068→                        strokeWidth={5}
+  1069→  1069→                        color="#10b981"
+  1070→  1070→                      />
+  1071→  1071→                      <div className="space-y-1">
+  1072→  1072→                        <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+  1073→  1073→                          Goal Achieved!
+  1074→  1074→                        </p>
+  1075→  1075→                        <p className="text-lg font-bold">
+  1076→  1076→                          {formatCurrency(goal.currentAmount, currency)}
+  1077→  1077→                        </p>
+  1078→  1078→                        <p className="text-xs text-muted-foreground">
+  1079→  1079→                          Target: {formatCurrency(goal.targetAmount, currency)}
+  1080→  1080→                        </p>
+  1081→  1081→                      </div>
+  1082→  1082→                    </div>
+  1083→  1083→                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+  1084→  1084→                      <CalendarDays className="size-3" />
+  1085→  1085→                      <span>Completed</span>
+  1086→  1086→                    </div>
+  1087→  1087→                  </CardContent>
+  1088→  1088→                </Card>
+  1089→  1089→              </motion.div>
+  1090→  1090→            ))}
+  1091→  1091→          </div>
+  1092→  1092→        </section>
+  1093→  1093→      )}
+  1094→  1094→
+  1095→  1095→      {/* Create/Edit Form — Desktop Dialog */}
+  1096→  1096→      {!isMobile && (
+  1097→  1097→        <Dialog open={formOpen} onOpenChange={setFormOpen}>
+  1098→  1098→          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+  1099→  1099→            <DialogHeader>
+  1100→  1100→              <DialogTitle>
+  1101→  1101→                {isEditing ? 'Edit Goal' : 'Create Goal'}
+  1102→  1102→              </DialogTitle>
+  1103→  1103→              <DialogDescription>
+  1104→  1104→                {isEditing
+  1105→  1105→                  ? 'Update your savings goal details.'
+  1106→  1106→                  : 'Set a new savings goal and start your journey.'}
+  1107→  1107→              </DialogDescription>
+  1108→  1108→            </DialogHeader>
+  1109→  1109→            {formContent}
+  1110→  1110→          </DialogContent>
+  1111→  1111→        </Dialog>
+  1112→  1112→      )}
+  1113→  1113→
+  1114→  1114→      {/* Create/Edit Form — Mobile Sheet */}
+  1115→  1115→      {isMobile && (
+  1116→  1116→        <Sheet open={formOpen} onOpenChange={setFormOpen}>
+  1117→  1117→          <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto rounded-t-2xl">
+  1118→  1118→            <SheetHeader>
+  1119→  1119→              <SheetTitle>
+  1120→  1120→                {isEditing ? 'Edit Goal' : 'Create Goal'}
+  1121→  1121→              </SheetTitle>
+  1122→  1122→              <SheetDescription>
+  1123→  1123→                {isEditing
+  1124→  1124→                  ? 'Update your savings goal details.'
+  1125→  1125→                  : 'Set a new savings goal and start your journey.'}
+  1126→  1126→              </SheetDescription>
+  1127→  1127→            </SheetHeader>
+  1128→  1128→            <div className="px-4 pb-4">{formContent}</div>
+  1129→  1129→          </SheetContent>
+  1130→  1130→        </Sheet>
+  1131→  1131→      )}
+  1132→  1132→
+  1133→  1133→      {/* Add Funds Dialog */}
+  1134→  1134→      <Dialog
+  1135→  1135→        open={!!addFundsTarget}
+  1136→  1136→        onOpenChange={(open) => !open && setAddFundsTarget(null)}
+  1137→  1137→      >
+  1138→  1138→        <DialogContent className="sm:max-w-md">
+  1139→  1139→          <DialogHeader>
+  1140→  1140→            <DialogTitle className="flex items-center gap-2">
+  1141→  1141→              <span className="text-xl">
+  1142→  1142→                {addFundsTarget?.icon || '🎯'}
+  1143→  1143→              </span>
+  1144→  1144→              Add Funds to &ldquo;{addFundsTarget?.name}&rdquo;
+  1145→  1145→            </DialogTitle>
+  1146→  1146→            <DialogDescription>
+  1147→  1147→              Current: {formatCurrency(addFundsTarget?.currentAmount || 0, currency)}
+  1148→  1148→              {' / '}
+  1149→  1149→              {formatCurrency(addFundsTarget?.targetAmount || 0, currency)}
+  1150→  1150→            </DialogDescription>
+  1151→  1151→          </DialogHeader>
+  1152→  1152→
+  1153→  1153→          <div className="space-y-4">
+  1154→  1154→            {/* Quick Add Buttons */}
+  1155→  1155→            <div className="space-y-2">
+  1156→  1156→              <p className="text-sm font-medium text-muted-foreground">
+  1157→  1157→                Quick add
+  1158→  1158→              </p>
+  1159→  1159→              <div className="flex flex-wrap gap-2">
+  1160→  1160→                {QUICK_ADD_AMOUNTS.map((amt) => (
+  1161→  1161→                  <Button
+  1162→  1162→                    key={amt}
+  1163→  1163→                    type="button"
+  1164→  1164→                    variant="outline"
+  1165→  1165→                    size="sm"
+  1166→  1166→                    className="h-8"
+  1167→  1167→                    disabled={isAddingFunds}
+  1168→  1168→                    onClick={() => handleQuickAdd(amt)}
+  1169→  1169→                  >
+  1170→  1170→                    +{formatCurrency(amt, currency)}
+  1171→  1171→                  </Button>
+  1172→  1172→                ))}
+  1173→  1173→              </div>
+  1174→  1174→            </div>
+  1175→  1175→
+  1176→  1176→            <Separator />
+  1177→  1177→
+  1178→  1178→            {/* Custom Amount */}
+  1179→  1179→            <Form {...addFundsForm}>
+  1180→  1180→              <form
+  1181→  1181→                onSubmit={addFundsForm.handleSubmit(onSubmitAddFunds)}
+  1182→  1182→                className="space-y-4"
+  1183→  1183→              >
+  1184→  1184→                <FormField
+  1185→  1185→                  control={addFundsForm.control}
+  1186→  1186→                  name="amount"
+  1187→  1187→                  render={({ field }) => (
+  1188→  1188→                    <FormItem>
+  1189→  1189→                      <FormLabel>Custom Amount</FormLabel>
+  1190→  1190→                      <FormControl>
+  1191→  1191→                        <Input
+  1192→  1192→                          type="number"
+  1193→  1193→                          step="0.01"
+  1194→  1194→                          min="0.01"
+  1195→  1195→                          placeholder="Enter amount"
+  1196→  1196→                          {...field}
+  1197→  1197→                        />
+  1198→  1198→                      </FormControl>
+  1199→  1199→                      <FormMessage />
+  1200→  1200→                    </FormItem>
+  1201→  1201→                  )}
+  1202→  1202→                />
+  1203→  1203→
+  1204→  1204→                <DialogFooter>
+  1205→  1205→                  <Button
+  1206→  1206→                    type="button"
+  1207→  1207→                    variant="outline"
+  1208→  1208→                    onClick={() => setAddFundsTarget(null)}
+  1209→  1209→                  >
+  1210→  1210→                    Cancel
+  1211→  1211→                  </Button>
+  1212→  1212→                  <Button type="submit" disabled={isAddingFunds}>
+  1213→  1213→                    {isAddingFunds && (
+  1214→  1214→                      <Loader2 className="mr-2 size-4 animate-spin" />
+  1215→  1215→                    )}
+  1216→  1216→                    Add Funds
+  1217→  1217→                  </Button>
+  1218→  1218→                </DialogFooter>
+  1219→  1219→              </form>
+  1220→  1220→            </Form>
+  1221→  1221→          </div>
+  1222→  1222→        </DialogContent>
+  1223→  1223→      </Dialog>
+  1224→  1224→
+  1225→  1225→      {/* Delete Confirmation */}
+  1226→  1226→      <ConfirmDialog
+  1227→  1227→        open={!!deleteTarget}
+  1228→  1228→        onOpenChange={(open) => !open && setDeleteTarget(null)}
+  1229→  1229→        title="Delete Goal"
+  1230→  1230→        description={`Are you sure you want to delete "${deleteTarget?.name}"? All progress will be lost.`}
+  1231→  1231→        confirmLabel="Delete"
+  1232→  1232→        variant="destructive"
+  1233→  1233→        onConfirm={handleDelete}
+  1234→  1234→        loading={deleteMutation.isPending}
+  1235→  1235→      />
+  1236→  1236→    </div>
+  1237→  1237→  )
+  1238→  1238→}
+  1239→  1239→

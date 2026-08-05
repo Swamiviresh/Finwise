@@ -118,7 +118,7 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.06,
+      staggerChildren: 0.08,
       delayChildren: 0.05,
     },
   },
@@ -164,7 +164,7 @@ function currencyTickFormatter(v: number) {
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string; dataKey: string }>; label?: string }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-lg border bg-background px-3 py-2 shadow-lg">
+    <div className="rounded-xl border border-border/40 bg-background/95 backdrop-blur-sm px-3.5 py-2.5 shadow-lg">
       <p className="mb-1 text-sm font-medium text-foreground">{label}</p>
       {payload.map((entry) => (
         <div key={entry.dataKey} className="flex items-center gap-2 text-xs">
@@ -375,8 +375,8 @@ function ReportSummary({
           iconBgColor="bg-primary/10"
           iconColor="text-primary"
         />
-        <Card className="transition-shadow hover:shadow-md">
-          <CardContent className="p-5">
+        <Card className="rounded-2xl border-border/40 backdrop-blur-sm bg-card/80 transition-all duration-200 hover:shadow-md">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="space-y-1.5">
                 <p className="text-sm font-medium text-muted-foreground">Savings Rate</p>
@@ -389,7 +389,7 @@ function ReportSummary({
               </div>
             </div>
             <div className="mt-3">
-              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted/50">
                 <div
                   className={cn(
                     'h-full rounded-full transition-all duration-700',
@@ -416,7 +416,7 @@ function ReportSummary({
 
       {/* Top 3 Spending Categories */}
       <motion.div variants={itemVariants}>
-        <Card>
+        <Card className="rounded-2xl border-border/40">
           <CardHeader>
             <CardTitle className="text-base">Top Spending Categories</CardTitle>
             <CardDescription>Your biggest expense areas for this period</CardDescription>
@@ -432,7 +432,7 @@ function ReportSummary({
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: i * 0.1 }}
-                    className="flex items-center gap-3 rounded-lg border p-3"
+                    className="flex items-center gap-3 rounded-xl border border-border/40 p-3.5 transition-all duration-200 hover:shadow-sm hover:bg-muted/30"
                   >
                     <div
                       className="flex size-10 items-center justify-center rounded-lg text-lg font-bold"
@@ -487,7 +487,7 @@ function IncomeReport({
   return (
     <div className="space-y-6">
       {/* Income Breakdown */}
-      <Card>
+      <Card className="rounded-2xl border-border/40">
         <CardHeader>
           <CardTitle className="text-base">Income Breakdown by Source</CardTitle>
           <CardDescription>Where your income comes from</CardDescription>
@@ -518,7 +518,7 @@ function IncomeReport({
                         </span>
                       </div>
                     </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted/50">
                       <div
                         className="h-full rounded-full transition-all duration-700"
                         style={{
@@ -536,7 +536,7 @@ function IncomeReport({
       </Card>
 
       {/* Income Trend */}
-      <Card>
+      <Card className="rounded-2xl border-border/40">
         <CardHeader>
           <CardTitle className="text-base">Income Trend</CardTitle>
           <CardDescription>Monthly income over the past 12 months</CardDescription>
@@ -625,7 +625,7 @@ function ExpenseReport({
     <div className="space-y-6">
       {/* Pie Chart + Top Expenses */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
+        <Card className="rounded-2xl border-border/40">
           <CardHeader>
             <CardTitle className="text-base">Expense Distribution</CardTitle>
             <CardDescription>Spending breakdown by category</CardDescription>
@@ -664,7 +664,7 @@ function ExpenseReport({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="rounded-2xl border-border/40">
           <CardHeader>
             <CardTitle className="text-base">Top Expenses</CardTitle>
             <CardDescription>Highest spending categories</CardDescription>
@@ -680,7 +680,7 @@ function ExpenseReport({
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.04 }}
-                    className="flex items-center gap-3 rounded-lg border p-2.5"
+                    className="flex items-center gap-3 rounded-xl border border-border/40 p-3 transition-all duration-200 hover:shadow-sm"
                   >
                     <div
                       className="flex size-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold"
@@ -714,7 +714,7 @@ function ExpenseReport({
       </div>
 
       {/* Category Table */}
-      <Card>
+      <Card className="rounded-2xl border-border/40">
         <CardHeader>
           <CardTitle className="text-base">Category Details</CardTitle>
           <CardDescription>Click column headers to sort</CardDescription>
@@ -828,7 +828,7 @@ function HistoricalReports() {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="rounded-2xl border-border/40">
         <CardHeader>
           <CardTitle className="text-base">Historical Reports</CardTitle>
         </CardHeader>
@@ -841,7 +841,7 @@ function HistoricalReports() {
 
   if (!reports.length) {
     return (
-      <Card>
+      <Card className="rounded-2xl border-border/40">
         <CardHeader>
           <CardTitle className="text-base">Historical Reports</CardTitle>
           <CardDescription>Previously generated reports</CardDescription>
@@ -862,7 +862,7 @@ function HistoricalReports() {
   }
 
   return (
-    <Card>
+    <Card className="rounded-2xl border-border/40">
       <CardHeader>
         <CardTitle className="text-base">Historical Reports</CardTitle>
         <CardDescription>{reports.length} report{reports.length !== 1 ? 's' : ''} generated</CardDescription>
@@ -882,7 +882,7 @@ function HistoricalReports() {
                 key={report.id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex items-start gap-3 rounded-lg border p-3"
+                className="flex items-start gap-3 rounded-xl border border-border/40 p-3.5 transition-all duration-200 hover:shadow-sm hover:bg-muted/30"
               >
                 <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                   <FileText className="size-4 text-primary" />
@@ -1125,7 +1125,7 @@ export function ReportsPage() {
                     Generate Report
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="rounded-2xl border-border/40" >
                   <DialogHeader>
                     <DialogTitle>Generate Report</DialogTitle>
                     <DialogDescription>
@@ -1171,8 +1171,8 @@ export function ReportsPage() {
 
       {/* Period Selector */}
       <motion.div variants={itemVariants}>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="rounded-2xl border-border/40">
+          <CardContent className="p-6">
             <div className="flex flex-wrap items-end gap-4">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Report Type</label>
@@ -1262,7 +1262,7 @@ export function ReportsPage() {
 
           {/* Detailed Reports Tabs */}
           <motion.div variants={itemVariants}>
-            <Card>
+            <Card className="rounded-2xl border-border/40">
               <CardHeader>
                 <CardTitle className="text-base">Detailed Reports</CardTitle>
                 <CardDescription>Deep dive into income, expenses, and categories</CardDescription>

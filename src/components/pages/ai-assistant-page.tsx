@@ -534,7 +534,7 @@ export function AiAssistantPage() {
 
           {/* Input area at bottom */}
           <div className="w-full max-w-2xl">
-            <div className="flex items-end gap-2 rounded-2xl border bg-card p-2 shadow-sm">
+            <div className="flex items-end gap-2 rounded-2xl border border-border/40 bg-card/80 backdrop-blur-sm p-2 shadow-sm">
               <Textarea
                 ref={textareaRef}
                 value={input}
@@ -790,7 +790,7 @@ export function AiAssistantPage() {
             </div>
 
             {/* Text input */}
-            <div className="flex items-end gap-2 rounded-2xl border bg-card p-2 shadow-sm transition-shadow focus-within:shadow-md">
+            <div className="flex items-end gap-2 rounded-2xl border border-border/40 bg-card/80 backdrop-blur-sm p-2 shadow-sm transition-shadow focus-within:shadow-md">
               <Textarea
                 ref={textareaRef}
                 value={input}

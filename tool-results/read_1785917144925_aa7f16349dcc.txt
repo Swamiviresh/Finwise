@@ -1,0 +1,1377 @@
+     1→'use client'
+     2→
+     3→import * as React from 'react'
+     4→import { useForm, Controller } from 'react-hook-form'
+     5→import { zodResolver } from '@hookform/resolvers/zod'
+     6→import { z } from 'zod'
+     7→import { useQuery } from '@tanstack/react-query'
+     8→import { motion, AnimatePresence } from 'framer-motion'
+     9→import { format, parseISO } from 'date-fns'
+    10→import {
+    11→  Plus,
+    12→  Search,
+    13→  Download,
+    14→  FileJson,
+    15→  FileSpreadsheet,
+    16→  Pencil,
+    17→  Trash2,
+    18→  X,
+    19→  ChevronLeft,
+    20→  ChevronRight,
+    21→  ChevronsLeft,
+    22→  ChevronsRight,
+    23→  ArrowUpDown,
+    24→  ArrowUp,
+    25→  ArrowDown,
+    26→  FilterX,
+    27→  CalendarIcon,
+    28→  Loader2,
+    29→} from 'lucide-react'
+    30→
+    31→import { useRouterStore } from '@/store/router-store'
+    32→import {
+    33→  useTransactions,
+    34→  useCreateTransaction,
+    35→  useUpdateTransaction,
+    36→  useDeleteTransaction,
+    37→} from '@/hooks/use-transactions'
+    38→import { apiRequest } from '@/hooks/use-auth'
+    39→import { PageHeader } from '@/components/shared/page-header'
+    40→import { EmptyState } from '@/components/shared/empty-state'
+    41→import { TransactionSkeleton, ListSkeleton } from '@/components/shared/loading-skeleton'
+    42→import { ConfirmDialog } from '@/components/shared/confirm-dialog'
+    43→import { formatCurrency, formatDate } from '@/lib/format'
+    44→import { PAYMENT_METHODS, DEFAULT_CATEGORIES, APP_CONFIG } from '@/lib/constants'
+    45→import { transactionSchema } from '@/lib/validators'
+    46→import type {
+    47→  TransactionWithCategory,
+    48→  TransactionFilters,
+    49→  Category,
+    50→  ApiResponse,
+    51→} from '@/types'
+    52→
+    53→import { Button } from '@/components/ui/button'
+    54→import { Input } from '@/components/ui/input'
+    55→import { Textarea } from '@/components/ui/textarea'
+    56→import { Badge } from '@/components/ui/badge'
+    57→import { Label } from '@/components/ui/label'
+    58→import {
+    59→  Table,
+    60→  TableBody,
+    61→  TableCell,
+    62→  TableHead,
+    63→  TableHeader,
+    64→  TableRow,
+    65→} from '@/components/ui/table'
+    66→import {
+    67→  Select,
+    68→  SelectContent,
+    69→  SelectItem,
+    70→  SelectTrigger,
+    71→  SelectValue,
+    72→} from '@/components/ui/select'
+    73→import {
+    74→  Dialog,
+    75→  DialogContent,
+    76→  DialogDescription,
+    77→  DialogFooter,
+    78→  DialogHeader,
+    79→  DialogTitle,
+    80→} from '@/components/ui/dialog'
+    81→import {
+    82→  Sheet,
+    83→  SheetContent,
+    84→  SheetDescription,
+    85→  SheetFooter,
+    86→  SheetHeader,
+    87→  SheetTitle,
+    88→} from '@/components/ui/sheet'
+    89→import {
+    90→  DropdownMenu,
+    91→  DropdownMenuContent,
+    92→  DropdownMenuItem,
+    93→  DropdownMenuSeparator,
+    94→  DropdownMenuTrigger,
+    95→} from '@/components/ui/dropdown-menu'
+    96→import {
+    97→  Popover,
+    98→  PopoverContent,
+    99→  PopoverTrigger,
+   100→} from '@/components/ui/popover'
+   101→import { Calendar } from '@/components/ui/calendar'
+   102→import {
+   103→  Form,
+   104→  FormControl,
+   105→  FormField,
+   106→  FormItem,
+   107→  FormLabel,
+   108→  FormMessage,
+   109→} from '@/components/ui/form'
+   110→import { Card, CardContent } from '@/components/ui/card'
+   111→import { Separator } from '@/components/ui/separator'
+   112→import { useMediaQuery } from '@reactuses/core'
+   113→
+   114→// ---------------------------------------------------------------------------
+   115→// Form schema
+   116→// ---------------------------------------------------------------------------
+   117→
+   118→const formSchema = transactionSchema
+   119→
+   120→type TransactionFormValues = z.infer<typeof formSchema>
+   121→
+   122→// ---------------------------------------------------------------------------
+   123→// Constants
+   124→// ---------------------------------------------------------------------------
+   125→
+   126→const SORT_OPTIONS = [
+   127→  { value: 'date', label: 'Date' },
+   128→  { value: 'amount', label: 'Amount' },
+   129→  { value: 'description', label: 'Description' },
+   130→] as const
+   131→
+   132→const PAGE_SIZE_OPTIONS = [10, 25, 50] as const
+   133→
+   134→const typeBadgeClass: Record<string, string> = {
+   135→  income: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
+   136→  expense: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 border-red-200 dark:border-red-800',
+   137→  transfer: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 border-amber-200 dark:border-amber-800',
+   138→}
+   139→
+   140→// ---------------------------------------------------------------------------
+   141→// Row animation
+   142→// ---------------------------------------------------------------------------
+   143→
+   144→const rowVariants = {
+   145→  hidden: { opacity: 0, y: 8 },
+   146→  visible: (i: number) => ({
+   147→    opacity: 1,
+   148→    y: 0,
+   149→    transition: { delay: i * 0.03, duration: 0.3, ease: 'easeOut' },
+   150→  }),
+   151→  exit: { opacity: 0, y: -8, transition: { duration: 0.2 } },
+   152→}
+   153→
+   154→// ============================================================================
+   155→// Transactions Page
+   156→// ============================================================================
+   157→
+   158→export function TransactionsPage() {
+   159→  const { user } = useRouterStore()
+   160→  const isMobile = useMediaQuery('(max-width: 768px)')
+   161→  const currency = user?.currency || APP_CONFIG.DEFAULT_CURRENCY
+   162→
+   163→  // ---- Filters state ----
+   164→  const [filters, setFilters] = React.useState<TransactionFilters>({
+   165→    page: 1,
+   166→    limit: 10,
+   167→    sortBy: 'date',
+   168→    sortOrder: 'desc',
+   169→  })
+   170→  const [searchInput, setSearchInput] = React.useState('')
+   171→  const debounceRef = React.useRef<NodeJS.Timeout | null>(null)
+   172→
+   173→  const updateFilter = React.useCallback(
+   174→    (patch: Partial<TransactionFilters>) => {
+   175→      setFilters((prev) => ({
+   176→        ...prev,
+   177→        ...patch,
+   178→        // Reset to page 1 when any filter changes (except page itself)
+   179→        page: patch.page !== undefined ? patch.page : 1,
+   180→      }))
+   181→    },
+   182→    [],
+   183→  )
+   184→
+   185→  const clearFilters = React.useCallback(() => {
+   186→    setFilters({
+   187→      page: 1,
+   188→      limit: filters.limit,
+   189→      sortBy: 'date',
+   190→      sortOrder: 'desc',
+   191→    })
+   192→    setSearchInput('')
+   193→    setStartDate(undefined)
+   194→    setEndDate(undefined)
+   195→  }, [filters.limit])
+   196→
+   197→  const hasActiveFilters = React.useMemo(
+   198→    () =>
+   199→      !!filters.search ||
+   200→      !!filters.type ||
+   201→      !!filters.categoryId ||
+   202→      !!filters.startDate ||
+   203→      !!filters.endDate ||
+   204→      filters.sortBy !== 'date' ||
+   205→      filters.sortOrder !== 'desc',
+   206→    [filters],
+   207→  )
+   208→
+   209→  // ---- Debounced search ----
+   210→  const handleSearchChange = React.useCallback(
+   211→    (value: string) => {
+   212→      setSearchInput(value)
+   213→      if (debounceRef.current) clearTimeout(debounceRef.current)
+   214→      debounceRef.current = setTimeout(() => {
+   215→        updateFilter({ search: value || undefined })
+   216→      }, 300)
+   217→    },
+   218→    [updateFilter],
+   219→  )
+   220→
+   221→  // ---- Date state ----
+   222→  const [startDate, setStartDate] = React.useState<Date | undefined>(undefined)
+   223→  const [endDate, setEndDate] = React.useState<Date | undefined>(undefined)
+   224→  const [startOpen, setStartOpen] = React.useState(false)
+   225→  const [endOpen, setEndOpen] = React.useState(false)
+   226→
+   227→  React.useEffect(() => {
+   228→    updateFilter({
+   229→      startDate: startDate ? format(startDate, 'yyyy-MM-dd') : undefined,
+   230→      endDate: endDate ? format(endDate, 'yyyy-MM-dd') : undefined,
+   231→    })
+   232→    }, [startDate, endDate])
+   233→
+   234→  // ---- Dialog / Sheet state ----
+   235→  const [formOpen, setFormOpen] = React.useState(false)
+   236→  const [editingTransaction, setEditingTransaction] =
+   237→    React.useState<TransactionWithCategory | null>(null)
+   238→  const [deleteTarget, setDeleteTarget] =
+   239→    React.useState<TransactionWithCategory | null>(null)
+   240→
+   241→  // ---- Data ----
+   242→  const { data, isLoading, isError } = useTransactions(filters)
+   243→
+   244→  const categoriesQuery = useQuery<ApiResponse<Category>>({
+   245→    queryKey: ['categories'],
+   246→    queryFn: () => apiRequest('/api/categories'),
+   247→    staleTime: 5 * 60 * 1000,
+   248→  })
+   249→  const categories = React.useMemo(() => {
+   250→    if (categoriesQuery.data?.data) {
+   251→      return categoriesQuery.data.data as unknown as Category[]
+   252→    }
+   253→    return DEFAULT_CATEGORIES.map((c) => ({
+   254→      id: c.name.toLowerCase().replace(/\s+/g, '-'),
+   255→      name: c.name,
+   256→      icon: c.icon,
+   257→      color: c.color,
+   258→      type: c.type,
+   259→      isDefault: true,
+   260→      userId: null,
+   261→      createdAt: new Date(),
+   262→      updatedAt: new Date(),
+   263→    })) as Category[]
+   264→  }, [categoriesQuery.data])
+   265→
+   266→  const transactions = data?.data ?? []
+   267→  const pagination = data?.pagination
+   268→  const totalItems = pagination?.total ?? 0
+   269→  const totalPages = pagination?.totalPages ?? 0
+   270→  const currentPage = filters.page ?? 1
+   271→  const currentLimit = filters.limit ?? 10
+   272→
+   273→  const startIdx = (currentPage - 1) * currentLimit + 1
+   274→  const endIdx = Math.min(currentPage * currentLimit, totalItems)
+   275→
+   276→  // ---- Mutations ----
+   277→  const createMutation = useCreateTransaction()
+   278→  const updateMutation = useUpdateTransaction()
+   279→  const deleteMutation = useDeleteTransaction()
+   280→
+   281→  const isSubmitting =
+   282→    createMutation.isPending || updateMutation.isPending
+   283→
+   284→  // ---- Form ----
+   285→  const form = useForm<TransactionFormValues>({
+   286→    resolver: zodResolver(formSchema),
+   287→    defaultValues: {
+   288→      amount: undefined as unknown as number,
+   289→      description: '',
+   290→      type: 'expense',
+   291→      date: format(new Date(), 'yyyy-MM-dd'),
+   292→      categoryId: '',
+   293→      paymentMethod: '',
+   294→      notes: '',
+   295→    },
+   296→  })
+   297→
+   298→  const watchedType = form.watch('type')
+   299→
+   300→  const filteredCategories = React.useMemo(() => {
+   301→    if (!watchedType) return categories
+   302→    return categories.filter(
+   303→      (c) => c.type === watchedType || c.type === 'transfer',
+   304→    )
+   305→  }, [categories, watchedType])
+   306→
+   307→  const openCreateForm = React.useCallback(() => {
+   308→    setEditingTransaction(null)
+   309→    form.reset({
+   310→      amount: undefined as unknown as number,
+   311→      description: '',
+   312→      type: 'expense',
+   313→      date: format(new Date(), 'yyyy-MM-dd'),
+   314→      categoryId: '',
+   315→      paymentMethod: '',
+   316→      notes: '',
+   317→    })
+   318→    setFormOpen(true)
+   319→  }, [form])
+   320→
+   321→  const openEditForm = React.useCallback(
+   322→    (t: TransactionWithCategory) => {
+   323→      setEditingTransaction(t)
+   324→      form.reset({
+   325→        amount: t.amount,
+   326→        description: t.description,
+   327→        type: t.type,
+   328→        date: format(new Date(t.date), 'yyyy-MM-dd'),
+   329→        categoryId: t.categoryId,
+   330→        paymentMethod: t.paymentMethod || '',
+   331→        notes: t.notes || '',
+   332→      })
+   333→      setFormOpen(true)
+   334→    },
+   335→    [form],
+   336→  )
+   337→
+   338→  const onSubmit = React.useCallback(
+   339→    (values: TransactionFormValues) => {
+   340→      if (editingTransaction) {
+   341→        updateMutation.mutate(
+   342→          { id: editingTransaction.id, data: values },
+   343→          { onSuccess: () => setFormOpen(false) },
+   344→        )
+   345→      } else {
+   346→        createMutation.mutate(values, {
+   347→          onSuccess: () => setFormOpen(false),
+   348→        })
+   349→      }
+   350→    },
+   351→    [editingTransaction, createMutation, updateMutation],
+   352→  )
+   353→
+   354→  const handleDelete = React.useCallback(() => {
+   355→    if (!deleteTarget) return
+   356→    deleteMutation.mutate(deleteTarget.id, {
+   357→      onSuccess: () => setDeleteTarget(null),
+   358→    })
+   359→  }, [deleteTarget, deleteMutation])
+   360→
+   361→  // ---- Export ----
+   362→  const exportTransactions = React.useCallback(
+   363→    (format: 'csv' | 'json') => {
+   364→      if (transactions.length === 0) return
+   365→
+   366→      let content: string
+   367→      let mimeType: string
+   368→      let ext: string
+   369→
+   370→      if (format === 'json') {
+   371→        const exportData = transactions.map((t) => ({
+   372→          description: t.description,
+   373→          amount: t.amount,
+   374→          type: t.type,
+   375→          category: t.category?.name || '',
+   376→          paymentMethod: t.paymentMethod || '',
+   377→          date: t.date,
+   378→          notes: t.notes || '',
+   379→        }))
+   380→        content = JSON.stringify(exportData, null, 2)
+   381→        mimeType = 'application/json'
+   382→        ext = 'json'
+   383→      } else {
+   384→        const headers = [
+   385→          'Description',
+   386→          'Amount',
+   387→          'Type',
+   388→          'Category',
+   389→          'Payment Method',
+   390→          'Date',
+   391→          'Notes',
+   392→        ]
+   393→        const rows = transactions.map((t) => [
+   394→          `"${t.description.replace(/"/g, '\"')}"`,
+   395→          t.amount.toFixed(2),
+   396→          t.type,
+   397→          t.category?.name || '',
+   398→          t.paymentMethod || '',
+   399→          format(new Date(t.date), 'yyyy-MM-dd'),
+   400→          `"${(t.notes || '').replace(/"/g, '\"')}"`,
+   401→        ])
+   402→        content = [headers.join(','), ...rows.map((r) => r.join(','))].join(
+   403→          '\n',
+   404→        )
+   405→        mimeType = 'text/csv'
+   406→        ext = 'csv'
+   407→      }
+   408→
+   409→      const blob = new Blob([content], { type: mimeType })
+   410→      const url = URL.createObjectURL(blob)
+   411→      const a = document.createElement('a')
+   412→      a.href = url
+   413→      a.download = `transactions.${ext}`
+   414→      a.click()
+   415→      URL.revokeObjectURL(url)
+   416→    },
+   417→    [transactions],
+   418→  )
+   419→
+   420→  // ---- Sort toggle ----
+   421→  const toggleSortOrder = React.useCallback(() => {
+   422→    updateFilter({
+   423→      sortOrder: filters.sortOrder === 'asc' ? 'desc' : 'asc',
+   424→    })
+   425→  }, [filters.sortOrder, updateFilter])
+   426→
+   427→  const SortIcon =
+   428→    filters.sortOrder === 'asc' ? ArrowUp : ArrowDown
+   429→
+   430→  // ---- Page numbers ----
+   431→  const pageNumbers = React.useMemo(() => {
+   432→    const pages: (number | '...')[] = []
+   433→    if (totalPages <= 7) {
+   434→      for (let i = 1; i <= totalPages; i++) pages.push(i)
+   435→    } else {
+   436→      pages.push(1)
+   437→      if (currentPage > 3) pages.push('...')
+   438→      const start = Math.max(2, currentPage - 1)
+   439→      const end = Math.min(totalPages - 1, currentPage + 1)
+   440→      for (let i = start; i <= end; i++) pages.push(i)
+   441→      if (currentPage < totalPages - 2) pages.push('...')
+   442→      pages.push(totalPages)
+   443→    }
+   444→    return pages
+   445→  }, [totalPages, currentPage])
+   446→
+   447→  // ---- Get payment method label ----
+   448→  const getPaymentLabel = React.useCallback(
+   449→    (val: string | null) => {
+   450→      if (!val) return '—'
+   451→      return PAYMENT_METHODS.find((m) => m.value === val)?.label || val
+   452→    },
+   453→    [],
+   454→  )
+   455→
+   456→  // ==========================================================================
+   457→  // Render
+   458→  // ==========================================================================
+   459→
+   460→  return (
+   461→    <div className="space-y-6">
+   462→      {/* Page Header */}
+   463→      <PageHeader
+   464→        title="Transactions"
+   465→        description="Track and manage all your financial transactions"
+   466→        breadcrumbs={[
+   467→          { label: 'Dashboard', href: '/dashboard' },
+   468→          { label: 'Transactions' },
+   469→        ]}
+   470→        actions={
+   471→          <div className="flex items-center gap-2">
+   472→            <DropdownMenu>
+   473→              <DropdownMenuTrigger asChild>
+   474→                <Button variant="outline" size="sm" disabled={transactions.length === 0}>
+   475→                  <Download className="size-4" />
+   476→                  <span className="hidden sm:inline">Export</span>
+   477→                </Button>
+   478→              </DropdownMenuTrigger>
+   479→              <DropdownMenuContent align="end">
+   480→                <DropdownMenuItem onClick={() => exportTransactions('csv')}>
+   481→                  <FileSpreadsheet className="size-4" />
+   482→                  Export as CSV
+   483→                </DropdownMenuItem>
+   484→                <DropdownMenuSeparator />
+   485→                <DropdownMenuItem onClick={() => exportTransactions('json')}>
+   486→                  <FileJson className="size-4" />
+   487→                  Export as JSON
+   488→                </DropdownMenuItem>
+   489→              </DropdownMenuContent>
+   490→            </DropdownMenu>
+   491→            <Button size="sm" onClick={openCreateForm}>
+   492→              <Plus className="size-4" />
+   493→              <span className="hidden sm:inline">Add Transaction</span>
+   494→            </Button>
+   495→          </div>
+   496→        }
+   497→      />
+   498→
+   499→      {/* Filters Bar */}
+   500→      <motion.div
+   501→        initial={{ opacity: 0, y: -10 }}
+   502→        animate={{ opacity: 1, y: 0 }}
+   503→        transition={{ duration: 0.3 }}
+   504→        className="rounded-lg border bg-card p-4"
+   505→      >
+   506→        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-2">
+   507→          {/* Search */}
+   508→          <div className="relative flex-1 lg:max-w-xs">
+   509→            <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+   510→            <Input
+   511→              placeholder="Search transactions..."
+   512→              value={searchInput}
+   513→              onChange={(e) => handleSearchChange(e.target.value)}
+   514→              className="pl-8"
+   515→            />
+   516→          </div>
+   517→
+   518→          {/* Type Filter */}
+   519→          <Select
+   520→            value={filters.type || 'all'}
+   521→            onValueChange={(val) =>
+   522→              updateFilter({ type: val === 'all' ? undefined : (val as TransactionFilters['type']) })
+   523→            }
+   524→          >
+   525→            <SelectTrigger className="w-full lg:w-[130px]">
+   526→              <SelectValue placeholder="Type" />
+   527→            </SelectTrigger>
+   528→            <SelectContent>
+   529→              <SelectItem value="all">All Types</SelectItem>
+   530→              <SelectItem value="income">Income</SelectItem>
+   531→              <SelectItem value="expense">Expense</SelectItem>
+   532→            </SelectContent>
+   533→          </Select>
+   534→
+   535→          {/* Category Filter */}
+   536→          <Select
+   537→            value={filters.categoryId || 'all'}
+   538→            onValueChange={(val) =>
+   539→              updateFilter({ categoryId: val === 'all' ? undefined : val })
+   540→            }
+   541→          >
+   542→            <SelectTrigger className="w-full lg:w-[160px]">
+   543→              <SelectValue placeholder="Category" />
+   544→            </SelectTrigger>
+   545→            <SelectContent>
+   546→              <SelectItem value="all">All Categories</SelectItem>
+   547→              {categories.map((cat) => (
+   548→                <SelectItem key={cat.id} value={cat.id}>
+   549→                  <span className="flex items-center gap-1.5">
+   550→                    {cat.icon && <span className="text-sm">{cat.icon}</span>}
+   551→                    {cat.name}
+   552→                  </span>
+   553→                </SelectItem>
+   554→              ))}
+   555→            </SelectContent>
+   556→          </Select>
+   557→
+   558→          {/* Start Date */}
+   559→          <Popover open={startOpen} onOpenChange={setStartOpen}>
+   560→            <PopoverTrigger asChild>
+   561→              <Button
+   562→                variant="outline"
+   563→                className="w-full justify-start text-left font-normal lg:w-[160px]"
+   564→              >
+   565→                <CalendarIcon className="mr-2 size-4" />
+   566→                {startDate ? format(startDate, 'MMM d, yyyy') : 'From'}
+   567→              </Button>
+   568→            </PopoverTrigger>
+   569→            <PopoverContent className="w-auto p-0" align="start">
+   570→              <Calendar
+   571→                mode="single"
+   572→                selected={startDate}
+   573→                onSelect={(d) => {
+   574→                  setStartDate(d)
+   575→                  setStartOpen(false)
+   576→                }}
+   577→                initialFocus
+   578→              />
+   579→            </PopoverContent>
+   580→          </Popover>
+   581→
+   582→          {/* End Date */}
+   583→          <Popover open={endOpen} onOpenChange={setEndOpen}>
+   584→            <PopoverTrigger asChild>
+   585→              <Button
+   586→                variant="outline"
+   587→                className="w-full justify-start text-left font-normal lg:w-[160px]"
+   588→              >
+   589→                <CalendarIcon className="mr-2 size-4" />
+   590→                {endDate ? format(endDate, 'MMM d, yyyy') : 'To'}
+   591→              </Button>
+   592→            </PopoverTrigger>
+   593→            <PopoverContent className="w-auto p-0" align="start">
+   594→              <Calendar
+   595→                mode="single"
+   596→                selected={endDate}
+   597→                onSelect={(d) => {
+   598→                  setEndDate(d)
+   599→                  setEndOpen(false)
+   600→                }}
+   601→                initialFocus
+   602→              />
+   603→            </PopoverContent>
+   604→          </Popover>
+   605→
+   606→          {/* Sort By */}
+   607→          <Select
+   608→            value={filters.sortBy || 'date'}
+   609→            onValueChange={(val) => updateFilter({ sortBy: val })}
+   610→          >
+   611→            <SelectTrigger className="w-full lg:w-[130px]">
+   612→              <ArrowUpDown className="mr-1 size-4" />
+   613→              <SelectValue />
+   614→            </SelectTrigger>
+   615→            <SelectContent>
+   616→              {SORT_OPTIONS.map((opt) => (
+   617→                <SelectItem key={opt.value} value={opt.value}>
+   618→                  {opt.label}
+   619→                </SelectItem>
+   620→              ))}
+   621→            </SelectContent>
+   622→          </Select>
+   623→
+   624→          {/* Sort Order Toggle */}
+   625→          <Button
+   626→            variant="outline"
+   627→            size="icon"
+   628→            onClick={toggleSortOrder}
+   629→            title={
+   630→              filters.sortOrder === 'asc' ? 'Ascending' : 'Descending'
+   631→            }
+   632→          >
+   633→            <SortIcon className="size-4" />
+   634→          </Button>
+   635→
+   636→          {/* Clear Filters */}
+   637→          {hasActiveFilters && (
+   638→            <Button
+   639→              variant="ghost"
+   640→              size="sm"
+   641→              onClick={clearFilters}
+   642→              className="text-muted-foreground"
+   643→            >
+   644→              <FilterX className="size-4" />
+   645→              <span className="hidden lg:inline">Clear</span>
+   646→            </Button>
+   647→          )}
+   648→        </div>
+   649→      </motion.div>
+   650→
+   651→      {/* Content */}
+   652→      {isLoading ? (
+   653→        <Card>
+   654→          <CardContent className="p-4">
+   655→            <div className="hidden md:block">
+   656→              {Array.from({ length: 8 }).map((_, i) => (
+   657→                <TransactionSkeleton key={i} />
+   658→              ))}
+   659→            </div>
+   660→            <div className="md:hidden">
+   661→              <ListSkeleton count={5} />
+   662→            </div>
+   663→          </CardContent>
+   664→        </Card>
+   665→      ) : isError ? (
+   666→        <Card>
+   667→          <CardContent className="flex min-h-[300px] items-center justify-center p-8">
+   668→            <p className="text-sm text-muted-foreground">
+   669→              Failed to load transactions. Please try again.
+   670→            </p>
+   671→          </CardContent>
+   672→        </Card>
+   673→      ) : transactions.length === 0 ? (
+   674→        <EmptyState
+   675→          icon={hasActiveFilters ? Search : Plus}
+   676→          title={
+   677→            hasActiveFilters
+   678→              ? 'No matching transactions'
+   679→              : 'No transactions yet'
+   680→          }
+   681→          description={
+   682→            hasActiveFilters
+   683→              ? 'Try adjusting your filters to find what you are looking for.'
+   684→              : 'Start tracking your finances by adding your first transaction.'
+   685→          }
+   686→          actionLabel={hasActiveFilters ? 'Clear Filters' : 'Add Transaction'}
+   687→          onAction={hasActiveFilters ? clearFilters : openCreateForm}
+   688→        />
+   689→      ) : (
+   690→        <>
+   691→          {/* Desktop Table */}
+   692→          <motion.div
+   693→            initial={{ opacity: 0 }}
+   694→            animate={{ opacity: 1 }}
+   695→            transition={{ duration: 0.3 }}
+   696→            className="hidden md:block"
+   697→          >
+   698→            <Card>
+   699→              <Table>
+   700→                <TableHeader>
+   701→                  <TableRow className="hover:bg-transparent">
+   702→                    <TableHead className="pl-4">Description</TableHead>
+   703→                    <TableHead>Category</TableHead>
+   704→                    <TableHead>Type</TableHead>
+   705→                    <TableHead>Payment</TableHead>
+   706→                    <TableHead className="text-right">Amount</TableHead>
+   707→                    <TableHead>Date</TableHead>
+   708→                    <TableHead className="pr-4 text-right">Actions</TableHead>
+   709→                  </TableRow>
+   710→                </TableHeader>
+   711→                <TableBody>
+   712→                  <AnimatePresence mode="popLayout">
+   713→                    {transactions.map((t, i) => (
+   714→                      <motion.tr
+   715→                        key={t.id}
+   716→                        custom={i}
+   717→                        variants={rowVariants}
+   718→                        initial="hidden"
+   719→                        animate="visible"
+   720→                        exit="exit"
+   721→                        className={
+   722→                          'group border-b transition-colors hover:bg-muted/50' +
+   723→                          (i % 2 === 1 ? ' bg-muted/30' : '')
+   724→                        }
+   725→                      >
+   726→                        <TableCell className="max-w-[200px] truncate pl-4 font-medium">
+   727→                          {t.description}
+   728→                        </TableCell>
+   729→                        <TableCell>
+   730→                          <span
+   731→                            className="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium"
+   732→                            style={{
+   733→                              backgroundColor: `${t.category?.color}15`,
+   734→                              borderColor: `${t.category?.color}30`,
+   735→                              color: t.category?.color,
+   736→                            }}
+   737→                          >
+   738→                            {t.category?.icon && (
+   739→                              <span>{t.category.icon}</span>
+   740→                            )}
+   741→                            {t.category?.name || 'Unknown'}
+   742→                          </span>
+   743→                        </TableCell>
+   744→                        <TableCell>
+   745→                          <Badge
+   746→                            variant="outline"
+   747→                            className={typeBadgeClass[t.type] || ''}
+   748→                          >
+   749→                            {t.type.charAt(0).toUpperCase() +
+   750→                              t.type.slice(1)}
+   751→                          </Badge>
+   752→                        </TableCell>
+   753→                        <TableCell className="text-muted-foreground">
+   754→                          {getPaymentLabel(t.paymentMethod)}
+   755→                        </TableCell>
+   756→                        <TableCell
+   757→                          className={
+   758→                            'text-right font-semibold tabular-nums ' +
+   759→                            (t.type === 'income'
+   760→                              ? 'text-emerald-600 dark:text-emerald-400'
+   761→                              : t.type === 'expense'
+   762→                                ? 'text-red-600 dark:text-red-400'
+   763→                                : 'text-amber-600 dark:text-amber-400')
+   764→                          }
+   765→                        >
+   766→                          {t.type === 'income' ? '+' : t.type === 'expense' ? '-' : ''}
+   767→                          {formatCurrency(t.amount, currency)}
+   768→                        </TableCell>
+   769→                        <TableCell className="text-muted-foreground">
+   770→                          {formatDate(t.date)}
+   771→                        </TableCell>
+   772→                        <TableCell className="pr-4">
+   773→                          <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+   774→                            <Button
+   775→                              variant="ghost"
+   776→                              size="icon"
+   777→                              className="size-8"
+   778→                              onClick={() => openEditForm(t)}
+   779→                            >
+   780→                              <Pencil className="size-3.5" />
+   781→                            </Button>
+   782→                            <Button
+   783→                              variant="ghost"
+   784→                              size="icon"
+   785→                              className="size-8 text-destructive hover:text-destructive"
+   786→                              onClick={() => setDeleteTarget(t)}
+   787→                            >
+   788→                              <Trash2 className="size-3.5" />
+   789→                            </Button>
+   790→                          </div>
+   791→                        </TableCell>
+   792→                      </motion.tr>
+   793→                    ))}
+   794→                  </AnimatePresence>
+   795→                </TableBody>
+   796→              </Table>
+   797→            </Card>
+   798→          </motion.div>
+   799→
+   800→          {/* Mobile Cards */}
+   801→          <div className="space-y-3 md:hidden">
+   802→            <AnimatePresence mode="popLayout">
+   803→              {transactions.map((t, i) => (
+   804→                <motion.div
+   805→                  key={t.id}
+   806→                  custom={i}
+   807→                  variants={rowVariants}
+   808→                  initial="hidden"
+   809→                  animate="visible"
+   810→                  exit="exit"
+   811→                >
+   812→                  <Card className="overflow-hidden">
+   813→                    <CardContent className="p-4">
+   814→                      <div className="flex items-start justify-between gap-3">
+   815→                        <div className="min-w-0 flex-1">
+   816→                          <div className="flex items-center gap-2">
+   817→                            <p className="truncate font-medium">
+   818→                              {t.description}
+   819→                            </p>
+   820→                            <Badge
+   821→                              variant="outline"
+   822→                              className={`shrink-0 ${typeBadgeClass[t.type] || ''}`}
+   823→                            >
+   824→                              {t.type.charAt(0).toUpperCase() +
+   825→                                t.type.slice(1)}
+   826→                            </Badge>
+   827→                          </div>
+   828→                          <div className="mt-1.5 flex items-center gap-2">
+   829→                            <span
+   830→                              className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium"
+   831→                              style={{
+   832→                                backgroundColor: `${t.category?.color}15`,
+   833→                                color: t.category?.color,
+   834→                              }}
+   835→                            >
+   836→                              {t.category?.icon && (
+   837→                                <span className="text-xs">
+   838→                                  {t.category.icon}
+   839→                                </span>
+   840→                              )}
+   841→                              {t.category?.name || 'Unknown'}
+   842→                            </span>
+   843→                            <span className="text-xs text-muted-foreground">
+   844→                              {getPaymentLabel(t.paymentMethod)}
+   845→                            </span>
+   846→                          </div>
+   847→                        </div>
+   848→                        <div className="text-right">
+   849→                          <p
+   850→                            className={
+   851→                              'font-semibold tabular-nums ' +
+   852→                              (t.type === 'income'
+   853→                                ? 'text-emerald-600 dark:text-emerald-400'
+   854→                                : t.type === 'expense'
+   855→                                  ? 'text-red-600 dark:text-red-400'
+   856→                                  : 'text-amber-600 dark:text-amber-400')
+   857→                            }
+   858→                          >
+   859→                            {t.type === 'income'
+   860→                              ? '+'
+   861→                              : t.type === 'expense'
+   862→                                ? '-'
+   863→                                : ''}
+   864→                            {formatCurrency(t.amount, currency)}
+   865→                          </p>
+   866→                          <p className="mt-0.5 text-xs text-muted-foreground">
+   867→                            {formatDate(t.date)}
+   868→                          </p>
+   869→                        </div>
+   870→                      </div>
+   871→                      {t.notes && (
+   872→                        <p className="mt-2 text-xs text-muted-foreground line-clamp-1">
+   873→                          {t.notes}
+   874→                        </p>
+   875→                      )}
+   876→                      <Separator className="my-3" />
+   877→                      <div className="flex items-center justify-end gap-1">
+   878→                        <Button
+   879→                          variant="ghost"
+   880→                          size="sm"
+   881→                          onClick={() => openEditForm(t)}
+   882→                        >
+   883→                          <Pencil className="size-3.5" />
+   884→                          Edit
+   885→                        </Button>
+   886→                        <Button
+   887→                          variant="ghost"
+   888→                          size="sm"
+   889→                          className="text-destructive hover:text-destructive"
+   890→                          onClick={() => setDeleteTarget(t)}
+   891→                        >
+   892→                          <Trash2 className="size-3.5" />
+   893→                          Delete
+   894→                        </Button>
+   895→                      </div>
+   896→                    </CardContent>
+   897→                  </Card>
+   898→                </motion.div>
+   899→              ))}
+   900→            </AnimatePresence>
+   901→          </div>
+   902→
+   903→          {/* Pagination */}
+   904→          {totalItems > 0 && (
+   905→            <motion.div
+   906→              initial={{ opacity: 0, y: 10 }}
+   907→              animate={{ opacity: 1, y: 0 }}
+   908→              transition={{ duration: 0.3, delay: 0.15 }}
+   909→              className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between"
+   910→            >
+   911→              <div className="flex items-center gap-3">
+   912→                <span className="text-sm text-muted-foreground">
+   913→                  Showing{' '}
+   914→                  <span className="font-medium text-foreground">
+   915→                    {startIdx}
+   916→                  </span>
+   917→                  –
+   918→                  <span className="font-medium text-foreground">
+   919→                    {endIdx}
+   920→                  </span>{' '}
+   921→                  of{' '}
+   922→                  <span className="font-medium text-foreground">
+   923→                    {totalItems}
+   924→                  </span>
+   925→                </span>
+   926→                <Select
+   927→                  value={String(currentLimit)}
+   928→                  onValueChange={(val) => updateFilter({ limit: Number(val) })}
+   929→                >
+   930→                  <SelectTrigger className="h-8 w-[70px]">
+   931→                    <SelectValue />
+   932→                  </SelectTrigger>
+   933→                  <SelectContent>
+   934→                    {PAGE_SIZE_OPTIONS.map((size) => (
+   935→                      <SelectItem key={size} value={String(size)}>
+   936→                        {size}
+   937→                      </SelectItem>
+   938→                    ))}
+   939→                  </SelectContent>
+   940→                </Select>
+   941→              </div>
+   942→
+   943→              <div className="flex items-center gap-1">
+   944→                <Button
+   945→                  variant="outline"
+   946→                  size="icon"
+   947→                  className="size-8"
+   948→                  disabled={currentPage <= 1}
+   949→                  onClick={() => updateFilter({ page: 1 })}
+   950→                >
+   951→                  <ChevronsLeft className="size-4" />
+   952→                </Button>
+   953→                <Button
+   954→                  variant="outline"
+   955→                  size="icon"
+   956→                  className="size-8"
+   957→                  disabled={currentPage <= 1}
+   958→                  onClick={() =>
+   959→                    updateFilter({ page: currentPage - 1 })
+   960→                  }
+   961→                >
+   962→                  <ChevronLeft className="size-4" />
+   963→                </Button>
+   964→
+   965→                {pageNumbers.map((page, idx) =>
+   966→                  page === '...' ? (
+   967→                    <span
+   968→                      key={`ellipsis-${idx}`}
+   969→                      className="px-1 text-muted-foreground"
+   970→                    >
+   971→                      …
+   972→                    </span>
+   973→                  ) : (
+   974→                    <Button
+   975→                      key={page}
+   976→                      variant={currentPage === page ? 'default' : 'outline'}
+   977→                      size="icon"
+   978→                      className="size-8"
+   979→                      onClick={() => updateFilter({ page })}
+   980→                    >
+   981→                      {page}
+   982→                    </Button>
+   983→                  ),
+   984→                )}
+   985→
+   986→                <Button
+   987→                  variant="outline"
+   988→                  size="icon"
+   989→                  className="size-8"
+   990→                  disabled={currentPage >= totalPages}
+   991→                  onClick={() =>
+   992→                    updateFilter({ page: currentPage + 1 })
+   993→                  }
+   994→                >
+   995→                  <ChevronRight className="size-4" />
+   996→                </Button>
+   997→                <Button
+   998→                  variant="outline"
+   999→                  size="icon"
+  1000→                  className="size-8"
+  1001→                  disabled={currentPage >= totalPages}
+  1002→                  onClick={() => updateFilter({ page: totalPages })}
+  1003→                >
+  1004→                  <ChevronsRight className="size-4" />
+  1005→                </Button>
+  1006→              </div>
+  1007→            </motion.div>
+  1008→          )}
+  1009→        </>
+  1010→      )}
+  1011→
+  1012→      {/* ========== Add / Edit Transaction Dialog (Desktop) ========== */}
+  1013→      {!isMobile && (
+  1014→        <Dialog open={formOpen} onOpenChange={setFormOpen}>
+  1015→          <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
+  1016→            <DialogHeader>
+  1017→              <DialogTitle>
+  1018→                {editingTransaction
+  1019→                  ? 'Edit Transaction'
+  1020→                  : 'New Transaction'}
+  1021→              </DialogTitle>
+  1022→              <DialogDescription>
+  1023→                {editingTransaction
+  1024→                  ? 'Update the details of this transaction.'
+  1025→                  : 'Add a new transaction to track your finances.'}
+  1026→              </DialogDescription>
+  1027→            </DialogHeader>
+  1028→            <TransactionForm
+  1029→              form={form}
+  1030→              categories={filteredCategories}
+  1031→              watchedType={watchedType}
+  1032→              isSubmitting={isSubmitting}
+  1033→              onSubmit={onSubmit}
+  1034→              onTypeChange={(val) => form.setValue('categoryId', '')}
+  1035→            />
+  1036→            <DialogFooter>
+  1037→              <Button
+  1038→                type="button"
+  1039→                variant="outline"
+  1040→                onClick={() => setFormOpen(false)}
+  1041→                disabled={isSubmitting}
+  1042→              >
+  1043→                Cancel
+  1044→              </Button>
+  1045→              <Button
+  1046→                type="button"
+  1047→                onClick={form.handleSubmit(onSubmit)}
+  1048→                disabled={isSubmitting}
+  1049→              >
+  1050→                {isSubmitting && <Loader2 className="size-4 animate-spin" />}
+  1051→                {editingTransaction ? 'Save Changes' : 'Create Transaction'}
+  1052→              </Button>
+  1053→            </DialogFooter>
+  1054→          </DialogContent>
+  1055→        </Dialog>
+  1056→      )}
+  1057→
+  1058→      {/* ========== Add / Edit Transaction Sheet (Mobile) ========== */}
+  1059→      {isMobile && (
+  1060→        <Sheet open={formOpen} onOpenChange={setFormOpen}>
+  1061→          <SheetContent side="bottom" className="max-h-[90vh] rounded-t-xl">
+  1062→            <SheetHeader>
+  1063→              <SheetTitle>
+  1064→                {editingTransaction
+  1065→                  ? 'Edit Transaction'
+  1066→                  : 'New Transaction'}
+  1067→              </SheetTitle>
+  1068→              <SheetDescription>
+  1069→                {editingTransaction
+  1070→                  ? 'Update the details of this transaction.'
+  1071→                  : 'Add a new transaction to track your finances.'}
+  1072→              </SheetDescription>
+  1073→            </SheetHeader>
+  1074→            <div className="flex-1 overflow-y-auto px-4">
+  1075→              <TransactionForm
+  1076→                form={form}
+  1077→                categories={filteredCategories}
+  1078→                watchedType={watchedType}
+  1079→                isSubmitting={isSubmitting}
+  1080→                onSubmit={onSubmit}
+  1081→                onTypeChange={(val) => form.setValue('categoryId', '')}
+  1082→              />
+  1083→            </div>
+  1084→            <SheetFooter className="border-t pt-4">
+  1085→              <Button
+  1086→                variant="outline"
+  1087→                onClick={() => setFormOpen(false)}
+  1088→                disabled={isSubmitting}
+  1089→                className="flex-1"
+  1090→              >
+  1091→                Cancel
+  1092→              </Button>
+  1093→              <Button
+  1094→                onClick={form.handleSubmit(onSubmit)}
+  1095→                disabled={isSubmitting}
+  1096→                className="flex-1"
+  1097→              >
+  1098→                {isSubmitting && <Loader2 className="size-4 animate-spin" />}
+  1099→                {editingTransaction ? 'Save Changes' : 'Create'}
+  1100→              </Button>
+  1101→            </SheetFooter>
+  1102→          </SheetContent>
+  1103→        </Sheet>
+  1104→      )}
+  1105→
+  1106→      {/* ========== Delete Confirmation ========== */}
+  1107→      <ConfirmDialog
+  1108→        open={!!deleteTarget}
+  1109→        onOpenChange={(open) => !open && setDeleteTarget(null)}
+  1110→        title="Delete Transaction"
+  1111→        description={`Are you sure you want to delete "${deleteTarget?.description || ''}"? This action cannot be undone.`}
+  1112→        confirmLabel="Delete"
+  1113→        variant="destructive"
+  1114→        onConfirm={handleDelete}
+  1115→        loading={deleteMutation.isPending}
+  1116→      />
+  1117→    </div>
+  1118→  )
+  1119→}
+  1120→
+  1121→// ============================================================================
+  1122→// Transaction Form (shared between Dialog and Sheet)
+  1123→// ============================================================================
+  1124→
+  1125→function TransactionForm({
+  1126→  form,
+  1127→  categories,
+  1128→  watchedType,
+  1129→  isSubmitting,
+  1130→  onSubmit,
+  1131→  onTypeChange,
+  1132→}: {
+  1133→  form: ReturnType<typeof useForm<TransactionFormValues>>
+  1134→  categories: Category[]
+  1135→  watchedType: string
+  1136→  isSubmitting: boolean
+  1137→  onSubmit: (values: TransactionFormValues) => void
+  1138→  onTypeChange: (type: 'income' | 'expense' | 'transfer') => void
+  1139→}) {
+  1140→  return (
+  1141→    <Form {...form}>
+  1142→      <form
+  1143→        onSubmit={(e) => {
+  1144→          e.preventDefault()
+  1145→          form.handleSubmit(onSubmit)(e)
+  1146→        }}
+  1147→        className="space-y-4"
+  1148→      >
+  1149→        {/* Type Toggle */}
+  1150→        <FormField
+  1151→          control={form.control}
+  1152→          name="type"
+  1153→          render={({ field }) => (
+  1154→            <FormItem>
+  1155→              <FormLabel>Type</FormLabel>
+  1156→              <FormControl>
+  1157→                <div className="flex gap-2 rounded-lg border p-1">
+  1158→                  {(['income', 'expense'] as const).map((type) => (
+  1159→                    <button
+  1160→                      key={type}
+  1161→                      type="button"
+  1162→                      onClick={() => {
+  1163→                        field.onChange(type)
+  1164→                        onTypeChange(type)
+  1165→                      }}
+  1166→                      className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+  1167→                        field.value === type
+  1168→                          ? type === 'income'
+  1169→                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
+  1170→                            : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
+  1171→                          : 'text-muted-foreground hover:bg-muted'
+  1172→                      }`}
+  1173→                    >
+  1174→                      {type === 'income' ? '↑ Income' : '↓ Expense'}
+  1175→                    </button>
+  1176→                  ))}
+  1177→                </div>
+  1178→              </FormControl>
+  1179→              <FormMessage />
+  1180→            </FormItem>
+  1181→          )}
+  1182→        />
+  1183→
+  1184→        {/* Description */}
+  1185→        <FormField
+  1186→          control={form.control}
+  1187→          name="description"
+  1188→          render={({ field }) => (
+  1189→            <FormItem>
+  1190→              <FormLabel>Description</FormLabel>
+  1191→              <FormControl>
+  1192→                <Input
+  1193→                  placeholder="e.g., Grocery shopping"
+  1194→                  {...field}
+  1195→                  disabled={isSubmitting}
+  1196→                />
+  1197→              </FormControl>
+  1198→              <FormMessage />
+  1199→            </FormItem>
+  1200→          )}
+  1201→        />
+  1202→
+  1203→        {/* Amount */}
+  1204→        <FormField
+  1205→          control={form.control}
+  1206→          name="amount"
+  1207→          render={({ field }) => (
+  1208→            <FormItem>
+  1209→              <FormLabel>Amount</FormLabel>
+  1210→              <FormControl>
+  1211→                <div className="relative">
+  1212→                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+  1213→                    $
+  1214→                  </span>
+  1215→                  <Input
+  1216→                    type="number"
+  1217→                    step="0.01"
+  1218→                    min="0.01"
+  1219→                    placeholder="0.00"
+  1220→                    className="pl-7"
+  1221→                    disabled={isSubmitting}
+  1222→                    value={field.value ?? ''}
+  1223→                    onChange={(e) => {
+  1224→                      const val = e.target.value
+  1225→                      field.onChange(val === '' ? undefined : parseFloat(val))
+  1226→                    }}
+  1227→                  />
+  1228→                </div>
+  1229→              </FormControl>
+  1230→              <FormMessage />
+  1231→            </FormItem>
+  1232→          )}
+  1233→        />
+  1234→
+  1235→        {/* Date */}
+  1236→        <FormField
+  1237→          control={form.control}
+  1238→          name="date"
+  1239→          render={({ field }) => (
+  1240→            <FormItem>
+  1241→              <FormLabel>Date</FormLabel>
+  1242→              <Popover>
+  1243→                <PopoverTrigger asChild>
+  1244→                  <FormControl>
+  1245→                    <Button
+  1246→                      variant="outline"
+  1247→                      className="w-full justify-start text-left font-normal"
+  1248→                      disabled={isSubmitting}
+  1249→                    >
+  1250→                      <CalendarIcon className="mr-2 size-4" />
+  1251→                      {field.value
+  1252→                        ? format(parseISO(field.value), 'MMM d, yyyy')
+  1253→                        : 'Pick a date'}
+  1254→                    </Button>
+  1255→                  </FormControl>
+  1256→                </PopoverTrigger>
+  1257→                <PopoverContent className="w-auto p-0" align="start">
+  1258→                  <Calendar
+  1259→                    mode="single"
+  1260→                    selected={field.value ? parseISO(field.value) : undefined}
+  1261→                    onSelect={(date) =>
+  1262→                      field.onChange(
+  1263→                        date ? format(date, 'yyyy-MM-dd') : '',
+  1264→                      )
+  1265→                    }
+  1266→                    initialFocus
+  1267→                  />
+  1268→                </PopoverContent>
+  1269→              </Popover>
+  1270→              <FormMessage />
+  1271→            </FormItem>
+  1272→          )}
+  1273→        />
+  1274→
+  1275→        {/* Category */}
+  1276→        <FormField
+  1277→          control={form.control}
+  1278→          name="categoryId"
+  1279→          render={({ field }) => (
+  1280→            <FormItem>
+  1281→              <FormLabel>Category</FormLabel>
+  1282→              <Select
+  1283→                value={field.value}
+  1284→                onValueChange={field.onChange}
+  1285→                disabled={isSubmitting}
+  1286→              >
+  1287→                <FormControl>
+  1288→                  <SelectTrigger>
+  1289→                    <SelectValue placeholder="Select a category" />
+  1290→                  </SelectTrigger>
+  1291→                </FormControl>
+  1292→                <SelectContent>
+  1293→                  {categories.length === 0 && (
+  1294→                    <SelectItem value="_none" disabled>
+  1295→                      No categories available
+  1296→                    </SelectItem>
+  1297→                  )}
+  1298→                  {categories.map((cat) => (
+  1299→                    <SelectItem key={cat.id} value={cat.id}>
+  1300→                      <span className="flex items-center gap-1.5">
+  1301→                        {cat.icon && <span>{cat.icon}</span>}
+  1302→                        {cat.name}
+  1303→                      </span>
+  1304→                    </SelectItem>
+  1305→                  ))}
+  1306→                </SelectContent>
+  1307→              </Select>
+  1308→              <FormMessage />
+  1309→            </FormItem>
+  1310→          )}
+  1311→        />
+  1312→
+  1313→        {/* Payment Method */}
+  1314→        <FormField
+  1315→          control={form.control}
+  1316→          name="paymentMethod"
+  1317→          render={({ field }) => (
+  1318→            <FormItem>
+  1319→              <FormLabel>Payment Method</FormLabel>
+  1320→              <Select
+  1321→                value={field.value || '_none'}
+  1322→                onValueChange={(val) =>
+  1323→                  field.onChange(val === '_none' ? '' : val)
+  1324→                }
+  1325→                disabled={isSubmitting}
+  1326→              >
+  1327→                <FormControl>
+  1328→                  <SelectTrigger>
+  1329→                    <SelectValue placeholder="Select payment method" />
+  1330→                  </SelectTrigger>
+  1331→                </FormControl>
+  1332→                <SelectContent>
+  1333→                  <SelectItem value="_none">None</SelectItem>
+  1334→                  {PAYMENT_METHODS.map((method) => (
+  1335→                    <SelectItem key={method.value} value={method.value}>
+  1336→                      <span className="flex items-center gap-1.5">
+  1337→                        <span>{method.icon}</span>
+  1338→                        {method.label}
+  1339→                      </span>
+  1340→                    </SelectItem>
+  1341→                  ))}
+  1342→                </SelectContent>
+  1343→              </Select>
+  1344→              <FormMessage />
+  1345→            </FormItem>
+  1346→          )}
+  1347→        />
+  1348→
+  1349→        {/* Notes */}
+  1350→        <FormField
+  1351→          control={form.control}
+  1352→          name="notes"
+  1353→          render={({ field }) => (
+  1354→            <FormItem>
+  1355→              <FormLabel>
+  1356→                Notes{' '}
+  1357→                <span className="text-muted-foreground font-normal">
+  1358→                  (optional)
+  1359→                </span>
+  1360→              </FormLabel>
+  1361→              <FormControl>
+  1362→                <Textarea
+  1363→                  placeholder="Add any additional notes..."
+  1364→                  rows={3}
+  1365→                  {...field}
+  1366→                  disabled={isSubmitting}
+  1367→                />
+  1368→              </FormControl>
+  1369→              <FormMessage />
+  1370→            </FormItem>
+  1371→          )}
+  1372→        />
+  1373→      </form>
+  1374→    </Form>
+  1375→  )
+  1376→}
+  1377→

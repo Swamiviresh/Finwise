@@ -1,0 +1,833 @@
+     1→'use client'
+     2→
+     3→import * as React from 'react'
+     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→import { format } from 'date-fns'
+     6→import Markdown from 'react-markdown'
+     7→import { toast } from 'sonner'
+     8→import {
+     9→  Send,
+    10→  Plus,
+    11→  MessageSquare,
+    12→  Trash2,
+    13→  Sparkles,
+    14→  Bot,
+    15→  PanelLeftClose,
+    16→  PanelLeft,
+    17→  TrendingUp,
+    18→  PiggyBank,
+    19→  Lightbulb,
+    20→  BarChart3,
+    21→  AlertTriangle,
+    22→  X,
+    23→  ChevronRight,
+    24→} from 'lucide-react'
+    25→import { Button } from '@/components/ui/button'
+    26→import { Textarea } from '@/components/ui/textarea'
+    27→import { ScrollArea } from '@/components/ui/scroll-area'
+    28→import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+    29→import {
+    30→  Tooltip,
+    31→  TooltipContent,
+    32→  TooltipTrigger,
+    33→} from '@/components/ui/tooltip'
+    34→import { cn } from '@/lib/utils'
+    35→
+    36→// ---------------------------------------------------------------------------
+    37→// Types
+    38→// ---------------------------------------------------------------------------
+    39→
+    40→interface LocalChatMessage {
+    41→  id: string
+    42→  role: 'user' | 'assistant' | 'system'
+    43→  content: string
+    44→  createdAt: Date
+    45→}
+    46→
+    47→interface LocalChat {
+    48→  id: string
+    49→  title: string
+    50→  messages: LocalChatMessage[]
+    51→  createdAt: Date
+    52→  updatedAt: Date
+    53→}
+    54→
+    55→// ---------------------------------------------------------------------------
+    56→// Financial AI Tips (fallback when API is unavailable)
+    57→// ---------------------------------------------------------------------------
+    58→
+    59→const FINANCIAL_TIPS: Record<string, string> = {
+    60→  spending: `## 📊 Spending Analysis
+    61→
+    62→Based on common spending patterns, here are some key insights:
+    63→
+    64→### Top Recommendations:
+    65→1. **Track every expense** — Awareness is the first step to financial health
+    66→2. **Apply the 50/30/20 rule** — 50% needs, 30% wants, 20% savings
+    67→3. **Review subscriptions monthly** — Cancel unused services
+    68→4. **Use cashback & rewards** — Make your spending work for you
+    69→5. **Set category limits** — Prevent overspending in specific areas
+    70→
+    71→### Action Items:
+    72→- Review your last 30 days of transactions
+    73→- Identify your top 3 spending categories
+    74→- Set a realistic monthly budget for each category`,
+    75→
+    76→  budget: `## 💰 Budget Suggestion
+    77→
+    78→Here's a recommended monthly budget structure based on the **50/30/20 rule**:
+    79→
+    80→### Essential Expenses (50%)
+    81→| Category | Allocation |
+    82→|----------|-----------|
+    83→| Housing | 30% |
+    84→| Groceries | 10% |
+    85→| Transportation | 5% |
+    86→| Utilities | 3% |
+    87→| Insurance | 2% |
+    88→
+    89→### Lifestyle (30%)
+    90→| Category | Allocation |
+    91→|----------|-----------|
+    92→| Dining Out | 8% |
+    93→| Entertainment | 5% |
+    94→| Shopping | 7% |
+    95→| Personal Care | 5% |
+    96→| Misc | 5% |
+    97→
+    98→### Savings & Goals (20%)
+    99→| Category | Allocation |
+   100→|----------|-----------|
+   101→| Emergency Fund | 8% |
+   102→| Retirement | 7% |
+   103→| Financial Goals | 5% |
+   104→
+   105→> 💡 **Tip**: Adjust these percentages based on your income level and financial priorities.`,
+   106→
+   107→  savings: `## 💡 Smart Savings Strategies
+   108→
+   109→Here are proven ways to save more money:
+   110→
+   111→### 1. **Automate Your Savings**
+   112→Set up automatic transfers to your savings account on payday. "Pay yourself first."
+   113→
+   114→### 2. **The 24-Hour Rule**
+   115→Before any non-essential purchase over $50, wait 24 hours. You'll be surprised how many impulse buys you avoid.
+   116→
+   117→### 3. **Meal Planning**
+   118→Plan your meals weekly. This can save **30-40%** on food costs compared to eating out or impulse grocery shopping.
+   119→
+   120→### 4. **Energy Savings**
+   121→- Use LED bulbs (save ~$75/year)
+   122→- Adjust thermostat by 2 degrees (save ~$180/year)
+   123→- Unplug devices when not in use
+   124→
+   125→### 5. **Subscription Audit**
+   126→Review all subscriptions quarterly. The average person has **$237/month** in recurring charges they forget about.
+   127→
+   128→### Quick Wins:
+   129→- 🏦 Round up purchases and save the difference
+   130→- 📱 Use cashback apps for routine purchases
+   131→- ☕ Brew coffee at home (save ~$1,500/year)
+   132→- 🚶 Walk or bike for short trips`,
+   133→
+   134→  insights: `## 📈 Financial Insights
+   135→
+   136→### Key Financial Health Metrics:
+   137→
+   138→**1. Savings Rate**
+   139→Aim for at least **20%** of your net income. The national average is only 5-7%.
+   140→
+   141→**2. Emergency Fund**
+   142→Target **3-6 months** of essential expenses. This provides a safety net for unexpected events.
+   143→
+   144→**3. Debt-to-Income Ratio**
+   145→Keep this below **36%**. Lenders use this to assess your borrowing capacity.
+   146→
+   147→**4. Net Worth Trend**
+   148→Track your net worth monthly. It should trend upward over time, even if slowly.
+   149→
+   150→### Weekly Financial Checklist:
+   151→- [ ] Review transactions for the week
+   152→- [ ] Check budget progress
+   153→- [ ] Verify all bills are paid
+   154→- [ ] Log any cash spending
+   155→- [ ] Review savings goals progress
+   156→
+   157→### Red Flags to Watch:
+   158→- ⚠️ Using credit cards for daily expenses without paying in full
+   159→- ⚠️ No emergency fund
+   160→- ⚠️ Living paycheck to paycheck
+   161→- ⚠️ No retirement contributions`,
+   162→
+   163→  unusual: `## 🔍 Unusual Spending Detection
+   164→
+   165→Here are common patterns of unusual spending to watch for:
+   166→
+   167→### Potential Red Flags:
+   168→1. **Subscription creep** — New recurring charges you don't remember signing up for
+   169→2. **Category spikes** — Any category suddenly 50%+ higher than your 3-month average
+   170→3. **Frequency changes** — Coffee shop visits doubling, more takeout orders, etc.
+   171→4. **Round number purchases** — Large round-number transactions may indicate impulse buys
+   172→5. **Late-night purchases** — Emotional spending often happens late at night
+   173→
+   174→### How to Detect Unusual Spending:
+   175→- Set up **budget alerts** at 50%, 75%, and 90% thresholds
+   176→- Review your **weekly spending summary** for anomalies
+   177→- Compare current month to **rolling 3-month averages**
+   178→- Enable **transaction notifications** for amounts over a set threshold
+   179→
+   180→### Quick Fix Actions:
+   181→- Cancel unused subscriptions immediately
+   182→- Set daily/weekly spending limits in high-risk categories
+   183→- Use a **cool-down period** for purchases over $100`,
+   184→}
+   185→
+   186→function getLocalResponse(input: string): string {
+   187→  const lower = input.toLowerCase()
+   188→
+   189→  if (lower.includes('spend') || lower.includes('analyz')) {
+   190→    return FINANCIAL_TIPS.spending
+   191→  }
+   192→  if (lower.includes('budget') || lower.includes('suggest')) {
+   193→    return FINANCIAL_TIPS.budget
+   194→  }
+   195→  if (lower.includes('save') || lower.includes('sav')) {
+   196→    return FINANCIAL_TIPS.savings
+   197→  }
+   198→  if (lower.includes('insight') || lower.includes('financial')) {
+   199→    return FINANCIAL_TIPS.insights
+   200→  }
+   201→  if (lower.includes('unusual') || lower.includes('detect') || lower.includes('anomal')) {
+   202→    return FINANCIAL_TIPS.unusual
+   203→  }
+   204→  if (lower.includes('invest')) {
+   205→    return `## 📈 Investment Guidance
+   206→
+   207→For beginners, here's a solid investment approach:
+   208→
+   209→### 1. **Start with an Emergency Fund**
+   210→Before investing, save 3-6 months of expenses in a high-yield savings account.
+   211→
+   212→### 2. **Employer Match (Free Money!)**
+   213→If your employer offers a 401(k) match, contribute at least enough to get the full match. It's an instant return on investment.
+   214→
+   215→### 3. **Index Funds**
+   216→Low-cost index funds (like those tracking the S&P 500) historically outperform 80% of actively managed funds over 10+ years.
+   217→
+   218→### 4. **Diversification**
+   219→Spread investments across:
+   220→- **Domestic stocks** (60-70%)
+   221→- **International stocks** (15-25%)
+   222→- **Bonds** (10-20%)
+   223→- **REITs / Alternatives** (5-10%)
+   224→
+   225→### 5. **Dollar-Cost Averaging**
+   226→Invest a fixed amount regularly regardless of market conditions. This reduces the impact of volatility.
+   227→
+   228→> ⚠️ **Disclaimer**: This is educational content, not personalized financial advice. Always consider consulting a certified financial advisor.`
+   229→  }
+   230→  if (lower.includes('debt') || lower.includes('loan')) {
+   231→    return `## 💳 Debt Management Strategy
+   232→
+   233→### Two Popular Methods:
+   234→
+   235→**Avalanche Method** (Mathematically optimal):
+   236→1. Pay minimums on all debts
+   237→2. Put extra money toward the **highest interest rate** debt
+   238→3. When that's paid off, move to the next highest rate
+   239→
+   240→**Snowball Method** (Psychologically motivating):
+   241→1. Pay minimums on all debts
+   242→2. Put extra money toward the **smallest balance** debt
+   243→3. When that's paid off, move to the next smallest
+   244→
+   245→### Quick Tips:
+   246→- Consider **balance transfer cards** with 0% APR for high-interest credit card debt
+   247→- Look into **student loan refinancing** if you have good credit
+   248→- Never pay just the minimum on credit cards
+   249→- Automate minimum payments to avoid late fees`
+   250→  }
+   251→
+   252→  return `I'd be happy to help with your financial questions! Here are some topics I can assist with:
+   253→
+   254→- 📊 **Spending Analysis** — Analyze your spending patterns
+   255→- 💰 **Budget Planning** — Create a personalized budget
+   256→- 💡 **Savings Tips** — Smart ways to save more
+   257→- 📈 **Financial Insights** — Understand your financial health
+   258→- 🔍 **Unusual Spending** — Detect anomalies in your spending
+   259→- 📈 **Investment Basics** — Getting started with investing
+   260→- 💳 **Debt Management** — Strategies to reduce debt
+   261→
+   262→Try asking a specific question, or use the quick action buttons below!`
+   263→}
+   264→
+   265→// ---------------------------------------------------------------------------
+   266→// Quick Actions
+   267→// ---------------------------------------------------------------------------
+   268→
+   269→const QUICK_ACTIONS = [
+   270→  { label: 'Analyze my spending', prompt: 'Analyze my spending patterns and give me a detailed breakdown', icon: BarChart3 },
+   271→  { label: 'Suggest a budget', prompt: 'Create a personalized monthly budget suggestion for me', icon: PiggyBank },
+   272→  { label: 'How can I save more?', prompt: 'Give me practical tips to save more money each month', icon: TrendingUp },
+   273→  { label: 'Show financial insights', prompt: 'Show me key financial insights and health metrics', icon: Lightbulb },
+   274→  { label: 'Detect unusual spending', prompt: 'Help me detect any unusual or anomalous spending patterns', icon: AlertTriangle },
+   275→]
+   276→
+   277→// ---------------------------------------------------------------------------
+   278→// Component
+   279→// ---------------------------------------------------------------------------
+   280→
+   281→export function AiAssistantPage() {
+   282→  // --- Chat state ---
+   283→  const [chats, setChats] = React.useState<LocalChat[]>([])
+   284→  const [activeChatId, setActiveChatId] = React.useState<string | null>(null)
+   285→  const [input, setInput] = React.useState('')
+   286→  const [isTyping, setIsTyping] = React.useState(false)
+   287→  const [sidebarOpen, setSidebarOpen] = React.useState(true)
+   288→
+   289→  const messagesEndRef = React.useRef<HTMLDivElement>(null)
+   290→  const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+   291→  const chatContainerRef = React.useRef<HTMLDivElement>(null)
+   292→
+   293→  const activeChat = chats.find((c) => c.id === activeChatId) ?? null
+   294→
+   295→  // --- Auto-scroll ---
+   296→  React.useEffect(() => {
+   297→    if (messagesEndRef.current) {
+   298→      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+   299→    }
+   300→  }, [activeChat?.messages, isTyping])
+   301→
+   302→  // --- Auto-resize textarea ---
+   303→  React.useEffect(() => {
+   304→    if (textareaRef.current) {
+   305→      textareaRef.current.style.height = 'auto'
+   306→      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`
+   307→    }
+   308→  }, [input])
+   309→
+   310→  // --- Generate unique ID ---
+   311→  const genId = React.useCallback(() => crypto.randomUUID(), [])
+   312→
+   313→  // --- Create new chat ---
+   314→  const createChat = React.useCallback(() => {
+   315→    const newChat: LocalChat = {
+   316→      id: genId(),
+   317→      title: 'New Conversation',
+   318→      messages: [],
+   319→      createdAt: new Date(),
+   320→      updatedAt: new Date(),
+   321→    }
+   322→    setChats((prev) => [newChat, ...prev])
+   323→    setActiveChatId(newChat.id)
+   324→    setInput('')
+   325→  }, [genId])
+   326→
+   327→  // --- Delete chat ---
+   328→  const deleteChat = React.useCallback(
+   329→    (chatId: string) => {
+   330→      setChats((prev) => prev.filter((c) => c.id !== chatId))
+   331→      if (activeChatId === chatId) {
+   332→        setActiveChatId(null)
+   333→      }
+   334→    },
+   335→    [activeChatId],
+   336→  )
+   337→
+   338→  // --- Send message ---
+   339→  const handleSend = React.useCallback(
+   340→    async (messageContent?: string) => {
+   341→      const content = (messageContent || input).trim()
+   342→      if (!content || isTyping) return
+   343→
+   344→      let chatId = activeChatId
+   345→
+   346→      // Create a new chat if none active
+   347→      if (!chatId) {
+   348→        const newChat: LocalChat = {
+   349→          id: genId(),
+   350→          title: content.slice(0, 50),
+   351→          messages: [],
+   352→          createdAt: new Date(),
+   353→          updatedAt: new Date(),
+   354→        }
+   355→        setChats((prev) => [newChat, ...prev])
+   356→        chatId = newChat.id
+   357→        setActiveChatId(chatId)
+   358→      }
+   359→
+   360→      const userMessage: LocalChatMessage = {
+   361→        id: genId(),
+   362→        role: 'user',
+   363→        content,
+   364→        createdAt: new Date(),
+   365→      }
+   366→
+   367→      // Add user message and update title on first message
+   368→      setChats((prev) =>
+   369→        prev.map((c) =>
+   370→          c.id === chatId
+   371→            ? {
+   372→                ...c,
+   373→                title: c.messages.length === 0 ? content.slice(0, 50) : c.title,
+   374→                messages: [...c.messages, userMessage],
+   375→                updatedAt: new Date(),
+   376→              }
+   377→            : c,
+   378→        ),
+   379→      )
+   380→
+   381→      setInput('')
+   382→      setIsTyping(true)
+   383→
+   384→      try {
+   385→        // Try the real API first
+   386→        const token =
+   387→          typeof window !== 'undefined'
+   388→            ? localStorage.getItem('token')
+   389→            : null
+   390→        const headers: Record<string, string> = {
+   391→          'Content-Type': 'application/json',
+   392→        }
+   393→        if (token) headers.Authorization = `Bearer ${token}`
+   394→
+   395→        // Build message history for API
+   396→        const currentChat = chats.find((c) => c.id === chatId)
+   397→        const apiMessages = [
+   398→          ...(currentChat?.messages.map((m) => ({
+   399→            role: m.role,
+   400→            content: m.content,
+   401→          })) ?? []),
+   402→          { role: 'user', content },
+   403→        ]
+   404→
+   405→        const res = await fetch('/api/ai/chat', {
+   406→          method: 'POST',
+   407→          headers,
+   408→          body: JSON.stringify({ messages: apiMessages }),
+   409→        })
+   410→
+   411→        if (res.ok) {
+   412→          const data = await res.json()
+   413→          const aiContent = data.content || data.message || data.data?.content || ''
+   414→          if (aiContent) {
+   415→            const assistantMessage: LocalChatMessage = {
+   416→              id: genId(),
+   417→              role: 'assistant',
+   418→              content: aiContent,
+   419→              createdAt: new Date(),
+   420→            }
+   421→            setChats((prev) =>
+   422→              prev.map((c) =>
+   423→                c.id === chatId
+   424→                  ? { ...c, messages: [...c.messages, assistantMessage], updatedAt: new Date() }
+   425→                  : c,
+   426→              ),
+   427→            )
+   428→            setIsTyping(false)
+   429→            return
+   430→          }
+   431→        }
+   432→        // Fall through to local response
+   433→      } catch {
+   434→        // Fall through to local response
+   435→      }
+   436→
+   437→      // Fallback to local financial tips
+   438→      await new Promise((resolve) => setTimeout(resolve, 800 + Math.random() * 1200))
+   439→      const response = getLocalResponse(content)
+   440→      const assistantMessage: LocalChatMessage = {
+   441→        id: genId(),
+   442→        role: 'assistant',
+   443→        content: response,
+   444→        createdAt: new Date(),
+   445→      }
+   446→
+   447→      setChats((prev) =>
+   448→        prev.map((c) =>
+   449→          c.id === chatId
+   450→            ? { ...c, messages: [...c.messages, assistantMessage], updatedAt: new Date() }
+   451→            : c,
+   452→        ),
+   453→      )
+   454→      setIsTyping(false)
+   455→    },
+   456→    [input, isTyping, activeChatId, chats, genId],
+   457→  )
+   458→
+   459→  // --- Handle keyboard ---
+   460→  const handleKeyDown = React.useCallback(
+   461→    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+   462→      if (e.key === 'Enter' && !e.shiftKey) {
+   463→        e.preventDefault()
+   464→        handleSend()
+   465→      }
+   466→    },
+   467→    [handleSend],
+   468→  )
+   469→
+   470→  // --- Empty state ---
+   471→  if (!activeChat && chats.length === 0) {
+   472→    return (
+   473→      <div className="flex h-full">
+   474→        {/* Mobile sidebar toggle */}
+   475→        <div className="absolute top-4 left-4 z-10 lg:hidden">
+   476→          <Button
+   477→            variant="ghost"
+   478→            size="icon"
+   479→            onClick={() => setSidebarOpen(!sidebarOpen)}
+   480→          >
+   481→            <PanelLeft className="size-5" />
+   482→          </Button>
+   483→        </div>
+   484→
+   485→        {/* Welcome screen */}
+   486→        <motion.div
+   487→          initial={{ opacity: 0, y: 20 }}
+   488→          animate={{ opacity: 1, y: 0 }}
+   489→          transition={{ duration: 0.5 }}
+   490→          className="flex flex-1 flex-col items-center justify-center gap-8 p-6"
+   491→        >
+   492→          <div className="flex flex-col items-center gap-3">
+   493→            <div className="flex size-20 items-center justify-center rounded-2xl bg-primary/10">
+   494→              <Sparkles className="size-10 text-primary" />
+   495→            </div>
+   496→            <div className="text-center">
+   497→              <h1 className="text-3xl font-bold tracking-tight">
+   498→                AI Financial Assistant
+   499→              </h1>
+   500→              <p className="mt-2 max-w-md text-muted-foreground">
+   501→                Get personalized financial insights, budget recommendations, and
+   502→                smart money advice powered by AI.
+   503→              </p>
+   504→            </div>
+   505→          </div>
+   506→
+   507→          {/* Quick actions */}
+   508→          <div className="w-full max-w-2xl">
+   509→            <p className="mb-4 text-center text-sm font-medium text-muted-foreground">
+   510→              Try asking about:
+   511→            </p>
+   512→            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+   513→              {QUICK_ACTIONS.map((action) => {
+   514→                const Icon = action.icon
+   515→                return (
+   516→                  <motion.button
+   517→                    key={action.label}
+   518→                    whileHover={{ scale: 1.02 }}
+   519→                    whileTap={{ scale: 0.98 }}
+   520→                    onClick={() => handleSend(action.prompt)}
+   521→                    className="group flex items-start gap-3 rounded-xl border bg-card p-4 text-left transition-colors hover:bg-accent"
+   522→                  >
+   523→                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+   524→                      <Icon className="size-4 text-primary" />
+   525→                    </div>
+   526→                    <span className="text-sm font-medium leading-tight">
+   527→                      {action.label}
+   528→                    </span>
+   529→                  </motion.button>
+   530→                )
+   531→              })}
+   532→            </div>
+   533→          </div>
+   534→
+   535→          {/* Input area at bottom */}
+   536→          <div className="w-full max-w-2xl">
+   537→            <div className="flex items-end gap-2 rounded-2xl border bg-card p-2 shadow-sm">
+   538→              <Textarea
+   539→                ref={textareaRef}
+   540→                value={input}
+   541→                onChange={(e) => setInput(e.target.value)}
+   542→                onKeyDown={handleKeyDown}
+   543→                placeholder="Ask about your finances..."
+   544→                className="min-h-[44px] flex-1 resize-none border-0 bg-transparent p-2 text-sm shadow-none focus-visible:ring-0"
+   545→                rows={1}
+   546→              />
+   547→              <Button
+   548→                size="icon"
+   549→                className="size-10 shrink-0 rounded-xl"
+   550→                onClick={() => handleSend()}
+   551→                disabled={!input.trim()}
+   552→              >
+   553→                <Send className="size-4" />
+   554→                <span className="sr-only">Send message</span>
+   555→              </Button>
+   556→            </div>
+   557→          </div>
+   558→        </motion.div>
+   559→      </div>
+   560→    )
+   561→  }
+   562→
+   563→  // --- Chat view ---
+   564→  return (
+   565→    <div className="flex h-full overflow-hidden">
+   566→      {/* Sidebar */}
+   567→      <AnimatePresence mode="wait">
+   568→        {sidebarOpen && (
+   569→          <motion.aside
+   570→            initial={{ width: 0, opacity: 0 }}
+   571→            animate={{ width: 280, opacity: 1 }}
+   572→            exit={{ width: 0, opacity: 0 }}
+   573→            transition={{ duration: 0.2, ease: 'easeInOut' }}
+   574→            className="flex shrink-0 flex-col border-r bg-muted/30 overflow-hidden"
+   575→          >
+   576→            {/* Sidebar header */}
+   577→            <div className="flex items-center justify-between p-3">
+   578→              <Button
+   579→                variant="ghost"
+   580→                size="sm"
+   581→                className="gap-1.5"
+   582→                onClick={createChat}
+   583→              >
+   584→                <Plus className="size-4" />
+   585→                New Chat
+   586→              </Button>
+   587→              <Button
+   588→                variant="ghost"
+   589→                size="icon"
+   590→                className="size-8"
+   591→                onClick={() => setSidebarOpen(false)}
+   592→              >
+   593→                <PanelLeftClose className="size-4" />
+   594→              </Button>
+   595→            </div>
+   596→
+   597→            {/* Chat list */}
+   598→            <ScrollArea className="flex-1 px-2">
+   599→              <div className="space-y-1 pb-4">
+   600→                {chats.map((chat) => (
+   601→                  <motion.div
+   602→                    key={chat.id}
+   603→                    layout
+   604→                    initial={{ opacity: 0, x: -10 }}
+   605→                    animate={{ opacity: 1, x: 0 }}
+   606→                    exit={{ opacity: 0, x: -10 }}
+   607→                    className="group flex items-center gap-2"
+   608→                  >
+   609→                    <button
+   610→                      onClick={() => setActiveChatId(chat.id)}
+   611→                      className={cn(
+   612→                        'flex flex-1 items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-accent',
+   613→                        activeChatId === chat.id && 'bg-accent font-medium',
+   614→                      )}
+   615→                    >
+   616→                      <MessageSquare className="size-4 shrink-0 text-muted-foreground" />
+   617→                      <span className="truncate">{chat.title}</span>
+   618→                    </button>
+   619→                    <Tooltip>
+   620→                      <TooltipTrigger asChild>
+   621→                        <Button
+   622→                          variant="ghost"
+   623→                          size="icon"
+   624→                          className="size-7 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+   625→                          onClick={() => deleteChat(chat.id)}
+   626→                        >
+   627→                          <Trash2 className="size-3.5 text-destructive" />
+   628→                        </Button>
+   629→                      </TooltipTrigger>
+   630→                      <TooltipContent>Delete chat</TooltipContent>
+   631→                    </Tooltip>
+   632→                  </motion.div>
+   633→                ))}
+   634→              </div>
+   635→            </ScrollArea>
+   636→          </motion.aside>
+   637→        )}
+   638→      </AnimatePresence>
+   639→
+   640→      {/* Main chat area */}
+   641→      <div className="flex flex-1 flex-col overflow-hidden">
+   642→        {/* Chat header */}
+   643→        <div className="flex items-center gap-2 border-b px-4 py-3">
+   644→          {!sidebarOpen && (
+   645→            <Button
+   646→              variant="ghost"
+   647→              size="icon"
+   648→              className="size-8"
+   649→              onClick={() => setSidebarOpen(true)}
+   650→            >
+   651→              <PanelLeft className="size-4" />
+   652→            </Button>
+   653→          )}
+   654→          <div className="flex items-center gap-2">
+   655→            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
+   656→              <Sparkles className="size-4 text-primary" />
+   657→            </div>
+   658→            <div>
+   659→              <h2 className="text-sm font-semibold">
+   660→                {activeChat?.title || 'AI Assistant'}
+   661→              </h2>
+   662→              <p className="text-xs text-muted-foreground">
+   663→                {activeChat?.messages.length ?? 0} messages
+   664→              </p>
+   665→            </div>
+   666→          </div>
+   667→        </div>
+   668→
+   669→        {/* Messages */}
+   670→        <div
+   671→          ref={chatContainerRef}
+   672→          className="flex-1 overflow-y-auto px-4 py-6"
+   673→        >
+   674→          <div className="mx-auto max-w-3xl space-y-6">
+   675→            <AnimatePresence mode="popLayout">
+   676→              {activeChat?.messages.map((message) => (
+   677→                <motion.div
+   678→                  key={message.id}
+   679→                  initial={{ opacity: 0, y: 10 }}
+   680→                  animate={{ opacity: 1, y: 0 }}
+   681→                  exit={{ opacity: 0 }}
+   682→                  transition={{ duration: 0.3 }}
+   683→                  className={cn(
+   684→                    'flex gap-3',
+   685→                    message.role === 'user' ? 'flex-row-reverse' : 'flex-row',
+   686→                    message.role === 'system' && 'justify-center',
+   687→                  )}
+   688→                >
+   689→                  {message.role === 'system' ? (
+   690→                    <div className="rounded-full bg-muted px-4 py-1.5 text-xs text-muted-foreground">
+   691→                      {message.content}
+   692→                    </div>
+   693→                  ) : (
+   694→                    <>
+   695→                      {message.role === 'assistant' && (
+   696→                        <Avatar className="mt-0.5 size-8 shrink-0">
+   697→                          <AvatarFallback className="bg-primary/10">
+   698→                            <Bot className="size-4 text-primary" />
+   699→                          </AvatarFallback>
+   700→                        </Avatar>
+   701→                      )}
+   702→                      <div
+   703→                        className={cn(
+   704→                          'max-w-[80%] space-y-2',
+   705→                          message.role === 'user' ? 'items-end' : 'items-start',
+   706→                        )}
+   707→                      >
+   708→                        <div
+   709→                          className={cn(
+   710→                            'rounded-2xl px-4 py-3 text-sm leading-relaxed',
+   711→                            message.role === 'user'
+   712→                              ? 'bg-primary text-primary-foreground'
+   713→                              : 'bg-muted',
+   714→                          )}
+   715→                        >
+   716→                          {message.role === 'assistant' ? (
+   717→                            <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-h2:mt-3 prose-h2:mb-1 prose-h3:mt-2 prose-h3:mb-1 prose-blockquote:my-1 prose-table:my-2 prose-th:p-1 prose-td:p-1 prose-pre:my-2 prose-code:text-xs">
+   718→                              <Markdown>{message.content}</Markdown>
+   719→                            </div>
+   720→                          ) : (
+   721→                            message.content
+   722→                          )}
+   723→                        </div>
+   724→                        <p className="text-[10px] text-muted-foreground">
+   725→                          {format(new Date(message.createdAt), 'h:mm a')}
+   726→                        </p>
+   727→                      </div>
+   728→                    </>
+   729→                  )}
+   730→                </motion.div>
+   731→              ))}
+   732→            </AnimatePresence>
+   733→
+   734→            {/* Typing indicator */}
+   735→            {isTyping && (
+   736→              <motion.div
+   737→                initial={{ opacity: 0, y: 10 }}
+   738→                animate={{ opacity: 1, y: 0 }}
+   739→                exit={{ opacity: 0 }}
+   740→                className="flex gap-3"
+   741→              >
+   742→                <Avatar className="mt-0.5 size-8 shrink-0">
+   743→                  <AvatarFallback className="bg-primary/10">
+   744→                    <Bot className="size-4 text-primary" />
+   745→                  </AvatarFallback>
+   746→                </Avatar>
+   747→                <div className="flex items-center gap-1 rounded-2xl bg-muted px-4 py-3">
+   748→                  <span className="sr-only">AI is thinking</span>
+   749→                  <div className="flex gap-1">
+   750→                    {[0, 1, 2].map((i) => (
+   751→                      <motion.div
+   752→                        key={i}
+   753→                        className="size-2 rounded-full bg-muted-foreground/40"
+   754→                        animate={{ y: [0, -4, 0] }}
+   755→                        transition={{
+   756→                          duration: 0.6,
+   757→                          repeat: Infinity,
+   758→                          delay: i * 0.15,
+   759→                          ease: 'easeInOut',
+   760→                        }}
+   761→                      />
+   762→                    ))}
+   763→                  </div>
+   764→                </div>
+   765→              </motion.div>
+   766→            )}
+   767→
+   768→            <div ref={messagesEndRef} />
+   769→          </div>
+   770→        </div>
+   771→
+   772→        {/* Input area */}
+   773→        <div className="border-t bg-background p-4">
+   774→          <div className="mx-auto max-w-3xl">
+   775→            {/* Quick actions */}
+   776→            <div className="mb-3 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+   777→              {QUICK_ACTIONS.map((action) => {
+   778→                const Icon = action.icon
+   779→                return (
+   780→                  <button
+   781→                    key={action.label}
+   782→                    onClick={() => handleSend(action.prompt)}
+   783→                    className="flex shrink-0 items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+   784→                  >
+   785→                    <Icon className="size-3" />
+   786→                    {action.label}
+   787→                  </button>
+   788→                )
+   789→              })}
+   790→            </div>
+   791→
+   792→            {/* Text input */}
+   793→            <div className="flex items-end gap-2 rounded-2xl border bg-card p-2 shadow-sm transition-shadow focus-within:shadow-md">
+   794→              <Textarea
+   795→                ref={textareaRef}
+   796→                value={input}
+   797→                onChange={(e) => setInput(e.target.value)}
+   798→                onKeyDown={handleKeyDown}
+   799→                placeholder="Ask about your finances..."
+   800→                className="min-h-[44px] flex-1 resize-none border-0 bg-transparent p-2 text-sm shadow-none focus-visible:ring-0"
+   801→                rows={1}
+   802→                disabled={isTyping}
+   803→              />
+   804→              <Button
+   805→                size="icon"
+   806→                className="size-10 shrink-0 rounded-xl"
+   807→                onClick={() => handleSend()}
+   808→                disabled={!input.trim() || isTyping}
+   809→              >
+   810→                {isTyping ? (
+   811→                  <motion.div
+   812→                    animate={{ rotate: 360 }}
+   813→                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+   814→                  >
+   815→                    <Send className="size-4" />
+   816→                  </motion.div>
+   817→                ) : (
+   818→                  <Send className="size-4" />
+   819→                )}
+   820→                <span className="sr-only">Send message</span>
+   821→              </Button>
+   822→            </div>
+   823→            <p className="mt-2 text-center text-[10px] text-muted-foreground">
+   824→              AI can make mistakes. Verify important financial decisions with a
+   825→              professional advisor.
+   826→            </p>
+   827→          </div>
+   828→        </div>
+   829→      </div>
+   830→    </div>
+   831→  )
+   832→}
+   833→

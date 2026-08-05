@@ -90,7 +90,7 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.06,
+      staggerChildren: 0.08,
       delayChildren: 0.05,
     },
   },
@@ -157,7 +157,7 @@ function currencyTickFormatter(v: number) {
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string; dataKey: string }>; label?: string }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-lg border bg-background px-3 py-2 shadow-lg">
+    <div className="rounded-xl border border-border/40 bg-background/95 backdrop-blur-sm px-3.5 py-2.5 shadow-lg">
       <p className="mb-1 text-sm font-medium text-foreground">{label}</p>
       {payload.map((entry) => (
         <div key={entry.dataKey} className="flex items-center gap-2 text-xs">
@@ -187,7 +187,7 @@ function IncomeVsExpensesTrend({
   if (isLoading) return <ChartSkeleton className="col-span-full" />
   if (!data.length) {
     return (
-      <Card className="col-span-full">
+      <Card className="col-span-full rounded-2xl border-border/40 backdrop-blur-sm bg-card/80">
         <CardHeader>
           <CardTitle className="text-base">Income vs Expenses</CardTitle>
         </CardHeader>
@@ -201,7 +201,7 @@ function IncomeVsExpensesTrend({
   }
 
   return (
-    <Card className="col-span-full">
+    <Card className="col-span-full rounded-2xl border-border/40 backdrop-blur-sm bg-card/80">
       <CardHeader>
         <CardTitle className="text-base">Income vs Expenses</CardTitle>
         <CardDescription>Trend over selected period</CardDescription>
@@ -279,7 +279,7 @@ function CategoryDonutChart({
   if (isLoading) return <ChartSkeleton />
   if (!data.length) {
     return (
-      <Card>
+      <Card className="rounded-2xl border-border/40">
         <CardHeader>
           <CardTitle className="text-base">Category Distribution</CardTitle>
         </CardHeader>
@@ -295,7 +295,7 @@ function CategoryDonutChart({
   const total = data.reduce((sum, d) => sum + d.value, 0)
 
   return (
-    <Card>
+    <Card className="rounded-2xl border-border/40">
       <CardHeader>
         <CardTitle className="text-base">Expense Distribution</CardTitle>
         <CardDescription>By category</CardDescription>
@@ -377,7 +377,7 @@ function MonthlyTrendChart({
   if (isLoading) return <ChartSkeleton />
   if (!data.length) {
     return (
-      <Card>
+      <Card className="rounded-2xl border-border/40">
         <CardHeader>
           <CardTitle className="text-base">Monthly Trend</CardTitle>
         </CardHeader>
@@ -396,7 +396,7 @@ function MonthlyTrendChart({
   }))
 
   return (
-    <Card>
+    <Card className="rounded-2xl border-border/40">
       <CardHeader>
         <CardTitle className="text-base">Monthly Comparison</CardTitle>
         <CardDescription>Income, expenses & net savings</CardDescription>
@@ -466,7 +466,7 @@ function CashFlowChart({
   if (isLoading) return <ChartSkeleton />
   if (!data.length) {
     return (
-      <Card>
+      <Card className="rounded-2xl border-border/40">
         <CardHeader>
           <CardTitle className="text-base">Cash Flow</CardTitle>
         </CardHeader>
@@ -485,7 +485,7 @@ function CashFlowChart({
   }))
 
   return (
-    <Card>
+    <Card className="rounded-2xl border-border/40">
       <CardHeader>
         <CardTitle className="text-base">Cash Flow Analysis</CardTitle>
         <CardDescription>Money in vs money out</CardDescription>
@@ -571,7 +571,7 @@ function SavingsTrendChart({
   if (isLoading) return <ChartSkeleton />
   if (!data.length) {
     return (
-      <Card>
+      <Card className="rounded-2xl border-border/40">
         <CardHeader>
           <CardTitle className="text-base">Savings Trend</CardTitle>
         </CardHeader>
@@ -593,7 +593,7 @@ function SavingsTrendChart({
   const maxY = Math.max(...cumData.map((d) => Math.abs(d.cumulative)), goalAmount ?? 0) * 1.1
 
   return (
-    <Card>
+    <Card className="rounded-2xl border-border/40">
       <CardHeader>
         <CardTitle className="text-base">Savings Trend</CardTitle>
         <CardDescription>Cumulative savings over time</CardDescription>
@@ -670,7 +670,7 @@ function BudgetUtilizationChart({
   if (isLoading) return <ChartSkeleton />
   if (!budgets || !budgets.length) {
     return (
-      <Card>
+      <Card className="rounded-2xl border-border/40">
         <CardHeader>
           <CardTitle className="text-base">Budget Utilization</CardTitle>
         </CardHeader>
@@ -709,7 +709,7 @@ function BudgetUtilizationChart({
   const topItems = items.slice(0, 8)
 
   return (
-    <Card>
+    <Card className="rounded-2xl border-border/40">
       <CardHeader>
         <CardTitle className="text-base">Budget Utilization</CardTitle>
         <CardDescription>Spending against budget limits</CardDescription>
@@ -723,7 +723,7 @@ function BudgetUtilizationChart({
                 {formatCurrency(item.spent)} / {formatCurrency(item.budget)}
               </span>
             </div>
-            <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted">
+            <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted/50">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min(item.percent, 100)}%` }}
@@ -763,7 +763,7 @@ function InsightCardData({ icon: Icon, label, value, subtext, iconBg, iconColor,
   return (
     <motion.div variants={itemVariants}>
       <Card className="h-full">
-        <CardContent className="p-5">
+        <CardContent className="p-6">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-2">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -1072,7 +1072,7 @@ export function AnalyticsPage() {
           ]}
           actions={
             <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-              <SelectTrigger size="sm" className="w-[180px]">
+              <SelectTrigger size="sm" className="w-[180px] rounded-xl h-10">
                 <SelectValue placeholder="Select period" />
               </SelectTrigger>
               <SelectContent>
@@ -1158,7 +1158,7 @@ export function AnalyticsPage() {
       {/* Budget Utilization */}
       <motion.div className="grid gap-4 lg:grid-cols-2" variants={itemVariants}>
         <BudgetUtilizationChart budgets={allBudgets} isLoading={!budgetsData && !budgetsData?.data} />
-        <Card>
+        <Card className="rounded-2xl border-border/40">
           <CardHeader>
             <CardTitle className="text-base">Spending by Category</CardTitle>
             <CardDescription>Ranked by amount spent</CardDescription>
@@ -1182,7 +1182,7 @@ export function AnalyticsPage() {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.05 }}
-                      className="flex items-center gap-3 rounded-lg border p-3"
+                      className="flex items-center gap-3 rounded-xl border border-border/40 p-3.5 transition-all duration-200 hover:shadow-sm hover:bg-muted/30"
                     >
                       <div
                         className="flex size-9 items-center justify-center rounded-lg text-sm"

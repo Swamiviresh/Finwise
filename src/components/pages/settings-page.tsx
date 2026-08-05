@@ -255,14 +255,14 @@ export function SettingsPage() {
         {/* ================================================================ */}
         {/* Appearance                                                       */}
         {/* ================================================================ */}
-        <Card>
+        <Card className="rounded-2xl border-border/40">
           <CardHeader>
             <div className="flex items-center gap-2">
               <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
                 <Palette className="size-4 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-base">Appearance</CardTitle>
+                <CardTitle className="flex items-center gap-2.5 text-base">Appearance</CardTitle>
                 <CardDescription className="text-xs">
                   Customize how FinWise looks
                 </CardDescription>
@@ -345,14 +345,14 @@ export function SettingsPage() {
         {/* ================================================================ */}
         {/* Currency & Language                                              */}
         {/* ================================================================ */}
-        <Card>
+        <Card className="rounded-2xl border-border/40">
           <CardHeader>
             <div className="flex items-center gap-2">
               <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
                 <Globe className="size-4 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-base">Currency & Language</CardTitle>
+                <CardTitle className="flex items-center gap-2.5 text-base">Currency & Language</CardTitle>
                 <CardDescription className="text-xs">
                   Set your regional preferences
                 </CardDescription>
@@ -431,7 +431,7 @@ export function SettingsPage() {
         {/* ================================================================ */}
         {/* Notification Preferences                                         */}
         {/* ================================================================ */}
-        <Card>
+        <Card className="rounded-2xl border-border/40">
           <CardHeader>
             <div className="flex items-center gap-2">
               <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
@@ -547,7 +547,7 @@ export function SettingsPage() {
         {/* ================================================================ */}
         {/* Privacy & Security                                               */}
         {/* ================================================================ */}
-        <Card>
+        <Card className="rounded-2xl border-border/40">
           <CardHeader>
             <div className="flex items-center gap-2">
               <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
@@ -585,7 +585,7 @@ export function SettingsPage() {
                     Change
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="rounded-2xl border-border/40" >
                   <DialogHeader>
                     <DialogTitle>Change Password</DialogTitle>
                     <DialogDescription>

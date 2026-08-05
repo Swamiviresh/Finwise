@@ -25,27 +25,66 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
-        'flex min-h-[300px] flex-col items-center justify-center gap-4 p-8 text-center',
+        'flex min-h-[320px] flex-col items-center justify-center gap-5 p-10 text-center',
         className,
       )}
     >
       {Icon && (
-        <div className="flex size-16 items-center justify-center rounded-full bg-muted">
-          <Icon className="size-7 text-muted-foreground" />
-        </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{
+            duration: 0.5,
+            delay: 0.1,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          className="relative"
+        >
+          {/* Gradient background circle */}
+          <div className="absolute inset-0 -m-4 rounded-full bg-gradient-to-br from-primary/8 via-primary/4 to-transparent" />
+          <motion.div
+            animate={{ y: [0, -6, 0] }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            className="relative flex size-16 items-center justify-center rounded-full bg-muted/60"
+          >
+            <Icon className="size-7 text-muted-foreground/70" />
+          </motion.div>
+        </motion.div>
       )}
-      <div className="max-w-sm space-y-1.5">
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
+        className="max-w-md space-y-2"
+      >
+        <h3 className="text-xl font-semibold tracking-tight">{title}</h3>
+        <p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground/80">
+          {description}
+        </p>
+      </motion.div>
       {actionLabel && onAction && (
-        <Button onClick={onAction} className="mt-2">
-          {actionLabel}
-        </Button>
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+        >
+          <Button
+            onClick={onAction}
+            className="mt-1 rounded-xl px-6 shadow-lg shadow-primary/20 transition-shadow duration-300 hover:shadow-xl hover:shadow-primary/25"
+          >
+            {actionLabel}
+          </Button>
+        </motion.div>
       )}
     </motion.div>
   )

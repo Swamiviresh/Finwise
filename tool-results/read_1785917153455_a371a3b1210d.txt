@@ -1,0 +1,864 @@
+     1→'use client'
+     2→
+     3→import * as React from 'react'
+     4→import { motion, useInView } from 'framer-motion'
+     5→import {
+     6→  Brain,
+     7→  Target,
+     8→  CreditCard,
+     9→  BarChart3,
+    10→  MessageSquare,
+    11→  PiggyBank,
+    12→  ArrowRight,
+    13→  Check,
+    14→  Play,
+    15→  Star,
+    16→  Sparkles,
+    17→  TrendingUp,
+    18→  Shield,
+    19→  Zap,
+    20→} from 'lucide-react'
+    21→import { useRouterStore } from '@/store/router-store'
+    22→import { LandingHeader } from '@/components/layout/landing-header'
+    23→import { LandingFooter } from '@/components/layout/landing-footer'
+    24→import { Button } from '@/components/ui/button'
+    25→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+    26→import {
+    27→  Accordion,
+    28→  AccordionContent,
+    29→  AccordionItem,
+    30→  AccordionTrigger,
+    31→} from '@/components/ui/accordion'
+    32→import { Badge } from '@/components/ui/badge'
+    33→
+    34→// ---------------------------------------------------------------------------
+    35→// Animation helpers
+    36→// ---------------------------------------------------------------------------
+    37→
+    38→function FadeIn({
+    39→  children,
+    40→  className,
+    41→  delay = 0,
+    42→}: {
+    43→  children: React.ReactNode
+    44→  className?: string
+    45→  delay?: number
+    46→}) {
+    47→  const ref = React.useRef(null)
+    48→  const inView = useInView(ref, { once: true, margin: '-60px' })
+    49→  return (
+    50→    <motion.div
+    51→      ref={ref}
+    52→      initial={{ opacity: 0, y: 32 }}
+    53→      animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 32 }}
+    54→      transition={{ duration: 0.6, delay, ease: [0.21, 0.47, 0.32, 0.98] }}
+    55→      className={className}
+    56→    >
+    57→      {children}
+    58→    </motion.div>
+    59→  )
+    60→}
+    61→
+    62→function StaggerContainer({
+    63→  children,
+    64→  className,
+    65→}: {
+    66→  children: React.ReactNode
+    67→  className?: string
+    68→}) {
+    69→  const ref = React.useRef(null)
+    70→  const inView = useInView(ref, { once: true, margin: '-60px' })
+    71→  return (
+    72→    <motion.div
+    73→      ref={ref}
+    74→      initial="hidden"
+    75→      animate={inView ? 'show' : 'hidden'}
+    76→      variants={{
+    77→        hidden: {},
+    78→        show: { transition: { staggerChildren: 0.1 } },
+    79→      }}
+    80→      className={className}
+    81→    >
+    82→      {children}
+    83→    </motion.div>
+    84→  )
+    85→}
+    86→
+    87→function StaggerItem({
+    88→  children,
+    89→  className,
+    90→}: {
+    91→  children: React.ReactNode
+    92→  className?: string
+    93→}) {
+    94→  return (
+    95→    <motion.div
+    96→      variants={{
+    97→        hidden: { opacity: 0, y: 24 },
+    98→        show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.21, 0.47, 0.32, 0.98] } },
+    99→      }}
+   100→      className={className}
+   101→    >
+   102→      {children}
+   103→    </motion.div>
+   104→  )
+   105→}
+   106→
+   107→// ---------------------------------------------------------------------------
+   108→// Hero Section
+   109→// ---------------------------------------------------------------------------
+   110→
+   111→function HeroSection() {
+   112→  const { setRoute } = useRouterStore()
+   113→
+   114→  return (
+   115→    <section className="relative flex min-h-screen items-center justify-center overflow-hidden pt-16">
+   116→      {/* Animated mesh gradient background */}
+   117→      <div className="pointer-events-none absolute inset-0 -z-10">
+   118→        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.25),rgba(0,0,0,0))]" />
+   119→        {/* Animated grid */}
+   120→        <svg
+   121→          className="absolute inset-0 h-full w-full opacity-[0.03] dark:opacity-[0.06]"
+   122→          xmlns="http://www.w3.org/2000/svg"
+   123→        >
+   124→          <defs>
+   125→            <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+   126→              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" strokeWidth="1" />
+   127→            </pattern>
+   128→          </defs>
+   129→          <rect width="100%" height="100%" fill="url(#grid)" />
+   130→        </svg>
+   131→        {/* Floating orbs */}
+   132→        <motion.div
+   133→          animate={{ y: [0, -20, 0], x: [0, 10, 0] }}
+   134→          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+   135→          className="absolute left-[15%] top-[20%] h-72 w-72 rounded-full bg-primary/10 blur-3xl"
+   136→        />
+   137→        <motion.div
+   138→          animate={{ y: [0, 15, 0], x: [0, -15, 0] }}
+   139→          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+   140→          className="absolute right-[10%] top-[30%] h-96 w-96 rounded-full bg-primary/5 blur-3xl"
+   141→        />
+   142→        <motion.div
+   143→          animate={{ y: [0, -10, 0] }}
+   144→          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+   145→          className="absolute bottom-[20%] left-[40%] h-64 w-64 rounded-full bg-primary/8 blur-3xl"
+   146→        />
+   147→      </div>
+   148→
+   149→      <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+   150→        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+   151→          {/* Left: Copy */}
+   152→          <motion.div
+   153→            initial={{ opacity: 0, y: 30 }}
+   154→            animate={{ opacity: 1, y: 0 }}
+   155→            transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
+   156→            className="text-center lg:text-left"
+   157→          >
+   158→            <Badge variant="secondary" className="mb-6 gap-1.5 px-3 py-1">
+   159→              <Sparkles className="size-3.5" />
+   160→              Powered by AI
+   161→            </Badge>
+   162→            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+   163→              Your AI Powered{' '}
+   164→              <span className="bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+   165→                Personal Finance
+   166→              </span>{' '}
+   167→              Companion
+   168→            </h1>
+   169→            <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground lg:mx-0">
+   170→              Take control of your money with intelligent budgeting, real-time
+   171→              analytics, and AI-powered insights. FinWise makes managing your
+   172→              finances effortless and rewarding.
+   173→            </p>
+   174→            <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row lg:justify-start">
+   175→              <Button
+   176→                size="lg"
+   177→                className="h-12 px-8 text-base"
+   178→                onClick={() => setRoute('/register')}
+   179→              >
+   180→                Get Started Free
+   181→                <ArrowRight className="ml-1 size-4" />
+   182→              </Button>
+   183→              <Button variant="outline" size="lg" className="h-12 px-8 text-base">
+   184→                <Play className="mr-1 size-4" />
+   185→                Watch Demo
+   186→              </Button>
+   187→            </div>
+   188→            <div className="mt-8 flex items-center justify-center gap-6 text-sm text-muted-foreground lg:justify-start">
+   189→              <div className="flex items-center gap-1.5">
+   190→                <Check className="size-4 text-primary" />
+   191→                Free forever plan
+   192→              </div>
+   193→              <div className="flex items-center gap-1.5">
+   194→                <Check className="size-4 text-primary" />
+   195→                No credit card
+   196→              </div>
+   197→              <div className="flex items-center gap-1.5">
+   198→                <Shield className="size-4 text-primary" />
+   199→                Bank-level security
+   200→              </div>
+   201→            </div>
+   202→          </motion.div>
+   203→
+   204→          {/* Right: Floating Card Mockups */}
+   205→          <motion.div
+   206→            initial={{ opacity: 0, y: 40 }}
+   207→            animate={{ opacity: 1, y: 0 }}
+   208→            transition={{ duration: 0.8, delay: 0.2, ease: [0.21, 0.47, 0.32, 0.98] }}
+   209→            className="relative hidden lg:block"
+   210→          >
+   211→            <div className="relative h-[480px]">
+   212→              {/* Main dashboard card */}
+   213→              <motion.div
+   214→                animate={{ y: [0, -8, 0] }}
+   215→                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+   216→                className="absolute right-0 top-4 w-[340px] rounded-2xl border bg-card/80 p-5 shadow-2xl backdrop-blur-xl"
+   217→              >
+   218→                <div className="mb-4 flex items-center justify-between">
+   219→                  <span className="text-sm font-semibold">Total Balance</span>
+   220→                  <Badge variant="secondary" className="text-xs">This Month</Badge>
+   221→                </div>
+   222→                <div className="mb-1 text-3xl font-bold tracking-tight">$24,563.00</div>
+   223→                <div className="mb-5 flex items-center gap-1 text-sm text-emerald-500">
+   224→                  <TrendingUp className="size-4" />
+   225→                  +12.5% from last month
+   226→                </div>
+   227→                <div className="grid grid-cols-3 gap-3">
+   228→                  {[
+   229→                    { label: 'Income', value: '$8,240', color: 'bg-emerald-500' },
+   230→                    { label: 'Expenses', value: '$3,120', color: 'bg-rose-500' },
+   231→                    { label: 'Savings', value: '$5,120', color: 'bg-primary' },
+   232→                  ].map((item) => (
+   233→                    <div key={item.label} className="rounded-lg bg-muted/50 p-2.5">
+   234→                      <div className={`mb-1.5 h-1 w-8 rounded-full ${item.color}`} />
+   235→                      <div className="text-xs text-muted-foreground">{item.label}</div>
+   236→                      <div className="text-sm font-semibold">{item.value}</div>
+   237→                    </div>
+   238→                  ))}
+   239→                </div>
+   240→              </motion.div>
+   241→
+   242→              {/* Floating AI card */}
+   243→              <motion.div
+   244→                animate={{ y: [0, 6, 0] }}
+   245→                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+   246→                className="absolute left-0 top-16 w-[220px] rounded-xl border bg-card/70 p-4 shadow-xl backdrop-blur-xl"
+   247→              >
+   248→                <div className="mb-2 flex items-center gap-2">
+   249→                  <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
+   250→                    <Brain className="size-4 text-primary" />
+   251→                  </div>
+   252→                  <span className="text-xs font-semibold">AI Insight</span>
+   253→                </div>
+   254→                <p className="text-xs leading-relaxed text-muted-foreground">
+   255→                  You could save <span className="font-semibold text-foreground">$340/mo</span> by
+   256→                  consolidating your subscriptions.
+   257→                </p>
+   258→              </motion.div>
+   259→
+   260→              {/* Floating goal card */}
+   261→              <motion.div
+   262→                animate={{ y: [0, -6, 0] }}
+   263→                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+   264→                className="absolute bottom-12 left-8 w-[200px] rounded-xl border bg-card/70 p-4 shadow-xl backdrop-blur-xl"
+   265→              >
+   266→                <div className="mb-2 text-xs font-semibold">Vacation Fund</div>
+   267→                <div className="mb-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+   268→                  <div className="h-full w-[72%] rounded-full bg-primary" />
+   269→                </div>
+   270→                <div className="flex justify-between text-xs text-muted-foreground">
+   271→                  <span>$3,600</span>
+   272→                  <span>$5,000</span>
+   273→                </div>
+   274→              </motion.div>
+   275→            </div>
+   276→          </motion.div>
+   277→        </div>
+   278→      </div>
+   279→    </section>
+   280→  )
+   281→}
+   282→
+   283→// ---------------------------------------------------------------------------
+   284→// Brands / Social Proof Section
+   285→// ---------------------------------------------------------------------------
+   286→
+   287→function BrandsSection() {
+   288→  const brands = ['Acme Corp', 'Globex', 'Initech', 'Umbrella', 'Stark Industries', 'Wayne Enterprises']
+   289→  return (
+   290→    <section className="border-y bg-muted/30 py-12">
+   291→      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+   292→        <p className="mb-8 text-center text-sm font-medium uppercase tracking-widest text-muted-foreground">
+   293→          Trusted by forward-thinking teams
+   294→        </p>
+   295→        <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
+   296→          {brands.map((brand) => (
+   297→            <span
+   298→              key={brand}
+   299→              className="text-lg font-bold tracking-tight text-muted-foreground/50 transition-colors hover:text-muted-foreground/80"
+   300→            >
+   301→              {brand}
+   302→            </span>
+   303→          ))}
+   304→        </div>
+   305→      </div>
+   306→    </section>
+   307→  )
+   308→}
+   309→
+   310→// ---------------------------------------------------------------------------
+   311→// Features Section
+   312→// ---------------------------------------------------------------------------
+   313→
+   314→const FEATURES = [
+   315→  {
+   316→    icon: Brain,
+   317→    title: 'Smart Budgeting',
+   318→    description:
+   319→      'AI-powered budget recommendations that learn from your spending habits and help you save more every month.',
+   320→    gradient: 'from-violet-500/10 to-purple-500/10',
+   321→    iconBg: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
+   322→  },
+   323→  {
+   324→    icon: CreditCard,
+   325→    title: 'Expense Tracking',
+   326→    description:
+   327→      'Automatic categorization and deep insights into your spending patterns. Know exactly where your money goes.',
+   328→    gradient: 'from-rose-500/10 to-pink-500/10',
+   329→    iconBg: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
+   330→  },
+   331→  {
+   332→    icon: Target,
+   333→    title: 'Financial Goals',
+   334→    description:
+   335→      'Set and track savings goals with visual progress indicators and smart milestones to keep you motivated.',
+   336→    gradient: 'from-amber-500/10 to-orange-500/10',
+   337→    iconBg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+   338→  },
+   339→  {
+   340→    icon: Zap,
+   341→    title: 'Subscription Management',
+   342→    description:
+   343→      'Track and manage all your recurring payments in one place. Never get surprised by a forgotten subscription again.',
+   344→    gradient: 'from-cyan-500/10 to-teal-500/10',
+   345→    iconBg: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
+   346→  },
+   347→  {
+   348→    icon: MessageSquare,
+   349→    title: 'AI Assistant',
+   350→    description:
+   351→      'Get personalized financial advice from our AI assistant. Ask questions about your spending, savings, and investments.',
+   352→    gradient: 'from-emerald-500/10 to-green-500/10',
+   353→    iconBg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+   354→  },
+   355→  {
+   356→    icon: BarChart3,
+   357→    title: 'Advanced Analytics',
+   358→    description:
+   359→      'Professional-grade financial reports with interactive charts, trends, and actionable insights for smarter decisions.',
+   360→    gradient: 'from-primary/10 to-primary/5',
+   361→    iconBg: 'bg-primary/10 text-primary',
+   362→  },
+   363→]
+   364→
+   365→function FeaturesSection() {
+   366→  return (
+   367→    <section id="features" className="py-24 sm:py-32">
+   368→      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+   369→        <FadeIn className="mx-auto mb-16 max-w-2xl text-center">
+   370→          <Badge variant="secondary" className="mb-4">Features</Badge>
+   371→          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+   372→            Everything you need to manage your finances
+   373→          </h2>
+   374→          <p className="mt-4 text-lg text-muted-foreground">
+   375→            Powerful tools designed to give you complete control over your financial life.
+   376→          </p>
+   377→        </FadeIn>
+   378→
+   379→        <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+   380→          {FEATURES.map((feature) => {
+   381→            const Icon = feature.icon
+   382→            return (
+   383→              <StaggerItem key={feature.title}>
+   384→                <Card className="group relative h-full overflow-hidden border-transparent transition-all duration-300 hover:border-border hover:shadow-lg">
+   385→                  <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 transition-opacity duration-300 group-hover:opacity-100`} />
+   386→                  <CardContent className="relative p-6">
+   387→                    <div className={`mb-4 flex size-11 items-center justify-center rounded-xl ${feature.iconBg}`}>
+   388→                      <Icon className="size-5" />
+   389→                    </div>
+   390→                    <h3 className="mb-2 text-lg font-semibold">{feature.title}</h3>
+   391→                    <p className="text-sm leading-relaxed text-muted-foreground">
+   392→                      {feature.description}
+   393→                    </p>
+   394→                  </CardContent>
+   395→                </Card>
+   396→              </StaggerItem>
+   397→            )
+   398→          })}
+   399→        </StaggerContainer>
+   400→      </div>
+   401→    </section>
+   402→  )
+   403→}
+   404→
+   405→// ---------------------------------------------------------------------------
+   406→// Screenshots / Dashboard Preview Section
+   407→// ---------------------------------------------------------------------------
+   408→
+   409→function ScreenshotSection() {
+   410→  return (
+   411→    <section className="bg-muted/30 py-24 sm:py-32">
+   412→      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+   413→        <FadeIn className="mx-auto mb-16 max-w-2xl text-center">
+   414→          <Badge variant="secondary" className="mb-4">Dashboard Preview</Badge>
+   415→          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+   416→            A beautiful dashboard that makes sense of your money
+   417→          </h2>
+   418→          <p className="mt-4 text-lg text-muted-foreground">
+   419→            Clean, intuitive, and packed with the insights you need at a glance.
+   420→          </p>
+   421→        </FadeIn>
+   422→
+   423→        <FadeIn delay={0.15}>
+   424→          <div className="mx-auto max-w-5xl">
+   425→            {/* Browser chrome */}
+   426→            <div className="overflow-hidden rounded-xl border bg-card shadow-2xl">
+   427→              {/* Title bar */}
+   428→              <div className="flex items-center gap-2 border-b bg-muted/50 px-4 py-3">
+   429→                <div className="flex gap-1.5">
+   430→                  <div className="size-3 rounded-full bg-red-400" />
+   431→                  <div className="size-3 rounded-full bg-yellow-400" />
+   432→                  <div className="size-3 rounded-full bg-green-400" />
+   433→                </div>
+   434→                <div className="mx-auto flex h-6 w-64 items-center justify-center rounded-md bg-background text-xs text-muted-foreground">
+   435→                  app.finwise.com/dashboard
+   436→                </div>
+   437→              </div>
+   438→
+   439→              {/* Dashboard content mockup */}
+   440→              <div className="grid grid-cols-12 gap-0">
+   441→                {/* Sidebar mockup */}
+   442→                <div className="col-span-3 hidden border-r bg-muted/30 p-4 md:block">
+   443→                  <div className="mb-6 flex items-center gap-2">
+   444→                    <div className="flex size-8 items-center justify-center rounded-lg bg-primary">
+   445→                      <PiggyBank className="size-4 text-primary-foreground" />
+   446→                    </div>
+   447→                    <span className="text-sm font-bold">FinWise</span>
+   448→                  </div>
+   449→                  <div className="space-y-1">
+   450→                    {['Dashboard', 'Transactions', 'Budgets', 'Goals', 'Analytics', 'Settings'].map((item, i) => (
+   451→                      <div
+   452→                        key={item}
+   453→                        className={`rounded-lg px-3 py-2 text-xs ${
+   454→                          i === 0 ? 'bg-primary/10 font-medium text-primary' : 'text-muted-foreground'
+   455→                        }`}
+   456→                      >
+   457→                        {item}
+   458→                      </div>
+   459→                    ))}
+   460→                  </div>
+   461→                </div>
+   462→
+   463→                {/* Main content mockup */}
+   464→                <div className="col-span-12 p-4 md:col-span-9 md:p-6">
+   465→                  {/* Summary cards */}
+   466→                  <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+   467→                    {[
+   468→                      { label: 'Total Balance', value: '$24,563', change: '+12.5%', positive: true },
+   469→                      { label: 'Monthly Income', value: '$8,240', change: '+4.2%', positive: true },
+   470→                      { label: 'Monthly Expenses', value: '$3,120', change: '-8.1%', positive: true },
+   471→                      { label: 'Savings Rate', value: '62%', change: '+5.3%', positive: true },
+   472→                    ].map((stat) => (
+   473→                      <div key={stat.label} className="rounded-lg border bg-card p-3">
+   474→                        <div className="text-xs text-muted-foreground">{stat.label}</div>
+   475→                        <div className="mt-1 text-lg font-bold">{stat.value}</div>
+   476→                        <div className={`text-xs ${stat.positive ? 'text-emerald-500' : 'text-rose-500'}`}>
+   477→                          {stat.change}
+   478→                        </div>
+   479→                      </div>
+   480→                    ))}
+   481→                  </div>
+   482→
+   483→                  {/* Chart area */}
+   484→                  <div className="mb-6 rounded-lg border bg-card p-4">
+   485→                    <div className="mb-3 text-sm font-semibold">Income vs Expenses</div>
+   486→                    <div className="flex h-32 items-end gap-2">
+   487→                      {[40, 65, 45, 70, 55, 80, 60, 75, 85, 65, 90, 70].map((h, i) => (
+   488→                        <div key={i} className="flex flex-1 flex-col items-center gap-1">
+   489→                          <div className="flex w-full gap-0.5" style={{ height: `${h}%` }}>
+   490→                            <div className="flex-1 rounded-t bg-primary/80" />
+   491→                            <div className="flex-1 rounded-t bg-rose-400/60" />
+   492→                          </div>
+   493→                          <div className="text-[9px] text-muted-foreground">
+   494→                            {['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'][i]}
+   495→                          </div>
+   496→                        </div>
+   497→                      ))}
+   498→                    </div>
+   499→                  </div>
+   500→
+   501→                  {/* Recent transactions */}
+   502→                  <div className="rounded-lg border bg-card p-4">
+   503→                    <div className="mb-3 text-sm font-semibold">Recent Transactions</div>
+   504→                    <div className="space-y-2.5">
+   505→                      {[
+   506→                        { name: 'Spotify Premium', category: 'Subscriptions', amount: '-$9.99', color: 'bg-rose-400' },
+   507→                        { name: 'Salary Deposit', category: 'Income', amount: '+$4,120', color: 'bg-emerald-400' },
+   508→                        { name: 'Grocery Store', category: 'Food & Dining', amount: '-$84.30', color: 'bg-rose-400' },
+   509→                        { name: 'Freelance Project', category: 'Income', amount: '+$2,000', color: 'bg-emerald-400' },
+   510→                      ].map((tx) => (
+   511→                        <div key={tx.name} className="flex items-center justify-between">
+   512→                          <div className="flex items-center gap-3">
+   513→                            <div className={`size-8 rounded-full ${tx.color}/20 flex items-center justify-center`}>
+   514→                              <div className={`size-2 rounded-full ${tx.color}`} />
+   515→                            </div>
+   516→                            <div>
+   517→                              <div className="text-xs font-medium">{tx.name}</div>
+   518→                              <div className="text-[10px] text-muted-foreground">{tx.category}</div>
+   519→                            </div>
+   520→                          </div>
+   521→                          <div className={`text-xs font-semibold ${tx.color === 'bg-emerald-400' ? 'text-emerald-500' : 'text-rose-500'}`}>
+   522→                            {tx.amount}
+   523→                          </div>
+   524→                        </div>
+   525→                      ))}
+   526→                    </div>
+   527→                  </div>
+   528→                </div>
+   529→              </div>
+   530→            </div>
+   531→          </div>
+   532→        </FadeIn>
+   533→      </div>
+   534→    </section>
+   535→  )
+   536→}
+   537→
+   538→// ---------------------------------------------------------------------------
+   539→// Testimonials Section
+   540→// ---------------------------------------------------------------------------
+   541→
+   542→const TESTIMONIALS = [
+   543→  {
+   544→    name: 'Sarah Chen',
+   545→    role: 'Product Designer at Figma',
+   546→    avatar: 'SC',
+   547→    quote:
+   548→      'FinWise completely transformed how I think about money. The AI insights helped me find $300/month in savings I didn\'t know I had. It\'s like having a financial advisor in my pocket.',
+   549→    rating: 5,
+   550→  },
+   551→  {
+   552→    name: 'Marcus Johnson',
+   553→    role: 'Freelance Developer',
+   554→    avatar: 'MJ',
+   555→    quote:
+   556→      'As a freelancer, tracking finances was always chaotic. FinWise made it simple. The budget tracking and goal features keep me on target every month. Highly recommend!',
+   557→    rating: 5,
+   558→  },
+   559→  {
+   560→    name: 'Emily Rodriguez',
+   561→    role: 'Marketing Director',
+   562→    avatar: 'ER',
+   563→    quote:
+   564→      'The subscription tracking alone saved me from renewing services I never used. The dashboard is beautiful and the analytics are incredibly insightful. Best finance app I\'ve used.',
+   565→    rating: 5,
+   566→  },
+   567→]
+   568→
+   569→function TestimonialsSection() {
+   570→  return (
+   571→    <section className="py-24 sm:py-32">
+   572→      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+   573→        <FadeIn className="mx-auto mb-16 max-w-2xl text-center">
+   574→          <Badge variant="secondary" className="mb-4">Testimonials</Badge>
+   575→          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+   576→            Loved by thousands of users
+   577→          </h2>
+   578→          <p className="mt-4 text-lg text-muted-foreground">
+   579→            Don\'t just take our word for it. Here\'s what our users have to say.
+   580→          </p>
+   581→        </FadeIn>
+   582→
+   583→        <StaggerContainer className="grid gap-6 md:grid-cols-3">
+   584→          {TESTIMONIALS.map((t) => (
+   585→            <StaggerItem key={t.name}>
+   586→              <Card className="h-full">
+   587→                <CardContent className="p-6">
+   588→                  <div className="mb-4 flex gap-0.5">
+   589→                    {Array.from({ length: t.rating }).map((_, i) => (
+   590→                      <Star key={i} className="size-4 fill-amber-400 text-amber-400" />
+   591→                    ))}
+   592→                  </div>
+   593→                  <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
+   594→                    &ldquo;{t.quote}&rdquo;
+   595→                  </p>
+   596→                  <div className="flex items-center gap-3">
+   597→                    <div className="flex size-10 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+   598→                      {t.avatar}
+   599→                    </div>
+   600→                    <div>
+   601→                      <div className="text-sm font-semibold">{t.name}</div>
+   602→                      <div className="text-xs text-muted-foreground">{t.role}</div>
+   603→                    </div>
+   604→                  </div>
+   605→                </CardContent>
+   606→              </Card>
+   607→            </StaggerItem>
+   608→          ))}
+   609→        </StaggerContainer>
+   610→      </div>
+   611→    </section>
+   612→  )
+   613→}
+   614→
+   615→// ---------------------------------------------------------------------------
+   616→// Pricing Section
+   617→// ---------------------------------------------------------------------------
+   618→
+   619→const PRICING_TIERS = [
+   620→  {
+   621→    name: 'Free',
+   622→    price: '$0',
+   623→    period: 'forever',
+   624→    description: 'Perfect for getting started with personal finance.',
+   625→    features: [
+   626→      'Up to 50 transactions/month',
+   627→      'Basic expense tracking',
+   628→      '1 budget',
+   629→      '1 financial goal',
+   630→      'Basic analytics',
+   631→      'Community support',
+   632→    ],
+   633→    cta: 'Get Started',
+   634→    highlighted: false,
+   635→  },
+   636→  {
+   637→    name: 'Pro',
+   638→    price: '$9.99',
+   639→    period: '/month',
+   640→    description: 'For individuals who want full control of their finances.',
+   641→    features: [
+   642→      'Unlimited transactions',
+   643→      'AI-powered categorization',
+   644→      'Unlimited budgets & goals',
+   645→      'Subscription management',
+   646→      'Advanced analytics & reports',
+   647→      'AI financial assistant',
+   648→      'Priority email support',
+   649→    ],
+   650→    cta: 'Start Free Trial',
+   651→    highlighted: true,
+   652→  },
+   653→  {
+   654→    name: 'Business',
+   655→    price: '$24.99',
+   656→    period: '/month',
+   657→    description: 'For professionals and small businesses.',
+   658→    features: [
+   659→      'Everything in Pro',
+   660→      'Multi-account management',
+   661→      'Team collaboration',
+   662→      'Custom financial reports',
+   663→      'API access',
+   664→      'White-label exports',
+   665→      'Dedicated account manager',
+   666→      '24/7 phone support',
+   667→    ],
+   668→    cta: 'Contact Sales',
+   669→    highlighted: false,
+   670→  },
+   671→]
+   672→
+   673→function PricingSection() {
+   674→  const { setRoute } = useRouterStore()
+   675→
+   676→  return (
+   677→    <section id="pricing" className="bg-muted/30 py-24 sm:py-32">
+   678→      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+   679→        <FadeIn className="mx-auto mb-16 max-w-2xl text-center">
+   680→          <Badge variant="secondary" className="mb-4">Pricing</Badge>
+   681→          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+   682→            Simple, transparent pricing
+   683→          </h2>
+   684→          <p className="mt-4 text-lg text-muted-foreground">
+   685→            Choose the plan that\'s right for you. Upgrade or downgrade anytime.
+   686→          </p>
+   687→        </FadeIn>
+   688→
+   689→        <StaggerContainer className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
+   690→          {PRICING_TIERS.map((tier) => (
+   691→            <StaggerItem key={tier.name}>
+   692→              <Card
+   693→                className={`relative h-full ${
+   694→                  tier.highlighted
+   695→                    ? 'border-primary shadow-lg shadow-primary/10'
+   696→                    : ''
+   697→                }`}
+   698→              >
+   699→                {tier.highlighted && (
+   700→                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+   701→                    <Badge className="px-3 py-1">Most Popular</Badge>
+   702→                  </div>
+   703→                )}
+   704→                <CardHeader className="pb-0">
+   705→                  <CardTitle className="text-lg">{tier.name}</CardTitle>
+   706→                </CardHeader>
+   707→                <CardContent className="flex flex-1 flex-col gap-6">
+   708→                  <div>
+   709→                    <span className="text-4xl font-bold tracking-tight">{tier.price}</span>
+   710→                    <span className="text-sm text-muted-foreground">{tier.period}</span>
+   711→                  </div>
+   712→                  <p className="text-sm text-muted-foreground">{tier.description}</p>
+   713→                  <ul className="flex-1 space-y-2.5">
+   714→                    {tier.features.map((feature) => (
+   715→                      <li key={feature} className="flex items-start gap-2 text-sm">
+   716→                        <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+   717→                        {feature}
+   718→                      </li>
+   719→                    ))}
+   720→                  </ul>
+   721→                  <Button
+   722→                    className="w-full"
+   723→                    variant={tier.highlighted ? 'default' : 'outline'}
+   724→                    size="lg"
+   725→                    onClick={() => setRoute('/register')}
+   726→                  >
+   727→                    {tier.cta}
+   728→                  </Button>
+   729→                </CardContent>
+   730→              </Card>
+   731→            </StaggerItem>
+   732→          ))}
+   733→        </StaggerContainer>
+   734→      </div>
+   735→    </section>
+   736→  )
+   737→}
+   738→
+   739→// ---------------------------------------------------------------------------
+   740→// FAQ Section
+   741→// ---------------------------------------------------------------------------
+   742→
+   743→const FAQ_ITEMS = [
+   744→  {
+   745→    q: 'Is FinWise free to use?',
+   746→    a: 'Yes! FinWise offers a generous free plan with up to 50 transactions per month, basic expense tracking, and one budget. You can upgrade to Pro or Business anytime for unlimited features and AI-powered insights.',
+   747→  },
+   748→  {
+   749→    q: 'How secure is my financial data?',
+   750→    a: 'We take security extremely seriously. All data is encrypted at rest and in transit using AES-256 encryption. We never store your banking credentials and use bank-level security protocols. We are SOC 2 Type II compliant.',
+   751→  },
+   752→  {
+   753→    q: 'Can I connect my bank accounts?',
+   754→    a: 'Yes, FinWise supports secure bank connections through Plaid. You can link over 12,000 financial institutions across the US, Canada, and Europe. Connections are read-only and your credentials are never stored on our servers.',
+   755→  },
+   756→  {
+   757→    q: 'What does the AI assistant do?',
+   758→    a: 'Our AI assistant analyzes your spending patterns to provide personalized financial advice, identify savings opportunities, predict future spending, suggest optimal budget allocations, and answer any questions about your finances in natural language.',
+   759→  },
+   760→  {
+   761→    q: 'Can I cancel my subscription anytime?',
+   762→    a: 'Absolutely. There are no long-term contracts or cancellation fees. You can cancel your Pro or Business subscription at any time from your account settings. You\'ll continue to have access until the end of your billing period.',
+   763→  },
+   764→  {
+   765→    q: 'Do you offer team or family plans?',
+   766→    a: 'Yes, our Business plan supports team collaboration with shared budgets and reports. We\'re also working on a Family plan that will allow multiple household members to track shared expenses and goals together. Stay tuned!',
+   767→  },
+   768→]
+   769→
+   770→function FAQSection() {
+   771→  return (
+   772→    <section id="faq" className="py-24 sm:py-32">
+   773→      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+   774→        <FadeIn className="mx-auto mb-16 text-center">
+   775→          <Badge variant="secondary" className="mb-4">FAQ</Badge>
+   776→          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+   777→            Frequently asked questions
+   778→          </h2>
+   779→          <p className="mt-4 text-lg text-muted-foreground">
+   780→            Everything you need to know about FinWise.
+   781→          </p>
+   782→        </FadeIn>
+   783→
+   784→        <FadeIn delay={0.15}>
+   785→          <Accordion type="single" collapsible className="w-full">
+   786→            {FAQ_ITEMS.map((item, i) => (
+   787→              <AccordionItem key={i} value={`item-${i}`}>
+   788→                <AccordionTrigger className="text-left text-sm font-medium sm:text-base">
+   789→                  {item.q}
+   790→                </AccordionTrigger>
+   791→                <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
+   792→                  {item.a}
+   793→                </AccordionContent>
+   794→              </AccordionItem>
+   795→            ))}
+   796→          </Accordion>
+   797→        </FadeIn>
+   798→      </div>
+   799→    </section>
+   800→  )
+   801→}
+   802→
+   803→// ---------------------------------------------------------------------------
+   804→// Final CTA Section
+   805→// ---------------------------------------------------------------------------
+   806→
+   807→function CTASection() {
+   808→  const { setRoute } = useRouterStore()
+   809→
+   810→  return (
+   811→    <section className="relative overflow-hidden py-24 sm:py-32">
+   812→      {/* Gradient background */}
+   813→      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent" />
+   814→      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(120,119,198,0.1),transparent_70%)]" />
+   815→
+   816→      <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
+   817→        <FadeIn>
+   818→          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+   819→            Ready to take control of your finances?
+   820→          </h2>
+   821→          <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
+   822→            Join thousands of users who have already transformed their financial lives with FinWise.
+   823→            Start for free, no credit card required.
+   824→          </p>
+   825→          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+   826→            <Button
+   827→              size="lg"
+   828→              className="h-12 px-8 text-base"
+   829→              onClick={() => setRoute('/register')}
+   830→            >
+   831→              Get Started Free
+   832→              <ArrowRight className="ml-1 size-4" />
+   833→            </Button>
+   834→            <Button variant="outline" size="lg" className="h-12 px-8 text-base">
+   835→              Schedule a Demo
+   836→            </Button>
+   837→          </div>
+   838→        </FadeIn>
+   839→      </div>
+   840→    </section>
+   841→  )
+   842→}
+   843→
+   844→// ---------------------------------------------------------------------------
+   845→// Main Landing Page
+   846→// ---------------------------------------------------------------------------
+   847→
+   848→export function LandingPage() {
+   849→  return (
+   850→    <div className="min-h-screen bg-background">
+   851→      <LandingHeader />
+   852→      <HeroSection />
+   853→      <BrandsSection />
+   854→      <FeaturesSection />
+   855→      <ScreenshotSection />
+   856→      <TestimonialsSection />
+   857→      <PricingSection />
+   858→      <FAQSection />
+   859→      <CTASection />
+   860→      <LandingFooter />
+   861→    </div>
+   862→  )
+   863→}
+   864→

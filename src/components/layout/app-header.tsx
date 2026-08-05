@@ -38,6 +38,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
+import { cn } from '@/lib/utils'
 
 const ROUTE_LABELS: Record<string, string> = {
   [AppRoute.DASHBOARD]: 'Dashboard',
@@ -57,6 +58,7 @@ export function AppHeader() {
   const { route, setRoute, user, clearAuth } = useRouterStore()
   const { searchQuery, setSearchQuery } = useAppStore()
   const [searchOpen, setSearchOpen] = React.useState(false)
+  const [searchFocused, setSearchFocused] = React.useState(false)
   const notificationCount = 3
 
   const currentLabel = ROUTE_LABELS[route] ?? 'Dashboard'
@@ -78,10 +80,10 @@ export function AppHeader() {
     : 'U'
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-md sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b/60 bg-background/60 px-4 backdrop-blur-xl sm:px-6">
       <SidebarTrigger className="-ml-1" />
 
-      <Separator orientation="vertical" className="mr-1 h-6" />
+      <Separator orientation="vertical" className="mr-1 h-6 opacity-40" />
 
       {/* Breadcrumbs */}
       <Breadcrumb className="hidden sm:flex">
@@ -89,30 +91,49 @@ export function AppHeader() {
           <BreadcrumbItem>
             <BreadcrumbLink
               onClick={() => setRoute(AppRoute.DASHBOARD)}
-              className="cursor-pointer"
+              className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors duration-150"
             >
               Home
             </BreadcrumbLink>
           </BreadcrumbItem>
-          <BreadcrumbSeparator />
+          <BreadcrumbSeparator className="text-muted-foreground/30" />
           <BreadcrumbItem>
-            <BreadcrumbPage>{currentLabel}</BreadcrumbPage>
+            <BreadcrumbPage className="font-medium text-foreground">
+              {currentLabel}
+            </BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
 
       {/* Mobile page title */}
-      <span className="text-sm font-medium sm:hidden">{currentLabel}</span>
+      <motion.span
+        key={currentLabel}
+        initial={{ opacity: 0, x: -6 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.2 }}
+        className="text-sm font-semibold sm:hidden"
+      >
+        {currentLabel}
+      </motion.span>
 
       <div className="ml-auto flex items-center gap-2">
         {/* Search */}
         <div className="relative hidden md:block">
-          <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60 transition-colors duration-150" />
           <Input
             placeholder="Search transactions..."
-            className="h-9 w-64 pl-9"
+            className={cn(
+              'h-9 w-64 rounded-xl border-border/60 bg-muted/40 pl-10 pr-4 text-sm',
+              'transition-all duration-200 ease-out',
+              'placeholder:text-muted-foreground/50',
+              searchFocused
+                ? 'w-80 border-primary/40 bg-background ring-4 ring-primary/5 shadow-sm'
+                : 'hover:border-border hover:bg-muted/60',
+            )}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
           />
         </div>
 
@@ -123,13 +144,13 @@ export function AppHeader() {
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: 200, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
               className="relative overflow-hidden md:hidden"
             >
-              <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
               <Input
                 placeholder="Search..."
-                className="h-9 w-full pl-9"
+                className="h-9 w-full rounded-xl border-border/60 bg-muted/40 pl-10 text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 autoFocus
@@ -149,43 +170,64 @@ export function AppHeader() {
         </Button>
 
         {/* Notifications */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative"
-          onClick={() => setRoute(AppRoute.NOTIFICATIONS)}
-        >
-          <Bell className="size-4" />
-          {notificationCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full p-0 text-[10px]"
-            >
-              {notificationCount}
-            </Badge>
-          )}
-          <span className="sr-only">Notifications</span>
-        </Button>
+        <motion.div whileTap={{ scale: 0.92 }}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative h-9 w-9 rounded-xl"
+            onClick={() => setRoute(AppRoute.NOTIFICATIONS)}
+          >
+            <Bell className="size-[18px] text-muted-foreground" />
+            {notificationCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex size-4.5 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-white shadow-sm shadow-destructive/30">
+                <motion.span
+                  className="absolute inset-0 rounded-full bg-destructive"
+                  animate={{ scale: [1, 1.8, 1], opacity: [0.4, 0, 0.4] }}
+                  transition={{
+                    duration: 2.5,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  }}
+                />
+                <span className="relative z-10">{notificationCount}</span>
+              </span>
+            )}
+            <span className="sr-only">Notifications</span>
+          </Button>
+        </motion.div>
 
         {/* User dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-              <Avatar className="size-8">
-                <AvatarImage
-                  src={user?.avatar ?? undefined}
-                  alt={user?.name ?? 'User'}
-                />
-                <AvatarFallback className="text-xs font-semibold">
-                  {userInitials}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="transition-shadow duration-200"
+            >
+              <Button
+                variant="ghost"
+                className="relative h-9 w-9 rounded-full p-0 hover:ring-2 hover:ring-primary/20 hover:ring-offset-2 hover:ring-offset-background transition-all duration-200"
+              >
+                <Avatar className="size-9">
+                  <AvatarImage
+                    src={user?.avatar ?? undefined}
+                    alt={user?.name ?? 'User'}
+                  />
+                  <AvatarFallback className="text-xs font-semibold">
+                    {userInitials}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </motion.div>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end" forceMount>
-            <DropdownMenuLabel className="font-normal">
+          <DropdownMenuContent
+            className="w-56 rounded-xl border-border/60 p-1.5"
+            align="end"
+            forceMount
+          >
+            <DropdownMenuLabel className="font-normal px-2 py-1.5">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">
+                <p className="text-sm font-semibold leading-none">
                   {user?.name ?? 'User'}
                 </p>
                 <p className="text-xs leading-none text-muted-foreground">
@@ -193,21 +235,27 @@ export function AppHeader() {
                 </p>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="opacity-60" />
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => setRoute(AppRoute.PROFILE)}>
+              <DropdownMenuItem
+                onClick={() => setRoute(AppRoute.PROFILE)}
+                className="rounded-lg px-2 py-1.5 cursor-pointer transition-colors duration-150"
+              >
                 <User className="mr-2 size-4" />
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setRoute(AppRoute.SETTINGS)}>
+              <DropdownMenuItem
+                onClick={() => setRoute(AppRoute.SETTINGS)}
+                className="rounded-lg px-2 py-1.5 cursor-pointer transition-colors duration-150"
+              >
                 <Settings className="mr-2 size-4" />
                 Settings
               </DropdownMenuItem>
             </DropdownMenuGroup>
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="opacity-60" />
             <DropdownMenuItem
               onClick={handleLogout}
-              className="text-destructive focus:text-destructive"
+              className="text-destructive focus:text-destructive rounded-lg px-2 py-1.5 cursor-pointer transition-colors duration-150"
             >
               <LogOut className="mr-2 size-4" />
               Log out

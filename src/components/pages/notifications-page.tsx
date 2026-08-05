@@ -97,7 +97,7 @@ const itemVariants = {
   visible: (i: number) => ({
     opacity: 1,
     x: 0,
-    transition: { delay: i * 0.03, duration: 0.25, ease: 'easeOut' },
+    transition: { delay: i * 0.05, duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] },
   }),
   exit: {
     opacity: 0,
@@ -150,7 +150,7 @@ function NotificationItem({
         }
         onClick={() => onClick(notification)}
       >
-        <CardContent className="p-4">
+        <CardContent className="p-6">
           <div className="flex items-start gap-3">
             {/* Icon */}
             <div
@@ -392,7 +392,7 @@ function NotificationList({
           </div>
         )}
         {hasMore && !isLoadingMore && (
-          <Button variant="ghost" size="sm" onClick={loadMore}>
+          <Button variant="ghost" size="sm" className="rounded-xl" onClick={loadMore}>
             <ChevronDown className="mr-1 size-4" />
             Load more
           </Button>
@@ -563,7 +563,7 @@ export function NotificationsPage() {
             {unreadCount > 0 && (
               <Badge
                 variant="secondary"
-                className="bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400"
+                className="rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400"
               >
                 {unreadCount} unread
               </Badge>
@@ -571,6 +571,7 @@ export function NotificationsPage() {
             <Button
               variant="outline"
               size="sm"
+              className="rounded-xl h-10"
               onClick={handleMarkAllRead}
               disabled={unreadCount === 0 || markAllReadMutation.isPending}
             >
@@ -591,7 +592,7 @@ export function NotificationsPage() {
         onValueChange={handleTabChange}
         className="w-full"
       >
-        <TabsList className="w-full sm:w-auto">
+        <TabsList className="w-full sm:w-auto rounded-xl p-1">
           <TabsTrigger value="all" className="gap-1.5">
             All
           </TabsTrigger>
@@ -633,8 +634,8 @@ export function NotificationsPage() {
         {['all', 'unread', 'info', 'warning', 'success'].map((tab) => (
           <TabsContent key={tab} value={tab}>
             {showFilteredEmpty ? (
-              <div className="py-12 text-center">
-                <Inbox className="mx-auto mb-3 size-10 text-muted-foreground/50" />
+              <div className="py-16 text-center">
+                <Inbox className="mx-auto mb-4 size-12 text-muted-foreground/30" />
                 <p className="text-sm font-medium text-muted-foreground">
                   No {tab === 'all' ? '' : tab + ' '}notifications found
                 </p>

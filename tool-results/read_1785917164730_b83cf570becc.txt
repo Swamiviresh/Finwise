@@ -1,0 +1,1060 @@
+     1→'use client'
+     2→
+     3→import * as React from 'react'
+     4→import { useForm, useFieldArray, Controller } from 'react-hook-form'
+     5→import { zodResolver } from '@hookform/resolvers/zod'
+     6→import { z } from 'zod'
+     7→import { useQuery, useQueryClient } from '@tanstack/react-query'
+     8→import { motion, AnimatePresence } from 'framer-motion'
+     9→import { format, parseISO } from 'date-fns'
+    10→import {
+    11→  Plus,
+    12→  Pencil,
+    13→  Trash2,
+    14→  Wallet,
+    15→  TrendingDown,
+    16→  AlertTriangle,
+    17→  CalendarDays,
+    18→  Minus,
+    19→  Loader2,
+    20→  X,
+    21→  CircleDollarSign,
+    22→} from 'lucide-react'
+    23→
+    24→import { useRouterStore } from '@/store/router-store'
+    25→import {
+    26→  useBudgets,
+    27→  useCreateBudget,
+    28→  useUpdateBudget,
+    29→  useDeleteBudget,
+    30→} from '@/hooks/use-budgets'
+    31→import { apiRequest } from '@/hooks/use-auth'
+    32→import { PageHeader } from '@/components/shared/page-header'
+    33→import { EmptyState } from '@/components/shared/empty-state'
+    34→import { CardSkeleton } from '@/components/shared/loading-skeleton'
+    35→import { ConfirmDialog } from '@/components/shared/confirm-dialog'
+    36→import { formatCurrency, formatDate, formatPercentage } from '@/lib/format'
+    37→import {
+    38→  BUDGET_PERIODS,
+    39→  DEFAULT_CATEGORIES,
+    40→  APP_CONFIG,
+    41→} from '@/lib/constants'
+    42→import type {
+    43→  Budget,
+    44→  Category,
+    45→  CategoryBudget,
+    46→  BudgetCreate,
+    47→  ApiResponse,
+    48→} from '@/types'
+    49→
+    50→import { Button } from '@/components/ui/button'
+    51→import { Input } from '@/components/ui/input'
+    52→import { Badge } from '@/components/ui/badge'
+    53→import { Separator } from '@/components/ui/separator'
+    54→import {
+    55→  Card,
+    56→  CardContent,
+    57→  CardHeader,
+    58→  CardTitle,
+    59→  CardAction,
+    60→  CardDescription,
+    61→} from '@/components/ui/card'
+    62→import {
+    63→  Dialog,
+    64→  DialogContent,
+    65→  DialogDescription,
+    66→  DialogFooter,
+    67→  DialogHeader,
+    68→  DialogTitle,
+    69→} from '@/components/ui/dialog'
+    70→import {
+    71→  Sheet,
+    72→  SheetContent,
+    73→  SheetDescription,
+    74→  SheetFooter,
+    75→  SheetHeader,
+    76→  SheetTitle,
+    77→} from '@/components/ui/sheet'
+    78→import {
+    79→  Select,
+    80→  SelectContent,
+    81→  SelectItem,
+    82→  SelectTrigger,
+    83→  SelectValue,
+    84→} from '@/components/ui/select'
+    85→import {
+    86→  Form,
+    87→  FormControl,
+    88→  FormField,
+    89→  FormItem,
+    90→  FormLabel,
+    91→  FormMessage,
+    92→  FormDescription,
+    93→} from '@/components/ui/form'
+    94→import {
+    95→  Alert,
+    96→  AlertTitle,
+    97→  AlertDescription,
+    98→} from '@/components/ui/alert'
+    99→import {
+   100→  Popover,
+   101→  PopoverContent,
+   102→  PopoverTrigger,
+   103→} from '@/components/ui/popover'
+   104→import { Calendar } from '@/components/ui/calendar'
+   105→import { useMediaQuery } from '@reactuses/core'
+   106→
+   107→// ---------------------------------------------------------------------------
+   108→// Form schema
+   109→// ---------------------------------------------------------------------------
+   110→
+   111→const categoryBudgetSchema = z.object({
+   112→  categoryId: z.string().min(1, 'Category is required'),
+   113→  amount: z.coerce.number().min(0.01, 'Amount must be greater than 0'),
+   114→})
+   115→
+   116→const budgetFormSchema = z.object({
+   117→  name: z.string().min(1, 'Name is required').max(100),
+   118→  amount: z.coerce.number().min(1, 'Amount must be greater than 0'),
+   119→  period: z.enum(['weekly', 'monthly', 'yearly']).default('monthly'),
+   120→  startDate: z.string().min(1, 'Start date is required'),
+   121→  endDate: z.string().optional(),
+   122→  alertThreshold: z.coerce.number().min(1).max(100).default(80),
+   123→  categoryBudgets: z.array(categoryBudgetSchema).optional(),
+   124→})
+   125→
+   126→type BudgetFormValues = z.infer<typeof budgetFormSchema>
+   127→
+   128→// ---------------------------------------------------------------------------
+   129→// Helpers
+   130→// ---------------------------------------------------------------------------
+   131→
+   132→function getProgressColor(percent: number): string {
+   133→  if (percent >= 90) return 'bg-red-500'
+   134→  if (percent >= 70) return 'bg-amber-500'
+   135→  return 'bg-emerald-500'
+   136→}
+   137→
+   138→function getProgressBgColor(percent: number): string {
+   139→  if (percent >= 90) return 'bg-red-500/20'
+   140→  if (percent >= 70) return 'bg-amber-500/20'
+   141→  return 'bg-emerald-500/20'
+   142→}
+   143→
+   144→function getProgressTextColor(percent: number): string {
+   145→  if (percent >= 90) return 'text-red-600 dark:text-red-400'
+   146→  if (percent >= 70) return 'text-amber-600 dark:text-amber-400'
+   147→  return 'text-emerald-600 dark:text-emerald-400'
+   148→}
+   149→
+   150→function getAlertType(percent: number, threshold: number): 'danger' | 'warning' | null {
+   151→  if (percent >= 100) return 'danger'
+   152→  if (percent >= threshold) return 'warning'
+   153→  return null
+   154→}
+   155→
+   156→const periodLabels: Record<string, string> = {
+   157→  weekly: 'Weekly',
+   158→  monthly: 'Monthly',
+   159→  yearly: 'Yearly',
+   160→}
+   161→
+   162→const cardVariants = {
+   163→  hidden: { opacity: 0, y: 16, scale: 0.97 },
+   164→  visible: (i: number) => ({
+   165→    opacity: 1,
+   166→    y: 0,
+   167→    scale: 1,
+   168→    transition: { delay: i * 0.06, duration: 0.4, ease: 'easeOut' },
+   169→  }),
+   170→}
+   171→
+   172→// ============================================================================
+   173→// Budget Form Content (shared between Dialog & Sheet)
+   174→// ============================================================================
+   175→
+   176→interface BudgetFormContentProps {
+   177→  form: ReturnType<typeof useForm<BudgetFormValues>>
+   178→  categories: Category[]
+   179→  isEditing: boolean
+   180→  isPending: boolean
+   181→  onClose: () => void
+   182→  onSubmit: (values: BudgetFormValues) => void
+   183→}
+   184→
+   185→function BudgetFormContent({
+   186→  form,
+   187→  categories,
+   188→  isEditing,
+   189→  isPending,
+   190→  onClose,
+   191→  onSubmit,
+   192→}: BudgetFormContentProps) {
+   193→  const { fields, append, remove } = useFieldArray({
+   194→    control: form.control,
+   195→    name: 'categoryBudgets',
+   196→  })
+   197→
+   198→  const expenseCategories = React.useMemo(
+   199→    () => categories.filter((c) => c.type === 'expense'),
+   200→    [categories],
+   201→  )
+   202→
+   203→  return (
+   204→    <Form {...form}>
+   205→      <form
+   206→        onSubmit={form.handleSubmit(onSubmit)}
+   207→        className="flex flex-col gap-5"
+   208→      >
+   209→        <FormField
+   210→          control={form.control}
+   211→          name="name"
+   212→          render={({ field }) => (
+   213→            <FormItem>
+   214→              <FormLabel>Budget Name</FormLabel>
+   215→              <FormControl>
+   216→                <Input placeholder="e.g. Monthly Groceries" {...field} />
+   217→              </FormControl>
+   218→              <FormMessage />
+   219→            </FormItem>
+   220→          )}
+   221→        />
+   222→
+   223→        <div className="grid gap-4 sm:grid-cols-2">
+   224→          <FormField
+   225→            control={form.control}
+   226→            name="amount"
+   227→            render={({ field }) => (
+   228→              <FormItem>
+   229→                <FormLabel>Total Budget</FormLabel>
+   230→                <FormControl>
+   231→                  <Input
+   232→                    type="number"
+   233→                    step="0.01"
+   234→                    min="0"
+   235→                    placeholder="0.00"
+   236→                    {...field}
+   237→                  />
+   238→                </FormControl>
+   239→                <FormMessage />
+   240→              </FormItem>
+   241→            )}
+   242→          />
+   243→
+   244→          <FormField
+   245→            control={form.control}
+   246→            name="period"
+   247→            render={({ field }) => (
+   248→              <FormItem>
+   249→                <FormLabel>Period</FormLabel>
+   250→                <Select
+   251→                  value={field.value}
+   252→                  onValueChange={field.onChange}
+   253→                >
+   254→                  <FormControl>
+   255→                    <SelectTrigger className="w-full">
+   256→                      <SelectValue placeholder="Select period" />
+   257→                    </SelectTrigger>
+   258→                  </FormControl>
+   259→                  <SelectContent>
+   260→                    {BUDGET_PERIODS.map((p) => (
+   261→                      <SelectItem key={p.value} value={p.value}>
+   262→                        {p.label}
+   263→                      </SelectItem>
+   264→                    ))}
+   265→                  </SelectContent>
+   266→                </Select>
+   267→                <FormMessage />
+   268→              </FormItem>
+   269→            )}
+   270→          />
+   271→        </div>
+   272→
+   273→        <div className="grid gap-4 sm:grid-cols-2">
+   274→          <FormField
+   275→            control={form.control}
+   276→            name="startDate"
+   277→            render={({ field }) => (
+   278→              <FormItem>
+   279→                <FormLabel>Start Date</FormLabel>
+   280→                <Popover>
+   281→                  <PopoverTrigger asChild>
+   282→                    <FormControl>
+   283→                      <Button
+   284→                        type="button"
+   285→                        variant="outline"
+   286→                        className="w-full justify-start text-left font-normal"
+   287→                      >
+   288→                        <CalendarDays className="mr-2 size-4" />
+   289→                        {field.value
+   290→                          ? format(parseISO(field.value), 'MMM d, yyyy')
+   291→                          : 'Pick a date'}
+   292→                      </Button>
+   293→                    </FormControl>
+   294→                  </PopoverTrigger>
+   295→                  <PopoverContent className="w-auto p-0" align="start">
+   296→                    <Calendar
+   297→                      mode="single"
+   298→                      selected={
+   299→                        field.value ? parseISO(field.value) : undefined
+   300→                      }
+   301→                      onSelect={(date) =>
+   302→                        field.onChange(date ? format(date, 'yyyy-MM-dd') : '')
+   303→                      }
+   304→                    />
+   305→                  </PopoverContent>
+   306→                </Popover>
+   307→                <FormMessage />
+   308→              </FormItem>
+   309→            )}
+   310→          />
+   311→
+   312→          <FormField
+   313→            control={form.control}
+   314→            name="endDate"
+   315→            render={({ field }) => (
+   316→              <FormItem>
+   317→                <FormLabel>End Date (optional)</FormLabel>
+   318→                <Popover>
+   319→                  <PopoverTrigger asChild>
+   320→                    <FormControl>
+   321→                      <Button
+   322→                        type="button"
+   323→                        variant="outline"
+   324→                        className="w-full justify-start text-left font-normal"
+   325→                      >
+   326→                        <CalendarDays className="mr-2 size-4" />
+   327→                        {field.value
+   328→                          ? format(parseISO(field.value), 'MMM d, yyyy')
+   329→                          : 'No end date'}
+   330→                      </Button>
+   331→                    </FormControl>
+   332→                  </PopoverTrigger>
+   333→                  <PopoverContent className="w-auto p-0" align="start">
+   334→                    <Calendar
+   335→                      mode="single"
+   336→                      selected={
+   337→                        field.value ? parseISO(field.value) : undefined
+   338→                      }
+   339→                      onSelect={(date) =>
+   340→                        field.onChange(date ? format(date, 'yyyy-MM-dd') : '')
+   341→                      }
+   342→                    />
+   343→                  </PopoverContent>
+   344→                </Popover>
+   345→                <FormDescription>
+   346→                  Leave empty for ongoing budget
+   347→                </FormDescription>
+   348→                <FormMessage />
+   349→              </FormItem>
+   350→            )}
+   351→          />
+   352→        </div>
+   353→
+   354→        <FormField
+   355→          control={form.control}
+   356→          name="alertThreshold"
+   357→          render={({ field }) => (
+   358→            <FormItem>
+   359→              <FormLabel>Alert Threshold (%)</FormLabel>
+   360→              <FormControl>
+   361→                <Input
+   362→                  type="number"
+   363→                  min="1"
+   364→                  max="100"
+   365→                  placeholder="80"
+   366→                  {...field}
+   367→                />
+   368→              </FormControl>
+   369→              <FormDescription>
+   370→                Get alerted when spending reaches this % of budget
+   371→              </FormDescription>
+   372→              <FormMessage />
+   373→            </FormItem>
+   374→          )}
+   375→        />
+   376→
+   377→        <Separator />
+   378→
+   379→        {/* Category Budgets */}
+   380→        <div className="space-y-3">
+   381→          <div className="flex items-center justify-between">
+   382→            <div>
+   383→              <h4 className="text-sm font-semibold">Category Budgets</h4>
+   384→              <p className="text-xs text-muted-foreground">
+   385→                Allocate specific amounts to expense categories
+   386→              </p>
+   387→            </div>
+   388→            <Button
+   389→              type="button"
+   390→              variant="outline"
+   391→              size="sm"
+   392→              onClick={() =>
+   393→                append({ categoryId: '', amount: 0 })
+   394→              }
+   395→            >
+   396→              <Plus className="mr-1 size-3.5" />
+   397→              Add
+   398→            </Button>
+   399→          </div>
+   400→
+   401→          {fields.length === 0 && (
+   402→            <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+   403→              No category budgets added. The total budget will apply without
+   404→              category breakdown.
+   405→            </p>
+   406→          )}
+   407→
+   408→          <div className="space-y-3 max-h-48 overflow-y-auto">
+   409→            {fields.map((field, index) => (
+   410→              <motion.div
+   411→                key={field.id}
+   412→                initial={{ opacity: 0, height: 0 }}
+   413→                animate={{ opacity: 1, height: 'auto' }}
+   414→                exit={{ opacity: 0, height: 0 }}
+   415→                className="flex items-end gap-2"
+   416→              >
+   417→                <FormField
+   418→                  control={form.control}
+   419→                  name={`categoryBudgets.${index}.categoryId`}
+   420→                  render={({ field: catField }) => (
+   421→                    <FormItem className="flex-1">
+   422→                      <Select
+   423→                        value={catField.value}
+   424→                        onValueChange={catField.onChange}
+   425→                      >
+   426→                        <FormControl>
+   427→                          <SelectTrigger className="w-full">
+   428→                            <SelectValue placeholder="Category" />
+   429→                          </SelectTrigger>
+   430→                        </FormControl>
+   431→                        <SelectContent>
+   432→                          {expenseCategories.map((cat) => (
+   433→                            <SelectItem key={cat.id} value={cat.id}>
+   434→                              <span className="flex items-center gap-2">
+   435→                                {cat.icon && <span>{cat.icon}</span>}
+   436→                                {cat.name}
+   437→                              </span>
+   438→                            </SelectItem>
+   439→                          ))}
+   440→                        </SelectContent>
+   441→                      </Select>
+   442→                      <FormMessage />
+   443→                    </FormItem>
+   444→                  )}
+   445→                />
+   446→
+   447→                <FormField
+   448→                  control={form.control}
+   449→                  name={`categoryBudgets.${index}.amount`}
+   450→                  render={({ field: amtField }) => (
+   451→                    <FormItem className="w-32">
+   452→                      <FormControl>
+   453→                        <Input
+   454→                          type="number"
+   455→                          step="0.01"
+   456→                          min="0"
+   457→                          placeholder="0.00"
+   458→                          {...amtField}
+   459→                        />
+   460→                      </FormControl>
+   461→                      <FormMessage />
+   462→                    </FormItem>
+   463→                  )}
+   464→                />
+   465→
+   466→                <Button
+   467→                  type="button"
+   468→                  variant="ghost"
+   469→                  size="icon"
+   470→                  className="shrink-0 text-muted-foreground hover:text-destructive"
+   471→                  onClick={() => remove(index)}
+   472→                >
+   473→                  <X className="size-4" />
+   474→                </Button>
+   475→              </motion.div>
+   476→            ))}
+   477→          </div>
+   478→        </div>
+   479→
+   480→        <DialogFooter>
+   481→          <Button type="button" variant="outline" onClick={onClose}>
+   482→            Cancel
+   483→          </Button>
+   484→          <Button type="submit" disabled={isPending}>
+   485→            {isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
+   486→            {isEditing ? 'Update Budget' : 'Create Budget'}
+   487→          </Button>
+   488→        </DialogFooter>
+   489→      </form>
+   490→    </Form>
+   491→  )
+   492→}
+   493→
+   494→// ============================================================================
+   495→// Budgets Page
+   496→// ============================================================================
+   497→
+   498→export function BudgetsPage() {
+   499→  const { user } = useRouterStore()
+   500→  const isMobile = useMediaQuery('(max-width: 768px)')
+   501→  const queryClient = useQueryClient()
+   502→  const currency = user?.currency || APP_CONFIG.DEFAULT_CURRENCY
+   503→
+   504→  // ---- Dialog / Sheet state ----
+   505→  const [formOpen, setFormOpen] = React.useState(false)
+   506→  const [editingBudget, setEditingBudget] = React.useState<Budget | null>(null)
+   507→  const [deleteTarget, setDeleteTarget] = React.useState<Budget | null>(null)
+   508→
+   509→  // ---- Data ----
+   510→  const { data, isLoading, isError } = useBudgets({
+   511→    limit: APP_CONFIG.MAX_PAGE_SIZE,
+   512→  })
+   513→
+   514→  const categoriesQuery = useQuery<ApiResponse<Category>>({
+   515→    queryKey: ['categories'],
+   516→    queryFn: () => apiRequest('/api/categories'),
+   517→    staleTime: 5 * 60 * 1000,
+   518→  })
+   519→  const categories = React.useMemo(() => {
+   520→    if (categoriesQuery.data?.data) {
+   521→      return categoriesQuery.data.data as unknown as Category[]
+   522→    }
+   523→    return DEFAULT_CATEGORIES.map((c) => ({
+   524→      id: c.name.toLowerCase().replace(/\s+/g, '-'),
+   525→      name: c.name,
+   526→      icon: c.icon,
+   527→      color: c.color,
+   528→      type: c.type,
+   529→      isDefault: true,
+   530→      userId: null,
+   531→      createdAt: new Date(),
+   532→      updatedAt: new Date(),
+   533→    })) as Category[]
+   534→  }, [categoriesQuery.data])
+   535→
+   536→  const budgets = data?.data ?? []
+   537→
+   538→  // ---- Mutations ----
+   539→  const createMutation = useCreateBudget()
+   540→  const updateMutation = useUpdateBudget()
+   541→  const deleteMutation = useDeleteBudget()
+   542→
+   543→  // ---- Derived ----
+   544→  const totalBudget = React.useMemo(
+   545→    () => budgets.reduce((sum, b) => sum + b.amount, 0),
+   546→    [budgets],
+   547→  )
+   548→  const totalSpent = React.useMemo(
+   549→    () => budgets.reduce((sum, b) => sum + b.spent, 0),
+   550→    [budgets],
+   551→  )
+   552→  const overallPercent =
+   553→    totalBudget > 0 ? Math.min((totalSpent / totalBudget) * 100, 100) : 0
+   554→
+   555→  // ---- Budget alerts ----
+   556→  const budgetAlerts = React.useMemo(() => {
+   557→    return budgets.filter(
+   558→      (b) => b.spent > 0 && (b.spent / b.amount) * 100 >= b.alertThreshold,
+   559→    )
+   560→  }, [budgets])
+   561→
+   562→  // ---- Form ----
+   563→  const form = useForm<BudgetFormValues>({
+   564→    resolver: zodResolver(budgetFormSchema),
+   565→    defaultValues: {
+   566→      name: '',
+   567→      amount: 0,
+   568→      period: 'monthly',
+   569→      startDate: format(new Date(), 'yyyy-MM-dd'),
+   570→      endDate: '',
+   571→      alertThreshold: 80,
+   572→      categoryBudgets: [],
+   573→    },
+   574→  })
+   575→
+   576→  const isEditing = !!editingBudget
+   577→  const isPending = createMutation.isPending || updateMutation.isPending
+   578→
+   579→  // ---- Handlers ----
+   580→  const openCreate = React.useCallback(() => {
+   581→    setEditingBudget(null)
+   582→    form.reset({
+   583→      name: '',
+   584→      amount: 0,
+   585→      period: 'monthly',
+   586→      startDate: format(new Date(), 'yyyy-MM-dd'),
+   587→      endDate: '',
+   588→      alertThreshold: 80,
+   589→      categoryBudgets: [],
+   590→    })
+   591→    setFormOpen(true)
+   592→  }, [form])
+   593→
+   594→  const openEdit = React.useCallback(
+   595→    (budget: Budget) => {
+   596→      setEditingBudget(budget)
+   597→      form.reset({
+   598→        name: budget.name,
+   599→        amount: budget.amount,
+   600→        period: budget.period,
+   601→        startDate: format(new Date(budget.startDate), 'yyyy-MM-dd'),
+   602→        endDate: budget.endDate
+   603→          ? format(new Date(budget.endDate), 'yyyy-MM-dd')
+   604→          : '',
+   605→        alertThreshold: budget.alertThreshold,
+   606→        categoryBudgets: budget.categoryBudgets?.length
+   607→          ? budget.categoryBudgets.map((cb) => ({
+   608→              categoryId: cb.categoryId,
+   609→              amount: cb.amount,
+   610→            }))
+   611→          : [],
+   612→      })
+   613→      setFormOpen(true)
+   614→    },
+   615→    [form],
+   616→  )
+   617→
+   618→  const onSubmit = React.useCallback(
+   619→    (values: BudgetFormValues) => {
+   620→      const payload: BudgetCreate = {
+   621→        name: values.name,
+   622→        amount: values.amount,
+   623→        period: values.period,
+   624→        startDate: values.startDate,
+   625→        endDate: values.endDate || undefined,
+   626→        alertThreshold: values.alertThreshold,
+   627→        categoryBudgets: values.categoryBudgets?.length
+   628→          ? values.categoryBudgets.filter((cb) => cb.categoryId)
+   629→          : undefined,
+   630→      }
+   631→      if (isEditing && editingBudget) {
+   632→        updateMutation.mutate(
+   633→          { id: editingBudget.id, data: payload },
+   634→          { onSuccess: () => setFormOpen(false) },
+   635→        )
+   636→      } else {
+   637→        createMutation.mutate(payload, {
+   638→          onSuccess: () => setFormOpen(false),
+   639→        })
+   640→      }
+   641→    },
+   642→    [isEditing, editingBudget, createMutation, updateMutation],
+   643→  )
+   644→
+   645→  const handleDelete = React.useCallback(() => {
+   646→    if (!deleteTarget) return
+   647→    deleteMutation.mutate(deleteTarget.id, {
+   648→      onSuccess: () => setDeleteTarget(null),
+   649→    })
+   650→  }, [deleteTarget, deleteMutation])
+   651→
+   652→  const buildCategoryMap = React.useCallback(() => {
+   653→    const map = new Map<string, Category>()
+   654→    for (const c of categories) {
+   655→      map.set(c.id, c)
+   656→    }
+   657→    return map
+   658→  }, [categories])
+   659→
+   660→  const categoryMap = buildCategoryMap()
+   661→
+   662→  // ---- Render ----
+   663→  if (isLoading) {
+   664→    return (
+   665→      <div className="space-y-6">
+   666→        <PageHeader title="Budgets" actions={<div className="h-10 w-36" />} />
+   667→        <div className="grid gap-4 sm:grid-cols-3">
+   668→          <CardSkeleton />
+   669→          <CardSkeleton />
+   670→          <CardSkeleton />
+   671→        </div>
+   672→        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+   673→          {Array.from({ length: 6 }).map((_, i) => (
+   674→            <CardSkeleton key={i} />
+   675→          ))}
+   676→        </div>
+   677→      </div>
+   678→    )
+   679→  }
+   680→
+   681→  if (isError || budgets.length === 0) {
+   682→    return (
+   683→      <div className="space-y-6">
+   684→        <PageHeader
+   685→          title="Budgets"
+   686→          description="Track and manage your spending limits"
+   687→          actions={
+   688→            <Button onClick={openCreate}>
+   689→              <Plus className="mr-2 size-4" />
+   690→              Create Budget
+   691→            </Button>
+   692→          }
+   693→        />
+   694→        <EmptyState
+   695→          icon={Wallet}
+   696→          title="No budgets yet"
+   697→          description="Create your first budget to start tracking spending limits and staying on top of your finances."
+   698→          actionLabel="Create Budget"
+   699→          onAction={openCreate}
+   700→        />
+   701→      </div>
+   702→    )
+   703→  }
+   704→
+   705→  const formContent = (
+   706→    <BudgetFormContent
+   707→      form={form}
+   708→      categories={categories}
+   709→      isEditing={isEditing}
+   710→      isPending={isPending}
+   711→      onClose={() => setFormOpen(false)}
+   712→      onSubmit={onSubmit}
+   713→    />
+   714→  )
+   715→
+   716→  return (
+   717→    <div className="space-y-6">
+   718→      {/* Page Header */}
+   719→      <PageHeader
+   720→        title="Budgets"
+   721→        description="Track and manage your spending limits"
+   722→        actions={
+   723→          <Button onClick={openCreate}>
+   724→            <Plus className="mr-2 size-4" />
+   725→            Create Budget
+   726→          </Button>
+   727→        }
+   728→      />
+   729→
+   730→      {/* Budget Alerts */}
+   731→      <AnimatePresence>
+   732→        {budgetAlerts.length > 0 && (
+   733→          <motion.div
+   734→            initial={{ opacity: 0, y: -8 }}
+   735→            animate={{ opacity: 1, y: 0 }}
+   736→            exit={{ opacity: 0, y: -8 }}
+   737→            className="space-y-3"
+   738→          >
+   739→            {budgetAlerts.map((budget) => {
+   740→              const pct = (budget.spent / budget.amount) * 100
+   741→              const alertType = getAlertType(pct, budget.alertThreshold)
+   742→              return (
+   743→                <Alert
+   744→                  key={budget.id}
+   745→                  variant={alertType === 'danger' ? 'destructive' : 'default'}
+   746→                  className={
+   747→                    alertType === 'warning'
+   748→                      ? 'border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30'
+   749→                      : ''
+   750→                  }
+   751→                >
+   752→                  <AlertTriangle className={alertType === 'warning' ? 'text-amber-600 dark:text-amber-400' : ''} />
+   753→                  <AlertTitle
+   754→                    className={
+   755→                      alertType === 'warning'
+   756→                        ? 'text-amber-800 dark:text-amber-300'
+   757→                        : ''
+   758→                    }
+   759→                  >
+   760→                    {pct >= 100
+   761→                      ? `${budget.name} budget exceeded!`
+   762→                      : `${budget.name} approaching limit`}
+   763→                  </AlertTitle>
+   764→                  <AlertDescription
+   765→                    className={
+   766→                      alertType === 'warning'
+   767→                        ? 'text-amber-700 dark:text-amber-400'
+   768→                        : ''
+   769→                    }
+   770→                  >
+   771→                    You have spent {formatCurrency(budget.spent, currency)} of{' '}
+   772→                    {formatCurrency(budget.amount, currency)} ({formatPercentage(pct)}).
+   773→                    {pct >= 100
+   774→                      ? ` Over by ${formatCurrency(budget.spent - budget.amount, currency)}.`
+   775→                      : ` Only ${formatCurrency(budget.amount - budget.spent, currency)} remaining.`}
+   776→                  </AlertDescription>
+   777→                </Alert>
+   778→              )
+   779→            })}
+   780→          </motion.div>
+   781→        )}
+   782→      </AnimatePresence>
+   783→
+   784→      {/* Monthly Overview */}
+   785→      <motion.div
+   786→        initial={{ opacity: 0, y: 12 }}
+   787→        animate={{ opacity: 1, y: 0 }}
+   788→        transition={{ duration: 0.3 }}
+   789→      >
+   790→        <Card>
+   791→          <CardHeader>
+   792→            <CardTitle className="flex items-center gap-2 text-base">
+   793→              <CircleDollarSign className="size-5 text-primary" />
+   794→              Overall Budget Overview
+   795→            </CardTitle>
+   796→          </CardHeader>
+   797→          <CardContent className="space-y-4">
+   798→            <div className="flex flex-wrap items-center justify-between gap-4">
+   799→              <div className="space-y-1">
+   800→                <p className="text-sm text-muted-foreground">Total Spent</p>
+   801→                <p className="text-2xl font-bold">
+   802→                  {formatCurrency(totalSpent, currency)}
+   803→                </p>
+   804→              </div>
+   805→              <div className="text-right space-y-1">
+   806→                <p className="text-sm text-muted-foreground">Total Budget</p>
+   807→                <p className="text-2xl font-bold">
+   808→                  {formatCurrency(totalBudget, currency)}
+   809→                </p>
+   810→              </div>
+   811→            </div>
+   812→
+   813→            <div className="space-y-2">
+   814→              <div className="flex items-center justify-between text-sm">
+   815→                <span
+   816→                  className={getProgressTextColor(overallPercent)}
+   817→                >
+   818→                  {formatPercentage(overallPercent)} used
+   819→                </span>
+   820→                <span className="text-muted-foreground">
+   821→                  {formatCurrency(Math.max(totalBudget - totalSpent, 0), currency)}{' '}
+   822→                  remaining
+   823→                </span>
+   824→              </div>
+   825→              <div className={`h-3 w-full rounded-full ${getProgressBgColor(overallPercent)}`}>
+   826→                <motion.div
+   827→                  className={`h-full rounded-full ${getProgressColor(overallPercent)}`}
+   828→                  initial={{ width: 0 }}
+   829→                  animate={{ width: `${Math.min(overallPercent, 100)}%` }}
+   830→                  transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
+   831→                />
+   832→              </div>
+   833→            </div>
+   834→          </CardContent>
+   835→        </Card>
+   836→      </motion.div>
+   837→
+   838→      {/* Budget Cards Grid */}
+   839→      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+   840→        <AnimatePresence mode="popLayout">
+   841→          {budgets.map((budget, i) => {
+   842→            const pct =
+   843→              budget.amount > 0
+   844→                ? Math.min((budget.spent / budget.amount) * 100, 100)
+   845→                : 0
+   846→            const remaining = Math.max(budget.amount - budget.spent, 0)
+   847→            const hasCategoryBudgets =
+   848→              budget.categoryBudgets && budget.categoryBudgets.length > 0
+   849→
+   850→            return (
+   851→              <motion.div
+   852→                key={budget.id}
+   853→                custom={i}
+   854→                variants={cardVariants}
+   855→                initial="hidden"
+   856→                animate="visible"
+   857→                exit="hidden"
+   858→                layout
+   859→              >
+   860→                <Card className="group h-full transition-all hover:shadow-lg hover:-translate-y-0.5">
+   861→                  <CardHeader>
+   862→                    <CardTitle className="flex items-center gap-2">
+   863→                      <Wallet className="size-4 text-muted-foreground" />
+   864→                      <span className="truncate">{budget.name}</span>
+   865→                    </CardTitle>
+   866→                    <CardAction>
+   867→                      <div className="flex items-center gap-1">
+   868→                        <Badge
+   869→                          variant="outline"
+   870→                          className="capitalize text-xs"
+   871→                        >
+   872→                          {periodLabels[budget.period] || budget.period}
+   873→                        </Badge>
+   874→                      </div>
+   875→                    </CardAction>
+   876→                  </CardHeader>
+   877→
+   878→                  <CardContent className="space-y-4">
+   879→                    {/* Spent / Total */}
+   880→                    <div className="flex items-baseline justify-between">
+   881→                      <div>
+   882→                        <p className="text-xs text-muted-foreground">Spent</p>
+   883→                        <p className="text-xl font-bold">
+   884→                          {formatCurrency(budget.spent, currency)}
+   885→                        </p>
+   886→                      </div>
+   887→                      <div className="text-right">
+   888→                        <p className="text-xs text-muted-foreground">of</p>
+   889→                        <p className="text-sm font-medium text-muted-foreground">
+   890→                          {formatCurrency(budget.amount, currency)}
+   891→                        </p>
+   892→                      </div>
+   893→                    </div>
+   894→
+   895→                    {/* Progress Bar */}
+   896→                    <div className="space-y-1.5">
+   897→                      <div className="flex items-center justify-between text-xs">
+   898→                        <span
+   899→                          className={getProgressTextColor(pct)}
+   900→                        >
+   901→                          {formatPercentage(pct)} used
+   902→                        </span>
+   903→                        <span className="text-muted-foreground">
+   904→                          {formatCurrency(remaining, currency)} left
+   905→                        </span>
+   906→                      </div>
+   907→                      <div className={`h-2 w-full rounded-full ${getProgressBgColor(pct)}`}>
+   908→                        <motion.div
+   909→                          className={`h-full rounded-full ${getProgressColor(pct)}`}
+   910→                          initial={{ width: 0 }}
+   911→                          animate={{ width: `${pct}%` }}
+   912→                          transition={{
+   913→                            duration: 0.6,
+   914→                            ease: 'easeOut',
+   915→                            delay: i * 0.06 + 0.2,
+   916→                          }}
+   917→                        />
+   918→                      </div>
+   919→                    </div>
+   920→
+   921→                    {/* Category Breakdown */}
+   922→                    {hasCategoryBudgets && (
+   923→                      <div className="space-y-2">
+   924→                        <Separator />
+   925→                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+   926→                          Category Breakdown
+   927→                        </p>
+   928→                        <div className="space-y-2 max-h-40 overflow-y-auto">
+   929→                          {budget.categoryBudgets!.map((cb) => {
+   930→                            const cat = categoryMap.get(cb.categoryId)
+   931→                            const cbPct =
+   932→                              cb.amount > 0
+   933→                                ? Math.min(
+   934→                                    (cb.spent / cb.amount) * 100,
+   935→                                    100,
+   936→                                  )
+   937→                                : 0
+   938→                            return (
+   939→                              <div
+   940→                                key={cb.id}
+   941→                                className="flex items-center gap-2 text-xs"
+   942→                              >
+   943→                                <span className="shrink-0">
+   944→                                  {cat?.icon || '📌'}
+   945→                                </span>
+   946→                                <span className="flex-1 truncate">
+   947→                                  {cat?.name || 'Unknown'}
+   948→                                </span>
+   949→                                <span className="text-muted-foreground shrink-0">
+   950→                                  {formatCurrency(cb.spent, currency)}/
+   951→                                  {formatCurrency(cb.amount, currency)}
+   952→                                </span>
+   953→                                <span
+   954→                                  className={`w-6 text-right ${getProgressTextColor(cbPct)}`}
+   955→                                >
+   956→                                  {Math.round(cbPct)}%
+   957→                                </span>
+   958→                              </div>
+   959→                            )
+   960→                          })}
+   961→                        </div>
+   962→                      </div>
+   963→                    )}
+   964→
+   965→                    {/* Dates */}
+   966→                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+   967→                      <CalendarDays className="size-3" />
+   968→                      <span>
+   969→                        {formatDate(budget.startDate)}
+   970→                        {budget.endDate
+   971→                          ? ` — ${formatDate(budget.endDate)}`
+   972→                          : ' — Ongoing'}
+   973→                      </span>
+   974→                    </div>
+   975→
+   976→                    {/* Actions */}
+   977→                    <Separator />
+   978→                    <div className="flex items-center justify-end gap-2">
+   979→                      <Button
+   980→                        variant="ghost"
+   981→                        size="sm"
+   982→                        className="h-8 text-xs"
+   983→                        onClick={() => openEdit(budget)}
+   984→                      >
+   985→                        <Pencil className="mr-1.5 size-3" />
+   986→                        Edit
+   987→                      </Button>
+   988→                      <Button
+   989→                        variant="ghost"
+   990→                        size="sm"
+   991→                        className="h-8 text-xs text-destructive hover:text-destructive"
+   992→                        onClick={() => setDeleteTarget(budget)}
+   993→                      >
+   994→                        <Trash2 className="mr-1.5 size-3" />
+   995→                        Delete
+   996→                      </Button>
+   997→                    </div>
+   998→                  </CardContent>
+   999→                </Card>
+  1000→              </motion.div>
+  1001→            )
+  1002→          })}
+  1003→        </AnimatePresence>
+  1004→      </div>
+  1005→
+  1006→      {/* Create/Edit Form — Desktop Dialog */}
+  1007→      {!isMobile && (
+  1008→        <Dialog open={formOpen} onOpenChange={setFormOpen}>
+  1009→          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+  1010→            <DialogHeader>
+  1011→              <DialogTitle>
+  1012→                {isEditing ? 'Edit Budget' : 'Create Budget'}
+  1013→              </DialogTitle>
+  1014→              <DialogDescription>
+  1015→                {isEditing
+  1016→                  ? 'Update your budget settings and limits.'
+  1017→                  : 'Set up a new budget to control your spending.'}
+  1018→              </DialogDescription>
+  1019→            </DialogHeader>
+  1020→            {formContent}
+  1021→          </DialogContent>
+  1022→        </Dialog>
+  1023→      )}
+  1024→
+  1025→      {/* Create/Edit Form — Mobile Sheet */}
+  1026→      {isMobile && (
+  1027→        <Sheet open={formOpen} onOpenChange={setFormOpen}>
+  1028→          <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto rounded-t-2xl">
+  1029→            <SheetHeader>
+  1030→              <SheetTitle>
+  1031→                {isEditing ? 'Edit Budget' : 'Create Budget'}
+  1032→              </SheetTitle>
+  1033→              <SheetDescription>
+  1034→                {isEditing
+  1035→                  ? 'Update your budget settings and limits.'
+  1036→                  : 'Set up a new budget to control your spending.'}
+  1037→              </SheetDescription>
+  1038→            </SheetHeader>
+  1039→            <div className="px-4 pb-4">
+  1040→              {formContent}
+  1041→            </div>
+  1042→          </SheetContent>
+  1043→        </Sheet>
+  1044→      )}
+  1045→
+  1046→      {/* Delete Confirmation */}
+  1047→      <ConfirmDialog
+  1048→        open={!!deleteTarget}
+  1049→        onOpenChange={(open) => !open && setDeleteTarget(null)}
+  1050→        title="Delete Budget"
+  1051→        description={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
+  1052→        confirmLabel="Delete"
+  1053→        variant="destructive"
+  1054→        onConfirm={handleDelete}
+  1055→        loading={deleteMutation.isPending}
+  1056→      />
+  1057→    </div>
+  1058→  )
+  1059→}
+  1060→
