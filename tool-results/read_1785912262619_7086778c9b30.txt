@@ -1,0 +1,902 @@
+     1→'use client'
+     2→
+     3→import * as React from 'react'
+     4→import { motion } from 'framer-motion'
+     5→import { format, differenceInDays, parseISO } from 'date-fns'
+     6→import {
+     7→  Wallet,
+     8→  TrendingUp,
+     9→  TrendingDown,
+    10→  PiggyBank,
+    11→  ArrowUpRight,
+    12→  ArrowRight,
+    13→  Plus,
+    14→  Target,
+    15→  Bot,
+    16→  BarChart3,
+    17→  Lightbulb,
+    18→  Receipt,
+    19→  CalendarDays,
+    20→  Activity,
+    21→  CircleDollarSign,
+    22→  Sparkles,
+    23→} from 'lucide-react'
+    24→
+    25→import { useDashboardData, useMonthlyChart, useCategoryDistribution } from '@/hooks/use-dashboard'
+    26→import { useTransactions } from '@/hooks/use-transactions'
+    27→import { useBudgets } from '@/hooks/use-budgets'
+    28→import { useSubscriptions } from '@/hooks/use-subscriptions'
+    29→import { useRouterStore } from '@/store/router-store'
+    30→import { AppRoute } from '@/types'
+    31→
+    32→import { StatCard } from '@/components/shared/stat-card'
+    33→import { FinancialChart } from '@/components/shared/financial-chart'
+    34→import {
+    35→  DashboardSkeleton,
+    36→  CardSkeleton,
+    37→  ChartSkeleton,
+    38→  ListSkeleton,
+    39→} from '@/components/shared/loading-skeleton'
+    40→import { PageHeader } from '@/components/shared/page-header'
+    41→import { formatCurrency, formatDate, formatPercentage } from '@/lib/format'
+    42→import { FINANCIAL_HEALTH_RANGES } from '@/lib/constants'
+    43→
+    44→import {
+    45→  Card,
+    46→  CardContent,
+    47→  CardHeader,
+    48→  CardTitle,
+    49→  CardDescription,
+    50→  CardAction,
+    51→} from '@/components/ui/card'
+    52→import { Button } from '@/components/ui/button'
+    53→import { Badge } from '@/components/ui/badge'
+    54→import { Progress } from '@/components/ui/progress'
+    55→import {
+    56→  Table,
+    57→  TableHeader,
+    58→  TableBody,
+    59→  TableHead,
+    60→  TableRow,
+    61→  TableCell,
+    62→} from '@/components/ui/table'
+    63→import { ScrollArea } from '@/components/ui/scroll-area'
+    64→import { Separator } from '@/components/ui/separator'
+    65→import { cn } from '@/lib/utils'
+    66→
+    67→// --- Animation Variants ---
+    68→
+    69→const containerVariants = {
+    70→  hidden: { opacity: 0 },
+    71→  visible: {
+    72→    opacity: 1,
+    73→    transition: {
+    74→      staggerChildren: 0.06,
+    75→      delayChildren: 0.1,
+    76→    },
+    77→  },
+    78→}
+    79→
+    80→const itemVariants = {
+    81→  hidden: { opacity: 0, y: 16 },
+    82→  visible: {
+    83→    opacity: 1,
+    84→    y: 0,
+    85→    transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] },
+    86→  },
+    87→}
+    88→
+    89→// --- Helpers ---
+    90→
+    91→function getGreeting(): string {
+    92→  const hour = new Date().getHours()
+    93→  if (hour < 12) return 'Good morning'
+    94→  if (hour < 17) return 'Good afternoon'
+    95→  return 'Good evening'
+    96→}
+    97→
+    98→function getHealthInfo(score: number) {
+    99→  return (
+   100→    FINANCIAL_HEALTH_RANGES.find(
+   101→      (r) => score >= r.min && score <= r.max,
+   102→    ) ?? FINANCIAL_HEALTH_RANGES[FINANCIAL_HEALTH_RANGES.length - 1]
+   103→  )
+   104→}
+   105→
+   106→function getBudgetColor(percent: number): string {
+   107→  if (percent > 90) return 'bg-red-500'
+   108→  if (percent >= 70) return 'bg-amber-500'
+   109→  return 'bg-emerald-500'
+   110→}
+   111→
+   112→function getBudgetBarClass(percent: number): string {
+   113→  if (percent > 90) return '[&>div]:bg-red-500'
+   114→  if (percent >= 70) return '[&>div]:bg-amber-500'
+   115→  return '[&>div]:bg-emerald-500'
+   116→}
+   117→
+   118→function daysUntil(dateStr: string | Date): number {
+   119→  const d = typeof dateStr === 'string' ? parseISO(dateStr) : dateStr
+   120→  return differenceInDays(d, new Date())
+   121→}
+   122→
+   123→// --- Sub-components ---
+   124→
+   125→function GreetingSection({ name }: { name: string | null }) {
+   126→  const today = format(new Date(), 'EEEE, MMMM d, yyyy')
+   127→  const displayName = name ?? 'there'
+   128→
+   129→  return (
+   130→    <div className="mb-6">
+   131→      <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+   132→        {getGreeting()}, {displayName.split(' ')[0]}
+   133→      </h2>
+   134→      <p className="mt-1 text-sm text-muted-foreground">{today}</p>
+   135→    </div>
+   136→  )
+   137→}
+   138→}
+   139→
+   140→function FinancialHealthCard({
+   141→  score,
+   142→  grade,
+   143→  summary,
+   144→}: {
+   145→  score: number
+   146→  grade: string
+   147→  summary: string
+   148→}) {
+   149→  const healthInfo = getHealthInfo(score)
+   150→  const radius = 54
+   151→   const circumference = 2 * Math.PI * radius
+   152→   const strokeDashoffset = circumference - (score / 100) * circumference
+   153→
+   154→  return (
+   155→    <Card>
+   156→      <CardHeader>
+   157→        <CardTitle className="flex items-center gap-2 text-base">
+   158→          <Activity className="size-4" />
+   159→          Financial Health Score
+   160→        </CardTitle>
+   161→      </CardHeader>
+   162→      <CardContent>
+   163→        <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
+   164→          {/* Circular progress */}
+   165→          <div className="relative shrink-0">
+   166→            <svg width="130" height="130" className="-rotate-90">
+   167→              <circle
+   168→                cx="65"
+   169→                cy="65"
+   170→                r={radius}
+   171→                fill="none"
+   172→                stroke="hsl(var(--muted))"
+   173→                strokeWidth="10"
+   174→              />
+   175→              <circle
+   176→                cx="65"
+   177→                cy="65"
+   178→                r={radius}
+   179→                fill="none"
+   180→                stroke={healthInfo.color}
+   181→                strokeWidth="10"
+   182→                strokeLinecap="round"
+   183→                strokeDasharray={circumference}
+   184→                strokeDashoffset={strokeDashoffset}
+   185→                className="transition-all duration-1000 ease-out"
+   186→              />
+   187→            </svg>
+   188→            <div className="absolute inset-0 flex flex-col items-center justify-center">
+   189→              <span className="text-3xl font-bold" style={{ color: healthInfo.color }}>
+   190→                {score}
+   191→              </span>
+   192→              <span className="text-xs text-muted-foreground">/ 100</span>
+   193→            </div>
+   194→          </div>
+   195→
+   196→          {/* Info */}
+   197→          <div className="flex flex-col gap-2 text-center sm:text-left">
+   198→            <div className="flex items-center justify-center gap-2 sm:justify-start">
+   199→              <span
+   200→                className="inline-flex items-center justify-center rounded-lg px-2.5 py-1 text-lg font-bold text-white"
+   201→                style={{ backgroundColor: healthInfo.color }}
+   202→              >
+   203→                {grade}
+   204→              </span>
+   205→              <span className="text-sm font-medium" style={{ color: healthInfo.color }}>
+   206→                {healthInfo.label}
+   207→              </span>
+   208→            </div>
+   209→            <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
+   210→              {summary}
+   211→            </p>
+   212→          </div>
+   213→        </div>
+   214→      </CardContent>
+   215→    </Card>
+   216→  )
+   217→}
+   218→
+   219→function RecentTransactionsCard({
+   220→  transactions,
+   221→  onViewAll,
+   222→}: {
+   223→  transactions: Array<{
+   224→    id: string
+   225→    description: string
+   226→    amount: number
+   227→    type: 'income' | 'expense' | 'transfer'
+   228→    date: Date | string
+   229→    category: { name: string; color: string; icon: string | null } | undefined
+   230→  }>
+   231→  onViewAll: () => void
+   232→}) {
+   233→  if (transactions.length === 0) {
+   234→    return (
+   235→      <Card>
+   236→        <CardHeader>
+   237→          <CardTitle className="text-base">Recent Transactions</CardTitle>
+   238→          <CardAction>
+   239→            <Button variant="ghost" size="sm" className="text-xs" onClick={onViewAll}>
+   240→              View All <ArrowRight className="ml-1 size-3" />
+   241→            </Button>
+   242→          </CardAction>
+   243→        </CardHeader>
+   244→        <CardContent>
+   245→          <div className="flex flex-col items-center justify-center py-8 text-center">
+   246→            <Receipt className="mb-3 size-10 text-muted-foreground/50" />
+   247→            <p className="text-sm font-medium text-muted-foreground">
+   248→              No transactions yet
+   249→            </p>
+   250→            <p className="mt-1 text-xs text-muted-foreground/70">
+   251→              Start by adding your first transaction
+   252→            </p>
+   253→          </div>
+   254→        </CardContent>
+   255→      </Card>
+   256→    )
+   257→  }
+   258→
+   259→  return (
+   260→    <Card>
+   261→      <CardHeader>
+   262→        <CardTitle className="text-base">Recent Transactions</CardTitle>
+   263→        <CardAction>
+   264→          <Button variant="ghost" size="sm" className="text-xs" onClick={onViewAll}>
+   265→            View All <ArrowRight className="ml-1 size-3" />
+   266→          </Button>
+   267→        </CardAction>
+   268→      </CardHeader>
+   269→      <CardContent className="px-0 pb-0">
+   270→        <Table>
+   271→          <TableHeader>
+   272→            <TableRow>
+   273→              <TableHead className="pl-6">Description</TableHead>
+   274→              <TableHead>Category</TableHead>
+   275→              <TableHead className="text-right">Amount</TableHead>
+   276→              <TableHead className="pr-6 text-right">Date</TableHead>
+   277→            </TableRow>
+   278→          </TableHeader>
+   279→          <TableBody>
+   280→            {transactions.slice(0, 5).map((tx) => (
+   281→              <TableRow key={tx.id} className="cursor-pointer">
+   282→                <TableCell className="pl-6 font-medium">
+   283→                  <div className="flex items-center gap-2.5">
+   284→                    {tx.category?.icon && (
+   285→                      <span className="text-base leading-none">
+   286→                        {tx.category.icon}
+   287→                      </span>
+   288→                    )}
+   289→                    <span className="max-w-[180px] truncate">
+   290→                      {tx.description}
+   291→                    </span>
+   292→                  </div>
+   293→                </TableCell>
+   294→                <TableCell>
+   295→                  {tx.category && (
+   296→                    <Badge
+   297→                      variant="secondary"
+   298→                      className="gap-1.5"
+   299→                      style={{
+   300→                        backgroundColor: `${tx.category.color}15`,
+   301→                        color: tx.category.color,
+   302→                        borderColor: `${tx.category.color}30`,
+   303→                      }}
+   304→                    >
+   305→                      {tx.category.name}
+   306→                    </Badge>
+   307→                  )}
+   308→                </TableCell>
+   309→                <TableCell className="text-right font-semibold tabular-nums">
+   310→                  <span
+   311→                    className={cn(
+   312→                      tx.type === 'income' && 'text-emerald-600 dark:text-emerald-400',
+   313→                      tx.type === 'expense' && 'text-red-600 dark:text-red-400',
+   314→                    )}
+   315→                  >
+   316→                    {tx.type === 'income' ? '+' : '-'}
+   317→                    {formatCurrency(Math.abs(tx.amount))}
+   318→                  </span>
+   319→                </TableCell>
+   320→                <TableCell className="pr-6 text-right text-muted-foreground">
+   321→                  {formatDate(tx.date)}
+   322→                </TableCell>
+   323→              </TableRow>
+   324→            ))}
+   325→          </TableBody>
+   326→        </Table>
+   327→      </CardContent>
+   328→    </Card>
+   329→  )
+   330→}
+   331→
+   332→function BudgetProgressCard({
+   333→  budgets,
+   334→  isLoading,
+   335→}: {
+   336→  budgets: Array<{
+   337→    id: string
+   338→    name: string
+   339→    amount: number
+   340→    spent: number
+   341→    period: string
+   342→  }>
+   343→  isLoading: boolean
+   344→}) {
+   345→  if (isLoading) {
+   346→    return (
+   347→      <Card>
+   348→        <CardHeader>
+   349→          <CardTitle className="text-base">Budget Progress</CardTitle>
+   350→        </CardHeader>
+   351→        <CardContent>
+   352→          <ListSkeleton count={4} />
+   353→        </CardContent>
+   354→      </Card>
+   355→    )
+   356→  }
+   357→
+   358→  const activeBudgets = budgets.filter((b) => b.amount > 0)
+   359→
+   360→  if (activeBudgets.length === 0) {
+   361→    return (
+   362→      <Card>
+   363→        <CardHeader>
+   364→          <CardTitle className="text-base">Budget Progress</CardTitle>
+   365→        </CardHeader>
+   366→        <CardContent>
+   367→          <div className="flex flex-col items-center justify-center py-6 text-center">
+   368→            <BarChart3 className="mb-3 size-10 text-muted-foreground/50" />
+   369→            <p className="text-sm font-medium text-muted-foreground">
+   370→              No active budgets
+   371→            </p>
+   372→            <p className="mt-1 text-xs text-muted-foreground/70">
+   373→              Create a budget to start tracking your spending
+   374→            </p>
+   375→          </div>
+   376→        </CardContent>
+   377→      </Card>
+   378→    )
+   379→  }
+   380→
+   381→  return (
+   382→    <Card>
+   383→      <CardHeader>
+   384→        <CardTitle className="text-base">Budget Progress</CardTitle>
+   385→        <CardDescription>This month</CardDescription>
+   386→      </CardHeader>
+   387→      <CardContent className="space-y-5">
+   388→        {activeBudgets.slice(0, 5).map((budget) => {
+   389→          const percent = Math.min(
+   390→            Math.round((budget.spent / budget.amount) * 100),
+   391→            100,
+   392→          )
+   393→          const remaining = Math.max(budget.amount - budget.spent, 0)
+   394→
+   395→          return (
+   396→            <div key={budget.id} className="space-y-2">
+   397→              <div className="flex items-center justify-between">
+   398→                <span className="text-sm font-medium">{budget.name}</span>
+   399→                <span
+   400→                  className={cn(
+   401→                    'text-xs font-semibold',
+   402→                    percent > 90 && 'text-red-600 dark:text-red-400',
+   403→                    percent >= 70 &&
+   404→                      percent <= 90 &&
+   405→                      'text-amber-600 dark:text-amber-400',
+   406→                    percent < 70 && 'text-emerald-600 dark:text-emerald-400',
+   407→                  )}
+   408→                >
+   409→                  {percent}%
+   410→                </span>
+   411→              </div>
+   412→              <Progress
+   413→                value={percent}
+   414→                className={cn('h-2', getBudgetBarClass(percent))}
+   415→              />
+   416→              <div className="flex items-center justify-between text-xs text-muted-foreground">
+   417→                <span>
+   418→                  {formatCurrency(budget.spent)} of {formatCurrency(budget.amount)}
+   419→                </span>
+   420→                <span>{formatCurrency(remaining)} left</span>
+   421→              </div>
+   422→            </div>
+   423→          )
+   424→        })}
+   425→      </CardContent>
+   426→    </Card>
+   427→  )
+   428→}
+   429→
+   430→function UpcomingBillsCard({
+   431→  subscriptions,
+   432→  isLoading,
+   433→}: {
+   434→  subscriptions: Array<{
+   435→    id: string
+   436→    name: string
+   437→    amount: number
+   438→    nextBillingDate: Date | string
+   439→    icon: string | null
+   440→    color: string
+   441→    billingCycle: string
+   442→  }>
+   443→  isLoading: boolean
+   444→}) {
+   445→  if (isLoading) {
+   446→    return (
+   447→      <Card>
+   448→        <CardHeader>
+   449→          <CardTitle className="text-base">Upcoming Bills</CardTitle>
+   450→        </CardHeader>
+   451→        <CardContent>
+   452→          <ListSkeleton count={4} />
+   453→        </CardContent>
+   454→      </Card>
+   455→    )
+   456→  }
+   457→
+   458→  const upcoming = subscriptions
+   459→    .filter((s) => {
+   460→      const days = daysUntil(s.nextBillingDate)
+   461→      return days >= 0 && days <= 30
+   462→    })
+   463→    .sort(
+   464→      (a, b) =>
+   465→        new Date(a.nextBillingDate).getTime() -
+   466→        new Date(b.nextBillingDate).getTime(),
+   467→    )
+   468→    .slice(0, 5)
+   469→
+   470→  if (upcoming.length === 0) {
+   471→    return (
+   472→      <Card>
+   473→        <CardHeader>
+   474→          <CardTitle className="text-base">Upcoming Bills</CardTitle>
+   475→        </CardHeader>
+   476→        <CardContent>
+   477→          <div className="flex flex-col items-center justify-center py-6 text-center">
+   478→            <CalendarDays className="mb-3 size-10 text-muted-foreground/50" />
+   479→            <p className="text-sm font-medium text-muted-foreground">
+   480→              No upcoming bills
+   481→            </p>
+   482→            <p className="mt-1 text-xs text-muted-foreground/70">
+   483→              Your subscription tracking is clear
+   484→            </p>
+   485→          </div>
+   486→        </CardContent>
+   487→      </Card>
+   488→    )
+   489→  }
+   490→
+   491→  return (
+   492→    <Card>
+   493→      <CardHeader>
+   494→        <CardTitle className="text-base">Upcoming Bills</CardTitle>
+   495→        <CardDescription>Next 30 days</CardDescription>
+   496→      </CardHeader>
+   497→      <CardContent>
+   498→        <div className="space-y-3">
+   499→          {upcoming.map((sub) => {
+   500→            const days = daysUntil(sub.nextBillingDate)
+   501→            const isSoon = days <= 3
+   502→
+   503→            return (
+   504→              <div
+   505→                key={sub.id}
+   506→                className="flex items-center gap-3 rounded-lg p-2.5 transition-colors hover:bg-muted/50"
+   507→              >
+   508→                <div
+   509→                  className="flex size-9 shrink-0 items-center justify-center rounded-lg text-base"
+   510→                  style={{ backgroundColor: `${sub.color}15` }}
+   511→                >
+   512→                  {sub.icon ?? <Receipt className="size-4" />}
+   513→                </div>
+   514→                <div className="min-w-0 flex-1">
+   515→                  <p className="truncate text-sm font-medium">{sub.name}</p>
+   516→                  <p className="text-xs text-muted-foreground">
+   517→                    {formatDate(sub.nextBillingDate)}
+   518→                  </p>
+   519→                </div>
+   520→                <div className="text-right shrink-0">
+   521→                  <p className="text-sm font-semibold tabular-nums">
+   522→                    {formatCurrency(sub.amount)}
+   523→                  </p>
+   524→                  <Badge
+   525→                    variant={isSoon ? 'destructive' : 'secondary'}
+   526→                    className="mt-0.5 text-[10px]"
+   527→                  >
+   528→                    {days === 0
+   529→                      ? 'Today'
+   530→                      : days === 1
+   531→                        ? 'Tomorrow'
+   532→                        : `${days}d`}
+   533→                  </Badge>
+   534→                </div>
+   535→              </div>
+   536→            )
+   537→          })}
+   538→        </div>
+   539→      </CardContent>
+   540→    </Card>
+   541→  )
+   542→}
+   543→
+   544→function AISummaryCard({ onNavigate }: { onNavigate: (route: string) => void }) {
+   545→  const quickActions = [
+   546→    {
+   547→      label: 'Analyze Spending',
+   548→      icon: BarChart3,
+   549→      prompt: 'Analyze my recent spending patterns',
+   550→    },
+   551→    {
+   552→      label: 'Suggest Savings',
+   553→      icon: PiggyBank,
+   554→      prompt: 'Suggest ways I can save more money',
+   555→    },
+   556→    {
+   557→      label: 'Budget Tips',
+   558→      icon: Lightbulb,
+   559→      prompt: 'Give me tips to improve my budget',
+   560→    },
+   561→  ]
+   562→
+   563→  return (
+   564→    <Card className="relative overflow-hidden">
+   565→      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5" />
+   566→      <CardHeader className="relative">
+   567→        <CardTitle className="flex items-center gap-2 text-base">
+   568→          <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
+   569→            <Bot className="size-4 text-primary" />
+   570→          </div>
+   571→          AI Financial Assistant
+   572→        </CardTitle>
+   573→        <CardDescription>
+   574→          Get personalized insights and recommendations
+   575→        </CardDescription>
+   576→      </CardHeader>
+   577→      <CardContent className="relative">
+   578→        <p className="mb-4 rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground">
+   579→          <Sparkles className="mb-1.5 inline size-3.5 text-amber-500" />{' '}
+   580→          Ask AI anything about your finances — spending analysis, savings
+   581→          strategies, or budget optimization.
+   582→        </p>
+   583→        <div className="grid gap-2 sm:grid-cols-3">
+   584→          {quickActions.map((action) => (
+   585→            <Button
+   586→              key={action.label}
+   587→              variant="outline"
+   588→              size="sm"
+   589→              className="h-auto flex-col gap-1.5 py-3 text-xs"
+   590→              onClick={() => onNavigate(AppRoute.CHAT)}
+   591→            >
+   592→              <action.icon className="size-4 text-muted-foreground" />
+   593→              <span className="font-medium">{action.label}</span>
+   594→            </Button>
+   595→          ))}
+   596→        </div>
+   597→      </CardContent>
+   598→    </Card>
+   599→  )
+   600→}
+   601→
+   602→function QuickActionsRow({
+   603→  onNavigate,
+   604→}: {
+   605→  onNavigate: (route: string) => void
+   606→}) {
+   607→  const actions = [
+   608→    {
+   609→      label: 'Add Transaction',
+   610→      icon: Plus,
+   611→      route: AppRoute.TRANSACTIONS,
+   612→      color: 'text-emerald-600 dark:text-emerald-400',
+   613→      bg: 'bg-emerald-500/10',
+   614→    },
+   615→    {
+   616→      label: 'Create Budget',
+   617→      icon: BarChart3,
+   618→      route: AppRoute.BUDGETS,
+   619→      color: 'text-sky-600 dark:text-sky-400',
+   620→      bg: 'bg-sky-500/10',
+   621→    },
+   622→    {
+   623→      label: 'Set Goal',
+   624→      icon: Target,
+   625→      route: AppRoute.GOALS,
+   626→      color: 'text-violet-600 dark:text-violet-400',
+   627→      bg: 'bg-violet-500/10',
+   628→    },
+   629→  ]
+   630→
+   631→  return (
+   632→    <div className="grid grid-cols-3 gap-3">
+   633→      {actions.map((action) => (
+   634→        <Button
+   635→          key={action.label}
+   636→          variant="outline"
+   637→          className="flex h-auto flex-col items-center gap-2.5 rounded-xl py-5 transition-all hover:shadow-md"
+   638→          onClick={() => onNavigate(action.route)}
+   639→        >
+   640→          <div
+   641→            className={cn(
+   642→              'flex size-10 items-center justify-center rounded-xl',
+   643→              action.bg,
+   644→            )}
+   645→          >
+   646→            <action.icon className={cn('size-5', action.color)} />
+   647→          </div>
+   648→          <span className="text-xs font-medium">{action.label}</span>
+   649→        </Button>
+   650→      ))}
+   651→    </div>
+   652→  )
+   653→}
+   654→
+   655→// --- Main Dashboard Page ---
+   656→
+   657→export function DashboardPage() {
+   658→  const { user, setRoute } = useRouterStore()
+   659→
+   660→  // Data fetching
+   661→  const { data: dashboardRes, isLoading: isDashboardLoading } = useDashboardData()
+   662→  const { data: chartRes, isLoading: isChartLoading } = useMonthlyChart(6)
+   663→  const { data: categoryRes, isLoading: isCategoryLoading } = useCategoryDistribution()
+   664→  const { data: transactionsRes, isLoading: isTransactionsLoading } = useTransactions({
+   665→    limit: 5,
+   666→    sortBy: 'date',
+   667→    sortOrder: 'desc',
+   668→  })
+   669→  const { data: budgetsRes, isLoading: isBudgetsLoading } = useBudgets({ limit: 5 })
+   670→  const { data: subscriptionsRes, isLoading: isSubscriptionsLoading } =
+   671→    useSubscriptions({ limit: 5, sortBy: 'nextBillingDate', sortOrder: 'asc' })
+   672→
+   673→  const dashboard = dashboardRes?.data
+   674→  const chartData = chartRes?.data ?? []
+   675→  const categoryData = categoryRes?.data ?? []
+   676→  const transactions = transactionsRes?.data ?? []
+   677→  const budgets = budgetsRes?.data ?? []
+   678→  const subscriptions = subscriptionsRes?.data ?? []
+   679→
+   680→  const isLoading =
+   681→    isDashboardLoading && !dashboard
+   682→
+   683→  const navigate = React.useCallback(
+   684→    (route: string) => setRoute(route),
+   685→    [setRoute],
+   686→  )
+   687→
+   688→  // Chart colors from CSS variables
+   689→  const chartColors = [
+   690→    'hsl(var(--chart-1))',
+   691→    'hsl(var(--chart-2))',
+   692→    'hsl(var(--chart-3))',
+   693→    'hsl(var(--chart-4))',
+   694→    'hsl(var(--chart-5))',
+   695→  ]
+   696→
+   697→  // Compute savings rate
+   698→  const savingsRate =
+   699→    dashboard && dashboard.income > 0
+   700→      ? ((dashboard.income - dashboard.expenses) / dashboard.income) * 100
+   701→      : 0
+   702→
+   703→  // Format chart data for FinancialChart component
+   704→  const areaChartData = React.useMemo(
+   705→    () =>
+   706→      chartData.map((d) => ({
+   707→        label: d.label,
+   708→        value: d.value,
+   709→        secondaryValue: d.secondaryValue ?? 0,
+   710→      })),
+   711→    [chartData],
+   712→  )
+   713→
+   714→  const pieChartData = React.useMemo(
+   715→    () =>
+   716→      categoryData.map((d) => ({
+   717→        label: d.categoryName,
+   718→        value: d.amount,
+   719→        fill: d.categoryColor,
+   720→      })),
+   721→    [categoryData],
+   722→  )
+   723→
+   724→  // Area chart config for income vs expenses
+   725→  const areaChartConfig = React.useMemo(
+   726→    () => ({
+   727→      income: { label: 'Income', color: 'hsl(var(--chart-1))' },
+   728→      expenses: { label: 'Expenses', color: 'hsl(var(--chart-5))' },
+   729→    }),
+   730→    [],
+   731→  )
+   732→
+   733→  if (isLoading) {
+   734→    return (
+   735→      <div className="space-y-6 p-6">
+   736→        <div className="space-y-2">
+   737→          <div className="h-8 w-64 animate-pulse rounded-lg bg-muted" />
+   738→          <div className="h-4 w-40 animate-pulse rounded bg-muted" />
+   739→        </div>
+   740→        <DashboardSkeleton />
+   741→      </div>
+   742→    )
+   743→  }
+   744→
+   745→  return (
+   746→    <motion.div
+   747→      className="space-y-6 p-6"
+   748→      variants={containerVariants}
+   749→      initial="hidden"
+   750→      animate="visible"
+   751→    >
+   752→      {/* Page Header */}
+   753→      <motion.div variants={itemVariants}>
+   754→        <PageHeader
+   755→          title="Dashboard"
+   756→          description="Your financial overview at a glance"
+   757→          breadcrumbs={[{ label: 'Dashboard' }]}
+   758→        />
+   759→      </motion.div>
+   760→
+   761→      {/* Greeting */}
+   762→      <motion.div variants={itemVariants}>
+   763→        <GreetingSection name={user?.name} />
+   764→      </motion.div>
+   765→
+   766→      {/* Financial Overview Stats */}
+   767→      <motion.div
+   768→        variants={itemVariants}
+   769→        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+   770→      >
+   771→        <StatCard
+   772→          icon={Wallet}
+   773→          title="Current Balance"
+   774→          value={formatCurrency(dashboard?.balance ?? 0)}
+   775→          change={
+   776→            dashboard?.balance && dashboard.balance > 0 ? 2.5 : undefined
+   777→          }
+   778→          changeLabel="vs last month"
+   779→          iconBgColor="bg-emerald-500/10"
+   780→          iconColor="text-emerald-600 dark:text-emerald-400"
+   781→        />
+   782→        <StatCard
+   783→          icon={TrendingUp}
+   784→          title="Monthly Income"
+   785→          value={formatCurrency(dashboard?.income ?? 0)}
+   786→          change={5.2}
+   787→          changeLabel="vs last month"
+   788→          iconBgColor="bg-sky-500/10"
+   789→          iconColor="text-sky-600 dark:text-sky-400"
+   790→        />
+   791→        <StatCard
+   792→          icon={TrendingDown}
+   793→          title="Monthly Expenses"
+   794→          value={formatCurrency(dashboard?.expenses ?? 0)}
+   795→          change={-3.1}
+   796→          changeLabel="vs last month"
+   797→          iconBgColor="bg-rose-500/10"
+   798→          iconColor="text-rose-600 dark:text-rose-400"
+   799→        />
+   800→        <StatCard
+   801→          icon={PiggyBank}
+   802→          title="Savings Rate"
+   803→          value={formatPercentage(savingsRate)}
+   804→          change={savingsRate > 20 ? 1.8 : -1.2}
+   805→          changeLabel="vs last month"
+   806→          iconBgColor="bg-amber-500/10"
+   807→          iconColor="text-amber-600 dark:text-amber-400"
+   808→        />
+   809→      </motion.div>
+   810→
+   811→      {/* Charts Section */}
+   812→      <motion.div
+   813→        variants={itemVariants}
+   814→        className="grid gap-6 lg:grid-cols-7"
+   815→      >
+   816→        <div className="lg:col-span-4">
+   817→          <FinancialChart
+   818→            type="area"
+   819→            data={areaChartData}
+   820→            dataKey="value"
+   821→            secondaryDataKey="secondaryValue"
+   822→            title="Income vs Expenses"
+   823→            description="Last 6 months trend"
+   824→            config={areaChartConfig}
+   825→            loading={isChartLoading}
+   826→            height={300}
+   827→            showLegend
+   828→          />
+   829→        </div>
+   830→        <div className="lg:col-span-3">
+   831→          <FinancialChart
+   832→            type="pie"
+   833→            data={pieChartData}
+   834→            title="Category Distribution"
+   835→            description="Where your money goes"
+   836→            dataKey="value"
+   837→            loading={isCategoryLoading}
+   838→            height={300}
+   839→            showLegend
+   840→            colors={chartColors}
+   841→          />
+   842→        </div>
+   843→      </motion.div>
+   844→
+   845→      {/* Financial Health Score + AI Summary */}
+   846→      <motion.div variants={itemVariants} className="grid gap-6 lg:grid-cols-2">
+   847→        {dashboard?.financialHealthScore ? (
+   848→          <FinancialHealthCard
+   849→            score={dashboard.financialHealthScore.score}
+   850→            grade={dashboard.financialHealthScore.grade}
+   851→            summary={dashboard.financialHealthScore.summary}
+   852→          />
+   853→        ) : (
+   854→          <CardSkeleton className="h-[220px]" />
+   855→        )}
+   856→        <AISummaryCard onNavigate={navigate} />
+   857→      </motion.div>
+   858→
+   859→      {/* Recent Transactions + Budget Progress */}
+   860→      <motion.div variants={itemVariants} className="grid gap-6 lg:grid-cols-5">
+   861→        <div className="lg:col-span-3">
+   862→          {isTransactionsLoading ? (
+   863→            <CardSkeleton className="h-[380px]" />
+   864→          ) : (
+   865→            <RecentTransactionsCard
+   866→              transactions={transactions}
+   867→              onViewAll={() => navigate(AppRoute.TRANSACTIONS)}
+   868→            />
+   869→          )}
+   870→        </div>
+   871→        <div className="lg:col-span-2">
+   872→          <BudgetProgressCard
+   873→            budgets={budgets}
+   874→            isLoading={isBudgetsLoading}
+   875→          />
+   876→        </div>
+   877→      </motion.div>
+   878→
+   879→      {/* Upcoming Bills + Quick Actions */}
+   880→      <motion.div variants={itemVariants} className="grid gap-6 lg:grid-cols-5">
+   881→        <div className="lg:col-span-3">
+   882→          <UpcomingBillsCard
+   883→            subscriptions={subscriptions}
+   884→            isLoading={isSubscriptionsLoading}
+   885→          />
+   886→        </div>
+   887→        <div className="lg:col-span-2">
+   888→          <Card>
+   889→            <CardHeader>
+   890→              <CardTitle className="text-base">Quick Actions</CardTitle>
+   891→              <CardDescription>Common tasks at your fingertips</CardDescription>
+   892→            </CardHeader>
+   893→            <CardContent>
+   894→              <QuickActionsRow onNavigate={navigate} />
+   895→            </CardContent>
+   896→          </Card>
+   897→        </div>
+   898→      </motion.div>
+   899→    </motion.div>
+   900→  )
+   901→}
+   902→
