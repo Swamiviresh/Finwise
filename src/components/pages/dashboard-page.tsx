@@ -418,6 +418,7 @@ function FinancialHealthCard({
 function RecentTransactionsCard({
   transactions,
   onViewAll,
+  currency,
 }: {
   transactions: Array<{
     id: string
@@ -428,6 +429,7 @@ function RecentTransactionsCard({
     category: { name: string; color: string; icon: string | null } | undefined
   }>
   onViewAll: () => void
+  currency: string
 }) {
   if (transactions.length === 0) {
     return (
@@ -519,7 +521,7 @@ function RecentTransactionsCard({
                 )}
               >
                 {tx.type === 'income' ? '+' : '-'}
-                {formatCurrency(Math.abs(tx.amount))}
+                {formatCurrency(Math.abs(tx.amount), currency)}
               </span>
             </div>
             <div className="hidden text-right text-xs text-muted-foreground md:block">
@@ -535,6 +537,7 @@ function RecentTransactionsCard({
 function BudgetProgressCard({
   budgets,
   isLoading,
+  currency,
 }: {
   budgets: Array<{
     id: string
@@ -544,6 +547,7 @@ function BudgetProgressCard({
     period: string
   }>
   isLoading: boolean
+  currency: string
 }) {
   if (isLoading) {
     return (
@@ -622,12 +626,12 @@ function BudgetProgressCard({
               </div>
               <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                 <span className="font-mono tabular-nums">
-                  {formatCurrency(budget.spent)}{' '}
+                  {formatCurrency(budget.spent, currency)}{' '}
                   <span className="text-muted-foreground/60">of</span>{' '}
-                  {formatCurrency(budget.amount)}
+                  {formatCurrency(budget.amount, currency)}
                 </span>
                 <span className="font-mono tabular-nums">
-                  {formatCurrency(remaining)} left
+                  {formatCurrency(remaining, currency)} left
                 </span>
               </div>
             </motion.div>
@@ -641,6 +645,7 @@ function BudgetProgressCard({
 function UpcomingBillsCard({
   subscriptions,
   isLoading,
+  currency,
 }: {
   subscriptions: Array<{
     id: string
@@ -652,6 +657,7 @@ function UpcomingBillsCard({
     billingCycle: string
   }>
   isLoading: boolean
+  currency: string
 }) {
   if (isLoading) {
     return (
@@ -729,7 +735,7 @@ function UpcomingBillsCard({
               </div>
               <div className="shrink-0 text-right">
                 <p className="font-mono text-sm font-semibold tabular-nums">
-                  {formatCurrency(sub.amount)}
+                  {formatCurrency(sub.amount, currency)}
                 </p>
                 <span
                   className={cn(
@@ -871,6 +877,7 @@ function QuickActionsRow({
 
 export function DashboardPage() {
   const { user, setRoute } = useRouterStore()
+  const currency = user?.currency || 'USD'
 
   // Data fetching
   const { data: dashboardRes, isLoading: isDashboardLoading } = useDashboardData()
@@ -964,7 +971,7 @@ export function DashboardPage() {
         <StatCard
           icon={Wallet}
           title="Current Balance"
-          value={formatCurrency(dashboard?.balance ?? 0)}
+          value={formatCurrency(dashboard?.balance ?? 0, currency)}
           change={2.5}
           changeLabel="vs last month"
           iconBgColor="bg-emerald-500/10"
@@ -974,7 +981,7 @@ export function DashboardPage() {
         <StatCard
           icon={TrendingUp}
           title="Monthly Income"
-          value={formatCurrency(dashboard?.income ?? 0)}
+          value={formatCurrency(dashboard?.income ?? 0, currency)}
           change={5.2}
           changeLabel="vs last month"
           iconBgColor="bg-sky-500/10"
@@ -984,7 +991,7 @@ export function DashboardPage() {
         <StatCard
           icon={TrendingDown}
           title="Monthly Expenses"
-          value={formatCurrency(dashboard?.expenses ?? 0)}
+          value={formatCurrency(dashboard?.expenses ?? 0, currency)}
           change={-3.1}
           changeLabel="vs last month"
           iconBgColor="bg-rose-500/10"
@@ -1051,11 +1058,12 @@ export function DashboardPage() {
             <RecentTransactionsCard
               transactions={transactions}
               onViewAll={() => navigate(AppRoute.TRANSACTIONS)}
+              currency={currency}
             />
           )}
         </div>
         <div className="lg:col-span-2">
-          <BudgetProgressCard budgets={budgets} isLoading={isBudgetsLoading} />
+          <BudgetProgressCard budgets={budgets} isLoading={isBudgetsLoading} currency={currency} />
         </div>
       </motion.div>
 
@@ -1071,6 +1079,7 @@ export function DashboardPage() {
           <UpcomingBillsCard
             subscriptions={subscriptions}
             isLoading={isSubscriptionsLoading}
+            currency={currency}
           />
         </div>
         <div className="lg:col-span-2">

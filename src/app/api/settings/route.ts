@@ -1,5 +1,5 @@
 // GET /api/settings & PUT /api/settings
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { settingsSchema } from '@/lib/validators';
 import { db } from '@/lib/db';
 import {
@@ -8,6 +8,7 @@ import {
   errorResponse,
   handleApiError,
 } from '@/lib/api-helpers';
+import { generateToken, createSessionCookie } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
@@ -55,15 +56,36 @@ export async function PUT(request: NextRequest) {
       update: parsed.data,
     });
 
-    // If currency changed, also update user
+    // If currency changed, update user and re-issue JWT + cookie
+    let newToken: string | undefined;
     if (parsed.data.currency) {
       await db.user.update({
         where: { id: authUser.id },
         data: { currency: parsed.data.currency },
       });
+
+      // Re-issue JWT with updated currency
+      newToken = await generateToken({
+        id: authUser.id,
+        email: authUser.email,
+        name: authUser.name,
+        role: authUser.role,
+        currency: parsed.data.currency,
+      });
     }
 
-    return successResponse(settings, 'Settings updated');
+    const response = NextResponse.json(
+      { success: true, data: settings, ...(newToken ? { token: newToken } : {}), message: 'Settings updated' },
+      { status: 200 },
+    );
+
+    // Set new JWT as httpOnly cookie if re-issued
+    if (newToken) {
+      const cookie = createSessionCookie(newToken);
+      response.cookies.set(cookie.name, cookie.value, cookie.options);
+    }
+
+    return response;
   } catch (error) {
     return handleApiError(error);
   }

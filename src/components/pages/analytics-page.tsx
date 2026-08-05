@@ -167,7 +167,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
           />
           <span className="text-muted-foreground">{entry.name}:</span>
           <span className="font-mono font-medium text-foreground">
-            {formatCurrency(entry.value)}
+            {formatCurrency(entry.value, currency)}
           </span>
         </div>
       ))}
@@ -353,7 +353,7 @@ function CategoryDonutChart({
                   <span className="truncate text-muted-foreground">{item.label}</span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="font-medium tabular-nums">{formatCurrency(item.value)}</span>
+                  <span className="font-medium tabular-nums">{formatCurrency(item.value, currency)}</span>
                   <span className="text-xs text-muted-foreground">
                     {((item.value / total) * 100).toFixed(1)}%
                   </span>
@@ -720,7 +720,7 @@ function BudgetUtilizationChart({
             <div className="flex items-center justify-between text-sm">
               <span className="truncate text-muted-foreground">{item.name}</span>
               <span className="shrink-0 tabular-nums font-medium">
-                {formatCurrency(item.spent)} / {formatCurrency(item.budget)}
+                {formatCurrency(item.spent, currency)} / {formatCurrency(item.budget, currency)}
               </span>
             </div>
             <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted/50">
@@ -740,7 +740,7 @@ function BudgetUtilizationChart({
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{item.percent.toFixed(1)}% used</span>
-              <span>{formatCurrency(Math.max(item.budget - item.spent, 0))} remaining</span>
+              <span>{formatCurrency(Math.max(item.budget - item.spent, 0), currency)} remaining</span>
             </div>
           </div>
         ))}
@@ -858,14 +858,14 @@ function SpendingInsights({
         icon={ShoppingBag}
         label="Top Spending Category"
         value={insights.topCategory?.categoryName ?? 'N/A'}
-        subtext={insights.topCategory ? `${formatCurrency(insights.topCategory.amount)} (${insights.topCategory.percentage.toFixed(1)}%)` : 'No spending data'}
+        subtext={insights.topCategory ? `${formatCurrency(insights.topCategory.amount, currency)} (${insights.topCategory.percentage.toFixed(1)}%)` : 'No spending data'}
         iconBg="bg-orange-500/10"
         iconColor="text-orange-500"
       />
       <InsightCardData
         icon={Flame}
         label="Biggest Expense"
-        value={insights.biggestExpense ? formatCurrency(insights.biggestExpense.amount) : 'N/A'}
+        value={insights.biggestExpense ? formatCurrency(insights.biggestExpense.amount, currency) : 'N/A'}
         subtext={insights.biggestExpense?.categoryName}
         iconBg="bg-red-500/10"
         iconColor="text-red-500"
@@ -894,7 +894,7 @@ function SpendingInsights({
             ? `${insights.spendingChange > 0 ? '+' : ''}${insights.spendingChange.toFixed(1)}%`
             : 'No change'
         }
-        subtext={totalExpenses > 0 ? `Total: ${formatCurrency(totalExpenses)}` : 'No data'}
+        subtext={totalExpenses > 0 ? `Total: ${formatCurrency(totalExpenses, currency)}` : 'No data'}
         iconBg={
           insights.spendingChange > 0
             ? 'bg-red-500/10'
@@ -936,6 +936,9 @@ function SpendingInsights({
 // --- Main Component ---
 
 export function AnalyticsPage() {
+  const { user } = useRouterStore()
+  const currency = user?.currency || 'USD'
+
   const [selectedPeriod, setSelectedPeriod] = React.useState('6')
   const months = Number(selectedPeriod)
 
@@ -1092,7 +1095,7 @@ export function AnalyticsPage() {
         <StatCard
           icon={TrendingUp}
           title="Total Income"
-          value={formatCurrency(totalIncome)}
+          value={formatCurrency(totalIncome, currency)}
           change={incomeChange}
           changeLabel="vs last month"
           iconBgColor="bg-emerald-500/10"
@@ -1101,7 +1104,7 @@ export function AnalyticsPage() {
         <StatCard
           icon={TrendingDown}
           title="Total Expenses"
-          value={formatCurrency(totalExpenses)}
+          value={formatCurrency(totalExpenses, currency)}
           change={expenseChange}
           changeLabel="vs last month"
           iconBgColor="bg-red-500/10"
@@ -1110,7 +1113,7 @@ export function AnalyticsPage() {
         <StatCard
           icon={PiggyBank}
           title="Net Savings"
-          value={formatCurrency(netSavings)}
+          value={formatCurrency(netSavings, currency)}
           change={savingsChange}
           changeLabel="vs last month"
           iconBgColor="bg-primary/10"
@@ -1119,7 +1122,7 @@ export function AnalyticsPage() {
         <StatCard
           icon={CalendarDays}
           title="Avg Daily Spend"
-          value={formatCurrency(avgDailySpend)}
+          value={formatCurrency(avgDailySpend, currency)}
           iconBgColor="bg-amber-500/10"
           iconColor="text-amber-500"
         />
@@ -1198,7 +1201,7 @@ export function AnalyticsPage() {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-medium tabular-nums">
-                          {formatCurrency(cat.amount)}
+                          {formatCurrency(cat.amount, currency)}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {cat.percentage.toFixed(1)}%

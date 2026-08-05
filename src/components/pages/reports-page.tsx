@@ -174,7 +174,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
           />
           <span className="text-muted-foreground">{entry.name}:</span>
           <span className="font-mono font-medium text-foreground">
-            {formatCurrency(entry.value)}
+            {formatCurrency(entry.value, currency)}
           </span>
         </div>
       ))}
@@ -351,7 +351,7 @@ function ReportSummary({
         <StatCard
           icon={DollarSign}
           title="Total Income"
-          value={formatCurrency(totalIncome)}
+          value={formatCurrency(totalIncome, currency)}
           change={incomeChange || undefined}
           changeLabel="vs last period"
           iconBgColor="bg-emerald-500/10"
@@ -360,7 +360,7 @@ function ReportSummary({
         <StatCard
           icon={Receipt}
           title="Total Expenses"
-          value={formatCurrency(totalExpenses)}
+          value={formatCurrency(totalExpenses, currency)}
           change={expenseChange || undefined}
           changeLabel="vs last period"
           iconBgColor="bg-red-500/10"
@@ -369,7 +369,7 @@ function ReportSummary({
         <StatCard
           icon={PiggyBank}
           title="Net Savings"
-          value={formatCurrency(netSavings)}
+          value={formatCurrency(netSavings, currency)}
           change={savingsChange || undefined}
           changeLabel="vs last period"
           iconBgColor="bg-primary/10"
@@ -446,7 +446,7 @@ function ReportSummary({
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{cat.name}</p>
                       <p className="text-sm font-semibold tabular-nums">
-                        {formatCurrency(cat.amount)}
+                        {formatCurrency(cat.amount, currency)}
                       </p>
                     </div>
                   </motion.div>
@@ -511,7 +511,7 @@ function IncomeReport({
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="font-semibold tabular-nums">
-                          {formatCurrency(source.amount)}
+                          {formatCurrency(source.amount, currency)}
                         </span>
                         <span className="text-xs text-muted-foreground w-12 text-right">
                           {pct.toFixed(1)}%
@@ -699,7 +699,7 @@ function ExpenseReport({
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-sm font-semibold tabular-nums">
-                        {formatCurrency(cat.amount)}
+                        {formatCurrency(cat.amount, currency)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {cat.percentage.toFixed(1)}%
@@ -784,7 +784,7 @@ function ExpenseReport({
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-semibold tabular-nums">
-                        {formatCurrency(cat.amount)}
+                        {formatCurrency(cat.amount, currency)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {cat.percentage.toFixed(1)}%
@@ -796,7 +796,7 @@ function ExpenseReport({
                   ))}
                 </TableBody>
                 <TableCaption>
-                  Total expenses: {formatCurrency(totalExpenses)} across{' '}
+                  Total expenses: {formatCurrency(totalExpenses, currency)} across{' '}
                   {sorted.length} categories
                 </TableCaption>
               </Table>
@@ -988,6 +988,9 @@ function exportAsJSON(
 // --- Main Component ---
 
 export function ReportsPage() {
+  const { user } = useRouterStore()
+  const currency = user?.currency || 'USD'
+
   const now = new Date()
   const currentYear = now.getFullYear()
   const currentMonth = now.getMonth() + 1
@@ -1146,11 +1149,11 @@ export function ReportsPage() {
                       <p className="text-sm font-medium">Summary</p>
                       <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
                         <span>Income:</span>
-                        <span className="text-right font-medium text-foreground">{formatCurrency(totalIncome)}</span>
+                        <span className="text-right font-medium text-foreground">{formatCurrency(totalIncome, currency)}</span>
                         <span>Expenses:</span>
-                        <span className="text-right font-medium text-foreground">{formatCurrency(totalExpenses)}</span>
+                        <span className="text-right font-medium text-foreground">{formatCurrency(totalExpenses, currency)}</span>
                         <span>Net:</span>
-                        <span className="text-right font-medium text-foreground">{formatCurrency(netSavings)}</span>
+                        <span className="text-right font-medium text-foreground">{formatCurrency(netSavings, currency)}</span>
                       </div>
                     </div>
                   </div>

@@ -13,7 +13,8 @@ import type {
   UserProfile,
   ApiResponse,
 } from '@/types'
-import { apiRequest } from '@/hooks/use-auth'
+import { apiRequest, setToken } from '@/hooks/use-auth'
+import { useRouterStore } from '@/store/router-store'
 import { toast } from 'sonner'
 
 export function useSettings() {
@@ -26,22 +27,36 @@ export function useSettings() {
 
 export function useUpdateSettings() {
   const queryClient = useQueryClient()
+  const setAuth = useRouterStore((s) => s.setAuth)
 
   return useMutation({
     mutationFn: async (data: SettingsInput) => {
-      const res = await apiRequest<ApiResponse<Settings>>(
-        '/api/settings',
-        {
-          method: 'PUT',
-          body: JSON.stringify(data),
+      // Use raw fetch to capture the token from the response body
+      const token = localStorage.getItem('token')
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-      )
-      return res.data
+        body: JSON.stringify(data),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.message || json.error || 'Request failed')
+      return json as ApiResponse<Settings> & { token?: string }
     },
-    onSuccess: (data) => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['settings'] })
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+
+      // If server returned a new token (currency changed), update client state
+      if (response.token) {
+        setToken(response.token)
+        // Invalidate auth/me to force a fresh fetch with the new user data
+        queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+      }
+
       toast.success('Settings updated')
-      return data
     },
     onError: (error: Error) => {
       toast.error(error.message)

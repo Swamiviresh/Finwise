@@ -1,0 +1,824 @@
+     1→'use client'
+     2→
+     3→import * as React from 'react'
+     4→import { useForm } from 'react-hook-form'
+     5→import { zodResolver } from '@hookform/resolvers/zod'
+     6→import { z } from 'zod'
+     7→import { motion } from 'framer-motion'
+     8→import { toast } from 'sonner'
+     9→import { useTheme } from 'next-themes'
+    10→import {
+    11→  Sun,
+    12→  Moon,
+    13→  Monitor,
+    14→  Palette,
+    15→  Globe,
+    16→  Languages,
+    17→  Bell,
+    18→  Mail,
+    19→  SlidersHorizontal,
+    20→  FileBarChart2,
+    21→  Shield,
+    22→  Lock,
+    23→  Smartphone,
+    24→  Download,
+    25→  Loader2,
+    26→  Save,
+    27→  Eye,
+    28→  EyeOff,
+    29→  Check,
+    30→  Zap,
+    31→} from 'lucide-react'
+    32→import { useRouterStore } from '@/store/router-store'
+    33→import { useSettings, useUpdateSettings, useExportData } from '@/hooks/use-settings'
+    34→import { PageHeader } from '@/components/shared/page-header'
+    35→import { Button } from '@/components/ui/button'
+    36→import { Input } from '@/components/ui/input'
+    37→import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+    38→import { Label } from '@/components/ui/label'
+    39→import { Separator } from '@/components/ui/separator'
+    40→import { Switch } from '@/components/ui/switch'
+    41→import { Slider } from '@/components/ui/slider'
+    42→import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+    43→import { Badge } from '@/components/ui/badge'
+    44→import { Skeleton } from '@/components/ui/skeleton'
+    45→import {
+    46→  Select,
+    47→  SelectContent,
+    48→  SelectItem,
+    49→  SelectTrigger,
+    50→  SelectValue,
+    51→} from '@/components/ui/select'
+    52→import {
+    53→  Dialog,
+    54→  DialogContent,
+    55→  DialogDescription,
+    56→  DialogFooter,
+    57→  DialogHeader,
+    58→  DialogTitle,
+    59→  DialogTrigger,
+    60→} from '@/components/ui/dialog'
+    61→import {
+    62→  Form,
+    63→  FormControl,
+    64→  FormDescription,
+    65→  FormField,
+    66→  FormItem,
+    67→  FormLabel,
+    68→  FormMessage,
+    69→} from '@/components/ui/form'
+    70→import { cn } from '@/lib/utils'
+    71→import { CURRENCY_CODES, LANGUAGES } from '@/lib/constants'
+    72→import type { SettingsInput } from '@/types'
+    73→
+    74→// ---------------------------------------------------------------------------
+    75→// Change Password Schema
+    76→// ---------------------------------------------------------------------------
+    77→
+    78→const changePasswordSchema = z
+    79→  .object({
+    80→    currentPassword: z.string().min(1, 'Current password is required'),
+    81→    newPassword: z
+    82→      .string()
+    83→      .min(8, 'Password must be at least 8 characters')
+    84→      .regex(/[A-Z]/, 'Must contain an uppercase letter')
+    85→      .regex(/[a-z]/, 'Must contain a lowercase letter')
+    86→      .regex(/[0-9]/, 'Must contain a number'),
+    87→    confirmPassword: z.string(),
+    88→  })
+    89→  .refine((data) => data.newPassword === data.confirmPassword, {
+    90→    message: 'Passwords do not match',
+    91→    path: ['confirmPassword'],
+    92→  })
+    93→
+    94→type ChangePasswordValues = z.infer<typeof changePasswordSchema>
+    95→
+    96→// ---------------------------------------------------------------------------
+    97→// Date Formats
+    98→// ---------------------------------------------------------------------------
+    99→
+   100→const DATE_FORMATS = [
+   101→  { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY (US)' },
+   102→  { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY (EU)' },
+   103→  { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD (ISO)' },
+   104→  { value: 'DD.MM.YYYY', label: 'DD.MM.YYYY (DE)' },
+   105→]
+   106→
+   107→// ---------------------------------------------------------------------------
+   108→// Theme Option
+   109→// ---------------------------------------------------------------------------
+   110→
+   111→interface ThemeOptionProps {
+   112→  value: string
+   113→  label: string
+   114→  icon: React.ReactNode
+   115→  selected: boolean
+   116→  onClick: () => void
+   117→}
+   118→
+   119→function ThemeOption({ value, label, icon, selected, onClick }: ThemeOptionProps) {
+   120→  return (
+   121→    <label
+   122→      htmlFor={`theme-${value}`}
+   123→      className={cn(
+   124→        'flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-all hover:bg-accent',
+   125→        selected && 'border-primary bg-primary/5 ring-1 ring-primary',
+   126→      )}
+   127→    >
+   128→      <RadioGroupItem value={value} id={`theme-${value}`} />
+   129→      <div className="flex size-9 items-center justify-center rounded-lg bg-muted">
+   130→        {icon}
+   131→      </div>
+   132→      <span className="text-sm font-medium">{label}</span>
+   133→    </label>
+   134→  )
+   135→}
+   136→
+   137→// ---------------------------------------------------------------------------
+   138→// Component
+   139→// ---------------------------------------------------------------------------
+   140→
+   141→export function SettingsPage() {
+   142→  const { user } = useRouterStore()
+   143→  const { theme, setTheme } = useTheme()
+   144→  const { data: settingsData, isLoading: settingsLoading } = useSettings()
+   145→  const updateSettings = useUpdateSettings()
+   146→  const exportData = useExportData()
+   147→
+   148→  const [passwordDialogOpen, setPasswordDialogOpen] = React.useState(false)
+   149→  const [showCurrentPassword, setShowCurrentPassword] = React.useState(false)
+   150→  const [showNewPassword, setShowNewPassword] = React.useState(false)
+   151→
+   152→  const settings = settingsData?.data ?? null
+   153→
+   154→  // --- Local settings state (updated individually per section) ---
+   155→  const [localTheme, setLocalTheme] = React.useState(settings?.theme || 'system')
+   156→  const [localCurrency, setLocalCurrency] = React.useState(settings?.currency || 'USD')
+   157→  const [localLanguage, setLocalLanguage] = React.useState(settings?.language || 'en')
+   158→  const [localDateFormat, setLocalDateFormat] = React.useState('MM/DD/YYYY')
+   159→  const [localNotifications, setLocalNotifications] = React.useState(
+   160→    settings?.enableNotifications ?? true,
+   161→  )
+   162→  const [localEmailDigest, setLocalEmailDigest] = React.useState(
+   163→    settings?.enableEmailDigest ?? true,
+   164→  )
+   165→  const [localBudgetThreshold, setLocalBudgetThreshold] = React.useState(
+   166→    settings?.budgetAlertThreshold ?? 80,
+   167→  )
+   168→  const [localWeeklyReport, setLocalWeeklyReport] = React.useState(
+   169→    settings?.weeklyReportEnabled ?? true,
+   170→  )
+   171→
+   172→  // Sync from server data
+   173→  React.useEffect(() => {
+   174→    if (settings) {
+   175→      setLocalTheme(settings.theme || 'system')
+   176→      setLocalCurrency(settings.currency || 'USD')
+   177→      setLocalLanguage(settings.language || 'en')
+   178→      setLocalNotifications(settings.enableNotifications)
+   179→      setLocalEmailDigest(settings.enableEmailDigest)
+   180→      setLocalBudgetThreshold(settings.budgetAlertThreshold)
+   181→      setLocalWeeklyReport(settings.weeklyReportEnabled)
+   182→    }
+   183→  }, [settings])
+   184→
+   185→  // --- Sync theme ---
+   186→  React.useEffect(() => {
+   187→    if (theme) setLocalTheme(theme)
+   188→  }, [theme])
+   189→
+   190→  // --- Save helper ---
+   191→  const saveSetting = React.useCallback(
+   192→    (patch: SettingsInput) => {
+   193→      updateSettings.mutate(patch)
+   194→    },
+   195→    [updateSettings],
+   196→  )
+   197→
+   198→  // --- Password form ---
+   199→  const passwordForm = useForm<ChangePasswordValues>({
+   200→    resolver: zodResolver(changePasswordSchema),
+   201→    defaultValues: {
+   202→      currentPassword: '',
+   203→      newPassword: '',
+   204→      confirmPassword: '',
+   205→    },
+   206→  })
+   207→
+   208→  const onPasswordSubmit = React.useCallback(
+   209→    (data: ChangePasswordValues) => {
+   210→      // Simulated — in production call the API
+   211→      toast.success('Password changed successfully')
+   212→      setPasswordDialogOpen(false)
+   213→      passwordForm.reset()
+   214→    },
+   215→    [passwordForm],
+   216→  )
+   217→
+   218→  // --- Loading skeleton ---
+   219→  if (settingsLoading) {
+   220→    return (
+   221→      <motion.div
+   222→        initial={{ opacity: 0, y: 20 }}
+   223→        animate={{ opacity: 1, y: 0 }}
+   224→        className="space-y-6 p-6"
+   225→      >
+   226→        <Skeleton className="h-8 w-32" />
+   227→        <div className="grid gap-6 lg:grid-cols-2">
+   228→          <Skeleton className="h-64 rounded-xl" />
+   229→          <Skeleton className="h-64 rounded-xl" />
+   230→          <Skeleton className="h-64 rounded-xl" />
+   231→          <Skeleton className="h-64 rounded-xl" />
+   232→        </div>
+   233→      </motion.div>
+   234→    )
+   235→  }
+   236→
+   237→  return (
+   238→    <motion.div
+   239→      initial={{ opacity: 0, y: 20 }}
+   240→      animate={{ opacity: 1, y: 0 }}
+   241→      transition={{ duration: 0.4 }}
+   242→      className="space-y-6 p-6"
+   243→    >
+   244→      {/* Page Header */}
+   245→      <PageHeader
+   246→        title="Settings"
+   247→        description="Customize your FinWise experience"
+   248→        breadcrumbs={[
+   249→          { label: 'Dashboard', href: '#dashboard' },
+   250→          { label: 'Settings' },
+   251→        ]}
+   252→      />
+   253→
+   254→      <div className="grid gap-6 lg:grid-cols-2">
+   255→        {/* ================================================================ */}
+   256→        {/* Appearance                                                       */}
+   257→        {/* ================================================================ */}
+   258→        <Card className="rounded-2xl border-border/40">
+   259→          <CardHeader>
+   260→            <div className="flex items-center gap-2">
+   261→              <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
+   262→                <Palette className="size-4 text-primary" />
+   263→              </div>
+   264→              <div>
+   265→                <CardTitle className="flex items-center gap-2.5 text-base">Appearance</CardTitle>
+   266→                <CardDescription className="text-xs">
+   267→                  Customize how FinWise looks
+   268→                </CardDescription>
+   269→              </div>
+   270→            </div>
+   271→          </CardHeader>
+   272→          <CardContent className="space-y-4">
+   273→            <RadioGroup
+   274→              value={localTheme}
+   275→              onValueChange={(val) => {
+   276→                setLocalTheme(val as 'light' | 'dark' | 'system')
+   277→                setTheme(val)
+   278→                saveSetting({ theme: val as 'light' | 'dark' | 'system' })
+   279→              }}
+   280→              className="grid gap-3 sm:grid-cols-3"
+   281→            >
+   282→              <ThemeOption
+   283→                value="light"
+   284→                label="Light"
+   285→                selected={localTheme === 'light'}
+   286→                onClick={() => {
+   287→                  setTheme('light')
+   288→                  saveSetting({ theme: 'light' })
+   289→                }}
+   290→                icon={<Sun className="size-4 text-amber-500" />}
+   291→              />
+   292→              <ThemeOption
+   293→                value="dark"
+   294→                label="Dark"
+   295→                selected={localTheme === 'dark'}
+   296→                onClick={() => {
+   297→                  setTheme('dark')
+   298→                  saveSetting({ theme: 'dark' })
+   299→                }}
+   300→                icon={<Moon className="size-4 text-violet-500" />}
+   301→              />
+   302→              <ThemeOption
+   303→                value="system"
+   304→                label="System"
+   305→                selected={localTheme === 'system'}
+   306→                onClick={() => {
+   307→                  setTheme('system')
+   308→                  saveSetting({ theme: 'system' })
+   309→                }}
+   310→                icon={<Monitor className="size-4 text-sky-500" />}
+   311→              />
+   312→            </RadioGroup>
+   313→
+   314→            {/* Theme Preview */}
+   315→            <div className="rounded-lg border p-3">
+   316→              <p className="mb-2 text-xs font-medium text-muted-foreground">
+   317→                Preview
+   318→              </p>
+   319→              <div
+   320→                className={cn(
+   321→                  'rounded-md border p-3 transition-colors',
+   322→                  localTheme === 'dark'
+   323→                    ? 'bg-zinc-900 text-zinc-100'
+   324→                    : localTheme === 'light'
+   325→                      ? 'bg-white text-zinc-900'
+   326→                      : 'bg-gradient-to-r from-white to-zinc-900 text-zinc-600',
+   327→                )}
+   328→              >
+   329→                <div className="flex items-center justify-between">
+   330→                  <div className="flex items-center gap-2">
+   331→                    <div className="size-6 rounded-full bg-primary/20" />
+   332→                    <div className="h-2.5 w-20 rounded bg-current opacity-40" />
+   333→                  </div>
+   334→                  <div className="h-2.5 w-10 rounded bg-current opacity-20" />
+   335→                </div>
+   336→                <div className="mt-2 space-y-1.5">
+   337→                  <div className="h-2 w-full rounded bg-current opacity-10" />
+   338→                  <div className="h-2 w-3/4 rounded bg-current opacity-10" />
+   339→                </div>
+   340→              </div>
+   341→            </div>
+   342→          </CardContent>
+   343→        </Card>
+   344→
+   345→        {/* ================================================================ */}
+   346→        {/* Currency & Language                                              */}
+   347→        {/* ================================================================ */}
+   348→        <Card className="rounded-2xl border-border/40">
+   349→          <CardHeader>
+   350→            <div className="flex items-center gap-2">
+   351→              <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
+   352→                <Globe className="size-4 text-primary" />
+   353→              </div>
+   354→              <div>
+   355→                <CardTitle className="flex items-center gap-2.5 text-base">Currency & Language</CardTitle>
+   356→                <CardDescription className="text-xs">
+   357→                  Set your regional preferences
+   358→                </CardDescription>
+   359→              </div>
+   360→            </div>
+   361→          </CardHeader>
+   362→          <CardContent className="space-y-4">
+   363→            {/* Currency */}
+   364→            <div className="space-y-2">
+   365→              <Label className="text-sm font-medium">Currency</Label>
+   366→              <Select
+   367→                value={localCurrency}
+   368→                onValueChange={(val) => {
+   369→                  setLocalCurrency(val)
+   370→                  saveSetting({ currency: val })
+   371→                }}
+   372→              >
+   373→                <SelectTrigger className="w-full">
+   374→                  <SelectValue placeholder="Select currency" />
+   375→                </SelectTrigger>
+   376→                <SelectContent>
+   377→                  {CURRENCY_CODES.map((c) => (
+   378→                    <SelectItem key={c.code} value={c.code}>
+   379→                      {c.symbol} {c.code} — {c.name}
+   380→                    </SelectItem>
+   381→                  ))}
+   382→                </SelectContent>
+   383→              </Select>
+   384→            </div>
+   385→
+   386→            {/* Language */}
+   387→            <div className="space-y-2">
+   388→              <Label className="text-sm font-medium">Language</Label>
+   389→              <Select
+   390→                value={localLanguage}
+   391→                onValueChange={(val) => {
+   392→                  setLocalLanguage(val)
+   393→                  saveSetting({ language: val })
+   394→                }}
+   395→              >
+   396→                <SelectTrigger className="w-full">
+   397→                  <SelectValue placeholder="Select language" />
+   398→                </SelectTrigger>
+   399→                <SelectContent>
+   400→                  {LANGUAGES.map((l) => (
+   401→                    <SelectItem key={l.code} value={l.code}>
+   402→                      {l.name}
+   403→                    </SelectItem>
+   404→                  ))}
+   405→                </SelectContent>
+   406→              </Select>
+   407→            </div>
+   408→
+   409→            {/* Date Format */}
+   410→            <div className="space-y-2">
+   411→              <Label className="text-sm font-medium">Date Format</Label>
+   412→              <Select
+   413→                value={localDateFormat}
+   414→                onValueChange={setLocalDateFormat}
+   415→              >
+   416→                <SelectTrigger className="w-full">
+   417→                  <SelectValue placeholder="Select format" />
+   418→                </SelectTrigger>
+   419→                <SelectContent>
+   420→                  {DATE_FORMATS.map((df) => (
+   421→                    <SelectItem key={df.value} value={df.value}>
+   422→                      {df.label}
+   423→                    </SelectItem>
+   424→                  ))}
+   425→                </SelectContent>
+   426→              </Select>
+   427→            </div>
+   428→          </CardContent>
+   429→        </Card>
+   430→
+   431→        {/* ================================================================ */}
+   432→        {/* Notification Preferences                                         */}
+   433→        {/* ================================================================ */}
+   434→        <Card className="rounded-2xl border-border/40">
+   435→          <CardHeader>
+   436→            <div className="flex items-center gap-2">
+   437→              <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
+   438→                <Bell className="size-4 text-primary" />
+   439→              </div>
+   440→              <div>
+   441→                <CardTitle className="text-base">
+   442→                  Notification Preferences
+   443→                </CardTitle>
+   444→                <CardDescription className="text-xs">
+   445→                  Control how you receive alerts
+   446→                </CardDescription>
+   447→              </div>
+   448→            </div>
+   449→          </CardHeader>
+   450→          <CardContent className="space-y-5">
+   451→            {/* Enable Notifications */}
+   452→            <div className="flex items-center justify-between">
+   453→              <div className="space-y-0.5">
+   454→                <Label className="text-sm font-medium flex items-center gap-2">
+   455→                  <Zap className="size-3.5 text-muted-foreground" />
+   456→                  Push Notifications
+   457→                </Label>
+   458→                <p className="text-xs text-muted-foreground">
+   459→                  Receive real-time alerts for important events
+   460→                </p>
+   461→              </div>
+   462→              <Switch
+   463→                checked={localNotifications}
+   464→                onCheckedChange={(checked) => {
+   465→                  setLocalNotifications(checked)
+   466→                  saveSetting({ enableNotifications: checked })
+   467→                }}
+   468→              />
+   469→            </div>
+   470→
+   471→            <Separator />
+   472→
+   473→            {/* Email Digest */}
+   474→            <div className="flex items-center justify-between">
+   475→              <div className="space-y-0.5">
+   476→                <Label className="text-sm font-medium flex items-center gap-2">
+   477→                  <Mail className="size-3.5 text-muted-foreground" />
+   478→                  Email Digest
+   479→                </Label>
+   480→                <p className="text-xs text-muted-foreground">
+   481→                  Receive a weekly summary of your finances via email
+   482→                </p>
+   483→              </div>
+   484→              <Switch
+   485→                checked={localEmailDigest}
+   486→                onCheckedChange={(checked) => {
+   487→                  setLocalEmailDigest(checked)
+   488→                  saveSetting({ enableEmailDigest: checked })
+   489→                }}
+   490→              />
+   491→            </div>
+   492→
+   493→            <Separator />
+   494→
+   495→            {/* Budget Alert Threshold */}
+   496→            <div className="space-y-3">
+   497→              <div className="flex items-center justify-between">
+   498→                <Label className="text-sm font-medium flex items-center gap-2">
+   499→                  <SlidersHorizontal className="size-3.5 text-muted-foreground" />
+   500→                  Budget Alert Threshold
+   501→                </Label>
+   502→                <Badge variant="secondary">{localBudgetThreshold}%</Badge>
+   503→              </div>
+   504→              <p className="text-xs text-muted-foreground">
+   505→                Get notified when spending reaches this percentage of your budget
+   506→              </p>
+   507→              <Slider
+   508→                value={[localBudgetThreshold]}
+   509→                onValueChange={([val]) => {
+   510→                  setLocalBudgetThreshold(val)
+   511→                  saveSetting({ budgetAlertThreshold: val })
+   512→                }}
+   513→                min={50}
+   514→                max={100}
+   515→                step={5}
+   516→              />
+   517→              <div className="flex justify-between text-[10px] text-muted-foreground">
+   518→                <span>50% — Early warning</span>
+   519→                <span>100% — Budget exceeded</span>
+   520→              </div>
+   521→            </div>
+   522→
+   523→            <Separator />
+   524→
+   525→            {/* Weekly Report */}
+   526→            <div className="flex items-center justify-between">
+   527→              <div className="space-y-0.5">
+   528→                <Label className="text-sm font-medium flex items-center gap-2">
+   529→                  <FileBarChart2 className="size-3.5 text-muted-foreground" />
+   530→                  Weekly Financial Report
+   531→                </Label>
+   532→                <p className="text-xs text-muted-foreground">
+   533→                  Auto-generate a weekly spending report every Sunday
+   534→                </p>
+   535→              </div>
+   536→              <Switch
+   537→                checked={localWeeklyReport}
+   538→                onCheckedChange={(checked) => {
+   539→                  setLocalWeeklyReport(checked)
+   540→                  saveSetting({ weeklyReportEnabled: checked })
+   541→                }}
+   542→              />
+   543→            </div>
+   544→          </CardContent>
+   545→        </Card>
+   546→
+   547→        {/* ================================================================ */}
+   548→        {/* Privacy & Security                                               */}
+   549→        {/* ================================================================ */}
+   550→        <Card className="rounded-2xl border-border/40">
+   551→          <CardHeader>
+   552→            <div className="flex items-center gap-2">
+   553→              <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
+   554→                <Shield className="size-4 text-primary" />
+   555→              </div>
+   556→              <div>
+   557→                <CardTitle className="text-base">
+   558→                  Privacy & Security
+   559→                </CardTitle>
+   560→                <CardDescription className="text-xs">
+   561→                  Manage your account security settings
+   562→                </CardDescription>
+   563→              </div>
+   564→            </div>
+   565→          </CardHeader>
+   566→          <CardContent className="space-y-5">
+   567→            {/* Change Password */}
+   568→            <div className="flex items-center justify-between">
+   569→              <div className="space-y-0.5">
+   570→                <Label className="text-sm font-medium flex items-center gap-2">
+   571→                  <Lock className="size-3.5 text-muted-foreground" />
+   572→                  Password
+   573→                </Label>
+   574→                <p className="text-xs text-muted-foreground">
+   575→                  Last changed 30 days ago
+   576→                </p>
+   577→              </div>
+   578→              <Dialog
+   579→                open={passwordDialogOpen}
+   580→                onOpenChange={setPasswordDialogOpen}
+   581→              >
+   582→                <DialogTrigger asChild>
+   583→                  <Button variant="outline" size="sm" className="gap-1.5">
+   584→                    <Lock className="size-3.5" />
+   585→                    Change
+   586→                  </Button>
+   587→                </DialogTrigger>
+   588→                <DialogContent className="rounded-2xl border-border/40" >
+   589→                  <DialogHeader>
+   590→                    <DialogTitle>Change Password</DialogTitle>
+   591→                    <DialogDescription>
+   592→                      Enter your current password and choose a new one
+   593→                    </DialogDescription>
+   594→                  </DialogHeader>
+   595→                  <Form {...passwordForm}>
+   596→                    <form
+   597→                      onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
+   598→                      className="space-y-4"
+   599→                    >
+   600→                      {/* Current Password */}
+   601→                      <FormField
+   602→                        control={passwordForm.control}
+   603→                        name="currentPassword"
+   604→                        render={({ field }) => (
+   605→                          <FormItem>
+   606→                            <FormLabel>Current Password</FormLabel>
+   607→                            <div className="relative">
+   608→                              <FormControl>
+   609→                                <Input
+   610→                                  type={
+   611→                                    showCurrentPassword ? 'text' : 'password'
+   612→                                  }
+   613→                                  placeholder="Enter current password"
+   614→                                  {...field}
+   615→                                />
+   616→                              </FormControl>
+   617→                              <Button
+   618→                                type="button"
+   619→                                variant="ghost"
+   620→                                size="icon"
+   621→                                className="absolute top-0 right-0 size-9"
+   622→                                onClick={() =>
+   623→                                  setShowCurrentPassword(!showCurrentPassword)
+   624→                                }
+   625→                              >
+   626→                                {showCurrentPassword ? (
+   627→                                  <EyeOff className="size-4" />
+   628→                                ) : (
+   629→                                  <Eye className="size-4" />
+   630→                                )}
+   631→                              </Button>
+   632→                            </div>
+   633→                            <FormMessage />
+   634→                          </FormItem>
+   635→                        )}
+   636→                      />
+   637→
+   638→                      {/* New Password */}
+   639→                      <FormField
+   640→                        control={passwordForm.control}
+   641→                        name="newPassword"
+   642→                        render={({ field }) => (
+   643→                          <FormItem>
+   644→                            <FormLabel>New Password</FormLabel>
+   645→                            <div className="relative">
+   646→                              <FormControl>
+   647→                                <Input
+   648→                                  type={
+   649→                                    showNewPassword ? 'text' : 'password'
+   650→                                  }
+   651→                                  placeholder="Enter new password"
+   652→                                  {...field}
+   653→                                />
+   654→                              </FormControl>
+   655→                              <Button
+   656→                                type="button"
+   657→                                variant="ghost"
+   658→                                size="icon"
+   659→                                className="absolute top-0 right-0 size-9"
+   660→                                onClick={() =>
+   661→                                  setShowNewPassword(!showNewPassword)
+   662→                                }
+   663→                              >
+   664→                                {showNewPassword ? (
+   665→                                  <EyeOff className="size-4" />
+   666→                                ) : (
+   667→                                  <Eye className="size-4" />
+   668→                                )}
+   669→                              </Button>
+   670→                            </div>
+   671→                            <FormDescription>
+   672→                              Min 8 chars, uppercase, lowercase, and number
+   673→                            </FormDescription>
+   674→                            <FormMessage />
+   675→                          </FormItem>
+   676→                        )}
+   677→                      />
+   678→
+   679→                      {/* Confirm Password */}
+   680→                      <FormField
+   681→                        control={passwordForm.control}
+   682→                        name="confirmPassword"
+   683→                        render={({ field }) => (
+   684→                          <FormItem>
+   685→                            <FormLabel>Confirm New Password</FormLabel>
+   686→                            <FormControl>
+   687→                              <Input
+   688→                                type="password"
+   689→                                placeholder="Confirm new password"
+   690→                                {...field}
+   691→                              />
+   692→                            </FormControl>
+   693→                            <FormMessage />
+   694→                          </FormItem>
+   695→                        )}
+   696→                      />
+   697→
+   698→                      <DialogFooter>
+   699→                        <Button
+   700→                          type="button"
+   701→                          variant="outline"
+   702→                          onClick={() => setPasswordDialogOpen(false)}
+   703→                        >
+   704→                          Cancel
+   705→                        </Button>
+   706→                        <Button
+   707→                          type="submit"
+   708→                          disabled={passwordForm.formState.isSubmitting}
+   709→                          className="gap-2"
+   710→                        >
+   711→                          {passwordForm.formState.isSubmitting ? (
+   712→                            <>
+   713→                              <Loader2 className="size-4 animate-spin" />
+   714→                              Updating...
+   715→                            </>
+   716→                          ) : (
+   717→                            <>
+   718→                              <Check className="size-4" />
+   719→                              Update Password
+   720→                            </>
+   721→                          )}
+   722→                        </Button>
+   723→                      </DialogFooter>
+   724→                    </form>
+   725→                  </Form>
+   726→                </DialogContent>
+   727→              </Dialog>
+   728→            </div>
+   729→
+   730→            <Separator />
+   731→
+   732→            {/* Two-Factor Auth */}
+   733→            <div className="flex items-center justify-between">
+   734→              <div className="space-y-0.5">
+   735→                <Label className="text-sm font-medium flex items-center gap-2">
+   736→                  <Smartphone className="size-3.5 text-muted-foreground" />
+   737→                  Two-Factor Authentication
+   738→                </Label>
+   739→                <p className="text-xs text-muted-foreground">
+   740→                  Add an extra layer of security
+   741→                </p>
+   742→              </div>
+   743→              <div className="flex items-center gap-2">
+   744→                <Badge variant="outline" className="text-xs">
+   745→                  Coming Soon
+   746→                </Badge>
+   747→                <Switch disabled />
+   748→              </div>
+   749→            </div>
+   750→
+   751→            <Separator />
+   752→
+   753→            {/* Active Sessions */}
+   754→            <div className="space-y-3">
+   755→              <Label className="text-sm font-medium flex items-center gap-2">
+   756→                <Smartphone className="size-3.5 text-muted-foreground" />
+   757→                Active Sessions
+   758→              </Label>
+   759→              <div className="rounded-lg border p-3 space-y-2">
+   760→                <div className="flex items-center justify-between">
+   761→                  <div className="flex items-center gap-2">
+   762→                    <div className="flex size-8 items-center justify-center rounded-lg bg-muted">
+   763→                      <Monitor className="size-4 text-muted-foreground" />
+   764→                    </div>
+   765→                    <div>
+   766→                      <p className="text-sm font-medium">Current session</p>
+   767→                      <p className="text-xs text-muted-foreground">
+   768→                        This device &middot; Active now
+   769→                      </p>
+   770→                    </div>
+   771→                  </div>
+   772→                  <Badge variant="default" className="text-xs">
+   773→                    Current
+   774→                  </Badge>
+   775→                </div>
+   776→              </div>
+   777→            </div>
+   778→
+   779→            <Separator />
+   780→
+   781→            {/* Export Data */}
+   782→            <div className="flex items-center justify-between">
+   783→              <div className="space-y-0.5">
+   784→                <Label className="text-sm font-medium flex items-center gap-2">
+   785→                  <Download className="size-3.5 text-muted-foreground" />
+   786→                  Export Data
+   787→                </Label>
+   788→                <p className="text-xs text-muted-foreground">
+   789→                  Download all your data in JSON or CSV format
+   790→                </p>
+   791→              </div>
+   792→              <div className="flex gap-2">
+   793→                <Button
+   794→                  variant="outline"
+   795→                  size="sm"
+   796→                  className="gap-1.5"
+   797→                  onClick={() => exportData.mutate('json')}
+   798→                  disabled={exportData.isPending}
+   799→                >
+   800→                  {exportData.isPending ? (
+   801→                    <Loader2 className="size-3.5 animate-spin" />
+   802→                  ) : (
+   803→                    <Download className="size-3.5" />
+   804→                  )}
+   805→                  JSON
+   806→                </Button>
+   807→                <Button
+   808→                  variant="outline"
+   809→                  size="sm"
+   810→                  className="gap-1.5"
+   811→                  onClick={() => exportData.mutate('csv')}
+   812→                  disabled={exportData.isPending}
+   813→                >
+   814→                  CSV
+   815→                </Button>
+   816→              </div>
+   817→            </div>
+   818→          </CardContent>
+   819→        </Card>
+   820→      </div>
+   821→    </motion.div>
+   822→  )
+   823→}
+   824→

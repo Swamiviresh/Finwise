@@ -46,3 +46,23 @@ Stage Summary:
 - Zero lint errors
 - All pages use shadcn/ui, Lucide icons, framer-motion animations, Recharts charts
 - Dark/light theme support with custom green fintech color palette
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Fix currency not reflecting on dashboard and other pages after settings change
+
+Work Log:
+- Investigated full currency data flow: Settings page → API → Zustand store → formatCurrency()
+- Identified 3 cascading bugs causing the issue
+- Bug #1: use-settings.ts missing ['auth', 'me'] query invalidation after settings update
+- Bug #2: dashboard, reports, analytics pages never pass user.currency to formatCurrency()
+- Bug #3: JWT token contains stale currency after settings change (not re-issued)
+- Fixed Bug #1: Added queryClient.invalidateQueries(['auth', 'me']) in useUpdateSettings
+- Fixed Bug #2: Added currency extraction from useRouterStore in all 3 pages, passed as 2nd arg to all formatCurrency() calls (30+ call sites)
+- Fixed Bug #3: Settings PUT handler now re-issues JWT with updated currency, sets new httpOnly cookie, returns token to client; client-side hook saves new token to localStorage
+- Build passes with zero errors, zero lint warnings
+
+Stage Summary:
+- Currency now flows correctly: Settings → DB → JWT refresh → Cookie + localStorage → Zustand store → all formatCurrency() calls
+- Files changed: use-settings.ts, settings/route.ts, dashboard-page.tsx, reports-page.tsx, analytics-page.tsx
