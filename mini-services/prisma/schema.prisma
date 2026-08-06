@@ -1,0 +1,230 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  passwordHash  String
+  phone         String?
+  avatar        String?
+  occupation    String?
+  currency      String   @default("USD")
+  timezone      String   @default("UTC")
+  language      String   @default("en")
+  role          String   @default("user")
+  isActive      Boolean  @default(true)
+  emailVerified Boolean @default(false)
+  
+  transactions  Transaction[]
+  budgets       Budget[]
+  goals         Goal[]
+  subscriptions Subscription[]
+  notifications Notification[]
+  settings      Settings?
+  reports       Report[]
+  chats         Chat[]
+  resetTokens   ResetToken[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  icon        String?
+  color       String   @default("#6366f1")
+  type        String   @default("expense") // income, expense, transfer
+  isDefault   Boolean  @default(false)
+  userId      String?
+  
+  transactions    Transaction[]
+  categoryBudgets CategoryBudget[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Transaction {
+  id            String   @id @default(cuid())
+  amount        Float
+  description   String
+  type          String   // income, expense, transfer
+  date          DateTime
+  categoryId    String
+  paymentMethod String?
+  notes         String?
+  attachmentUrl String?
+  isRecurring   Boolean  @default(false)
+  recurringFreq String?  // daily, weekly, monthly, yearly
+  
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category      Category @relation(fields: [categoryId], references: [id])
+
+  userId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Budget {
+  id          String   @id @default(cuid())
+  name        String
+  amount      Float
+  spent       Float    @default(0)
+  period      String   @default("monthly") // weekly, monthly, yearly
+  startDate   DateTime
+  endDate     DateTime?
+  alertThreshold Float  @default(80)
+  isActive    Boolean  @default(true)
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  userId      String
+  categoryBudgets CategoryBudget[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CategoryBudget {
+  id       String @id @default(cuid())
+  amount   Float
+  spent    Float  @default(0)
+  
+  budget   Budget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+
+  budgetId  String
+  categoryId String
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Goal {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  targetAmount Float
+  currentAmount Float @default(0)
+  deadline    DateTime?
+  icon        String?
+  color       String   @default("#10b981")
+  isCompleted Boolean  @default(false)
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  userId      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Subscription {
+  id          String   @id @default(cuid())
+  name        String
+  amount      Float
+  billingCycle String  // monthly, yearly, weekly
+  nextBillingDate DateTime
+  startDate   DateTime
+  endDate     DateTime?
+  category    String?
+  icon        String?
+  color       String   @default("#8b5cf6")
+  isActive    Boolean  @default(true)
+  url         String?
+  notes       String?
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  userId      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  type      String   @default("info") // info, warning, success, error
+  isRead    Boolean  @default(false)
+  actionUrl String?
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  userId    String
+  createdAt DateTime @default(now())
+}
+
+model Settings {
+  id              String @id @default(cuid())
+  theme           String @default("system") // light, dark, system
+  currency        String @default("USD")
+  language        String @default("en")
+  enableNotifications Boolean @default(true)
+  enableEmailDigest  Boolean @default(true)
+  budgetAlertThreshold Float @default(80)
+  weeklyReportEnabled  Boolean @default(true)
+  dataExportFormat     String @default("csv")
+  
+  user              User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  userId            String @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Report {
+  id        String   @id @default(cuid())
+  name      String
+  type      String   // monthly, yearly, custom
+  period    String
+  data      String   // JSON string
+  summary   String?
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  userId    String
+  createdAt DateTime @default(now())
+}
+
+model Chat {
+  id        String   @id @default(cuid())
+  title     String?
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  role      String   // user, assistant, system
+  content   String
+  tokens    Int?
+  
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  chatId    String
+  createdAt DateTime @default(now())
+}
