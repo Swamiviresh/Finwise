@@ -686,10 +686,25 @@ export function BudgetsPage() {
           title="Budgets"
           description="Track and manage your spending limits"
           actions={
-            <Button className="rounded-xl h-11" onClick={openCreate}>
-              <Plus className="mr-2 size-4" />
-              Create Budget
-            </Button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => alert('RAW BUTTON WORKS')}
+                style={{
+                  padding: '8px 14px',
+                  background: 'red',
+                  color: 'white',
+                  borderRadius: 8,
+                  fontWeight: 700,
+                }}
+              >
+                TEST CLICK
+              </button>
+              <Button className="rounded-xl h-11" onClick={openCreate}>
+                <Plus className="mr-2 size-4" />
+                Create Budget (v2)
+              </Button>
+            </div>
           }
         />
         <EmptyState
