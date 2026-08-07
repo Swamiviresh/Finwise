@@ -1128,6 +1128,7 @@ export function SubscriptionsPage() {
 
 
   const openCreateForm = () => {
+    console.log('[DEBUG] openCreateForm fired (Subscriptions)')
     setEditingSubscription(null)
     setFormOpen(true)
   }

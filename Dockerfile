@@ -30,6 +30,5 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
-ENV HOSTNAME="0.0.0.0"
 EXPOSE 3000
 CMD ["bun", "server.js"]

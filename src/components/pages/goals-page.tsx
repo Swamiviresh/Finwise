@@ -580,6 +580,7 @@ export function GoalsPage() {
 
   // ---- Handlers ----
   const openCreate = React.useCallback(() => {
+    console.log('[DEBUG] openCreate fired (Goals)')
     setEditingGoal(null)
     form.reset({
       name: '',

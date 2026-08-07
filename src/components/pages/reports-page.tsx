@@ -1121,7 +1121,13 @@ export function ReportsPage() {
               </DropdownMenu>
 
               {/* Generate Report */}
-              <Dialog open={showGenerateDialog} onOpenChange={setShowGenerateDialog}>
+              <Dialog
+                open={showGenerateDialog}
+                onOpenChange={(open) => {
+                  console.log('[DEBUG] Generate Report dialog onOpenChange ->', open)
+                  setShowGenerateDialog(open)
+                }}
+              >
                 <DialogTrigger asChild>
                   <Button size="sm">
                     <Plus className="mr-1.5 size-3.5" />

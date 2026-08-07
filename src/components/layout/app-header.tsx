@@ -39,6 +39,7 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 import { cn } from '@/lib/utils'
+import { useUnreadNotificationCount } from '@/hooks/use-notifications'
 
 const ROUTE_LABELS: Record<string, string> = {
   [AppRoute.DASHBOARD]: 'Dashboard',
@@ -59,7 +60,8 @@ export function AppHeader() {
   const { searchQuery, setSearchQuery } = useAppStore()
   const [searchOpen, setSearchOpen] = React.useState(false)
   const [searchFocused, setSearchFocused] = React.useState(false)
-  const notificationCount = 3
+  const { data: unreadData } = useUnreadNotificationCount()
+  const notificationCount = unreadData?.data?.count ?? 0
 
   const currentLabel = ROUTE_LABELS[route] ?? 'Dashboard'
 

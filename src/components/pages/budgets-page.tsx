@@ -578,6 +578,7 @@ export function BudgetsPage() {
 
   // ---- Handlers ----
   const openCreate = React.useCallback(() => {
+    console.log('[DEBUG] openCreate fired (Budgets)')
     setEditingBudget(null)
     form.reset({
       name: '',

@@ -15,14 +15,11 @@ import {
   Globe,
   Clock,
   Languages,
-  Camera,
   CalendarDays,
   Shield,
   ShieldCheck,
   Trash2,
   Loader2,
-  CheckCircle2,
-  AlertCircle,
   Save,
 } from 'lucide-react'
 import { useRouterStore } from '@/store/router-store'
@@ -85,7 +82,6 @@ export function ProfilePage() {
   const updateProfile = useUpdateProfile()
 
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
-  const [avatarUploading, setAvatarUploading] = React.useState(false)
 
   const profile = profileData?.data ?? null
 
@@ -129,16 +125,6 @@ export function ProfilePage() {
     },
     [updateProfile],
   )
-
-  // --- Avatar upload simulation ---
-  const handleAvatarUpload = React.useCallback(() => {
-    setAvatarUploading(true)
-    // Simulated upload — in production this would call an upload API
-    setTimeout(() => {
-      setAvatarUploading(false)
-      toast.info('Avatar upload is simulated in this demo')
-    }, 1500)
-  }, [])
 
   // --- Delete account ---
   const handleDeleteAccount = React.useCallback(() => {
@@ -199,28 +185,14 @@ export function ProfilePage() {
           {/* Avatar Card */}
           <Card className="rounded-2xl border-border/40">
             <CardContent className="flex flex-col items-center gap-4 p-6">
-              <div className="relative">
-                <Avatar className="size-28 ring-4 ring-primary/10 ring-offset-4 ring-offset-background">
-                  {profile?.avatar && (
-                    <AvatarImage src={profile.avatar} alt={displayName} />
-                  )}
-                  <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/5 text-3xl font-bold text-primary">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
-                <Button
-                  size="icon"
-                  className="absolute -bottom-1 -right-1 size-9 rounded-full border-2 border-background shadow-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                  onClick={handleAvatarUpload}
-                  disabled={avatarUploading}
-                >
-                  {avatarUploading ? (
-                    <Loader2 className="size-3.5 animate-spin" />
-                  ) : (
-                    <Camera className="size-3.5" />
-                  )}
-                </Button>
-              </div>
+              <Avatar className="size-28 ring-4 ring-primary/10 ring-offset-4 ring-offset-background">
+                {profile?.avatar && (
+                  <AvatarImage src={profile.avatar} alt={displayName} />
+                )}
+                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/5 text-3xl font-bold text-primary">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
               <div className="text-center">
                 <h3 className="text-lg font-semibold">{displayName}</h3>
                 <p className="text-sm text-muted-foreground">{displayEmail}</p>
@@ -257,24 +229,6 @@ export function ProfilePage() {
                 >
                   {user?.isActive !== false ? 'Active' : 'Inactive'}
                 </Badge>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Mail className="size-4" />
-                  Email verified
-                </div>
-                {user?.emailVerified ? (
-                  <Badge variant="default" className="gap-1 text-xs">
-                    <CheckCircle2 className="size-3" />
-                    Verified
-                  </Badge>
-                ) : (
-                  <Badge variant="destructive" className="gap-1 text-xs">
-                    <AlertCircle className="size-3" />
-                    Not verified
-                  </Badge>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -313,6 +267,7 @@ export function ProfilePage() {
           <CardContent>
             <Form {...form}>
               <form
+                key={profile?.id ?? 'loading'}
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-6"
               >
